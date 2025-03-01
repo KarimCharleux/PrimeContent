@@ -1,8 +1,8 @@
 'use client';
-import { useEffect, useRef } from 'react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useEffect, useRef, useState } from 'react';
+import gsap from './lib/gsap-config';
 import Gallery from './components/Gallery';
+import ScrambleText from './components/ScrambleText';
 
 // Importation des styles
 import './styles/gallery.scss';
@@ -19,9 +19,6 @@ export default function Page() {
     const serviceRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     useEffect(() => {
-        // Enregistrer le plugin ScrollTrigger
-        gsap.registerPlugin(ScrollTrigger);
-
         // Animation des textes du hero
         const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
         
@@ -67,7 +64,7 @@ export default function Page() {
             });
         }
     }, []);
-
+    
     // Fonction pour ajouter les références aux services
     const addServiceRef = (el: HTMLDivElement | null, index: number) => {
         serviceRefs.current[index] = el;
@@ -107,12 +104,11 @@ export default function Page() {
                             >
                                 Mariage
                             </a>
-                            <a
+                            <ScrambleText 
+                                text="Contact" 
                                 href="/contact"
                                 className="hover:text-purple-400 transition"
-                            >
-                                Contact
-                            </a>
+                            />
                         </div>
                     </div>
                 </div>
@@ -137,9 +133,9 @@ export default function Page() {
                     </p>
                     <button 
                         ref={heroButtonRef}
-                        className="px-8 py-4 bg-white text-black rounded-full transition transform hover:scale-105 flex items-center space-x-2 opacity-0"
+                        className="hero-contact-btn px-8 py-4 w-72 bg-white text-black rounded-full transition transform flex items-center justify-center space-x-2"
                     >
-                        <span>Contactez-nous</span>
+                        <ScrambleText text="CONTACTEZ-NOUS" className="inline-block w-40" />
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="h-5 w-5"
@@ -180,7 +176,7 @@ export default function Page() {
                             </svg>
                         </div>
                         <h3 className="text-xl font-bold mb-4">
-                            Production Vidéo
+                            <ScrambleText text="Production Vidéo" />
                         </h3>
                         <p className="text-gray-400">
                             Création de contenu vidéo professionnel pour tous vos besoins marketing
@@ -209,7 +205,7 @@ export default function Page() {
                             </svg>
                         </div>
                         <h3 className="text-xl font-bold mb-4">
-                            Photographie
+                            <ScrambleText text="Photographie" />
                         </h3>
                         <p className="text-gray-400">
                             Photos professionnelles pour vos événements, produits et portraits
@@ -238,7 +234,7 @@ export default function Page() {
                             </svg>
                         </div>
                         <h3 className="text-xl font-bold mb-4">
-                            Design Digital
+                            <ScrambleText text="Design Digital" />
                         </h3>
                         <p className="text-gray-400">
                             Création d'interfaces web et mobile, branding et gestion des réseaux
