@@ -1,5 +1,8 @@
 // Variables
 $content-z-index: 3;
+$primary-blue: #0f3460;
+$secondary-blue: #1a4b8c;
+$accent-blue: #2c6cb0;
 
 // Mixins
 @mixin flex-center {
@@ -21,6 +24,11 @@ $content-z-index: 3;
   height: 100%;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  cursor: default;
+  user-select: none;
+}
+
 // Contenu du hero
 .hero-content {
   @include flex-column-center;
@@ -38,4 +46,187 @@ $content-z-index: 3;
 
 .hero-contact-btn:is(:hover, :focus-visible) > *{
   opacity: 1 !important;
+}
+
+// Section des expertises
+.expertise-section {
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, rgba(44, 108, 176, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  
+  // Particules décoratives
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      radial-gradient(circle at 20% 30%, rgba(15, 52, 96, 0.1) 0, rgba(15, 52, 96, 0.1) 2px, transparent 2px),
+      radial-gradient(circle at 75% 60%, rgba(26, 75, 140, 0.1) 0, rgba(26, 75, 140, 0.1) 2px, transparent 2px),
+      radial-gradient(circle at 40% 80%, rgba(44, 108, 176, 0.1) 0, rgba(44, 108, 176, 0.1) 2px, transparent 2px);
+    background-size: 120px 120px, 100px 100px, 80px 80px;
+    background-position: 0 0, 0 0, 0 0;
+    pointer-events: none;
+  }
+  
+  .expertise-title {
+    position: relative;
+    display: inline-block;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 3px;
+      background: linear-gradient(90deg, #1a4b8c, #2c6cb0);
+      border-radius: 3px;
+    }
+  }
+  
+  .expertise-grid {
+    position: relative;
+    z-index: 1;
+  }
+  
+  // Animation subtile des cartes au survol
+  .expertise-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.3);
+    }
+  }
+}
+
+// Section "Ils nous ont fait confiance"
+.trust-section {
+  position: relative;
+  
+  // Lignes horizontales décoratives
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      rgba(255, 255, 255, 0.1) 20%, 
+      rgba(255, 255, 255, 0.1) 80%, 
+      transparent 100%
+    );
+  }
+  
+  &::before {
+    top: 0;
+  }
+  
+  &::after {
+    bottom: 0;
+  }
+  
+  .trust-title {
+    position: relative;
+    display: inline-block;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 3px;
+      background: linear-gradient(90deg, #1a4b8c, #2c6cb0);
+      border-radius: 3px;
+    }
+  }
+  
+  // Style pour le carrousel de logos
+  .logo-carousel {
+    position: relative;
+    margin: 0 -20px;
+    padding: 20px 0;
+    
+    // Effet de fondu sur les bords
+    &::before, &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      width: 120px;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+    }
+    
+    &::before {
+      left: 0;
+      background: linear-gradient(90deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%);
+    }
+    
+    &::after {
+      right: 0;
+      background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 100%);
+    }
+    
+    // Styles pour les logos individuels
+    .brand-logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.01);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+    }
+  }
+  
+  // Style pour les photos de profil
+  .rounded-full {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 2px solid transparent;
+    
+    &:hover {
+      transform: scale(1.05);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+  }
+  
+  // Style pour le bouton
+  button {
+    position: relative;
+    overflow: hidden;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s ease;
+    }
+    
+    &:hover::after {
+      left: 100%;
+    }
+  }
 }

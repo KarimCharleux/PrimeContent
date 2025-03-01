@@ -7,7 +7,6 @@ if (typeof window !== 'undefined') {
   // S'assurer que les plugins ne sont enregistrés qu'une seule fois
   if (!gsap.plugins?.text) {
     gsap.registerPlugin(ScrollTrigger, TextPlugin);
-    console.log('GSAP plugins registered: ScrollTrigger, TextPlugin');
   }
 }
 
