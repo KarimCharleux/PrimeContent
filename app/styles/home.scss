@@ -160,6 +160,7 @@ h1, h2, h3, h4, h5, h6 {
   // Style pour le carrousel de logos
   .logo-carousel {
     position: relative;
+    margin: 0 -20px;
     padding: 20px 0;
     
     // Effet de fondu sur les bords
@@ -225,17 +226,31 @@ h1, h2, h3, h4, h5, h6 {
       transform: translateZ(40px);
       will-change: transform;
       transition: transform 0.3s ease;
+      z-index: 10;
       
       h3 {
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
         position: relative;
         display: inline-block;
-        color: white;
+        color: #ffffff !important;
+        font-weight: 700;
+        
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: -5px;
+          left: 0;
+          width: 30px;
+          height: 2px;
+          background: linear-gradient(90deg, $accent-blue, transparent);
+          transition: width 0.3s ease;
+        }
       }
       
       p {
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-        color: white;
+        color: #ffffff !important;
+        opacity: 0.9;
       }
     }
     
@@ -328,4 +343,302 @@ h1, h2, h3, h4, h5, h6 {
       display: inline-block;
     }
   }
+}
+
+// Section "NOS RÉALISATIONS"
+.portfolio-section {
+  position: relative;
+  
+  // Fond avec effet de particules
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      radial-gradient(circle at 15% 25%, rgba(44, 108, 176, 0.05) 0, rgba(44, 108, 176, 0.05) 1px, transparent 1px),
+      radial-gradient(circle at 80% 45%, rgba(26, 75, 140, 0.05) 0, rgba(26, 75, 140, 0.05) 1px, transparent 1px),
+      radial-gradient(circle at 35% 75%, rgba(15, 52, 96, 0.05) 0, rgba(15, 52, 96, 0.05) 1px, transparent 1px);
+    background-size: 90px 90px, 110px 110px, 95px 95px;
+    pointer-events: none;
+  }
+  
+  .portfolio-title {
+    position: relative;
+    display: inline-block;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 3px;
+      background: linear-gradient(90deg, #1a4b8c, #2c6cb0);
+      border-radius: 3px;
+    }
+  }
+  
+  // Style pour les boutons de filtre
+  .filter-btn {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #1a4b8c, #2c6cb0);
+      transition: width 0.3s ease;
+    }
+    
+    &:hover::after {
+      width: 50%;
+    }
+    
+    &.active {
+      background: white;
+      color: black;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      
+      &::after {
+        width: 0;
+      }
+    }
+    
+    // Effet de pulsation pour le bouton "Projets à la une" lorsqu'il est actif
+    &.from-blue-500 {
+      animation: pulse 2s infinite;
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+      
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+        }
+      }
+    }
+  }
+  
+  // Style pour la grille de projets
+  .portfolio-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 16px;
+    
+    @media (max-width: 768px) {
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+    }
+    
+    @media (max-width: 480px) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+  }
+  
+  // Style pour les éléments du portfolio
+  .portfolio-item {
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    will-change: transform;
+    overflow: hidden;
+    position: relative;
+    border-radius: 8px;
+    
+    // Styles communs pour tous les formats
+    &.portfolio-item-carre,
+    &.portfolio-item-paysage,
+    &.portfolio-item-portrait {
+      // Assurer que les images et vidéos remplissent correctement l'espace
+      img, video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+      }
+      
+      &:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 15px 40px -10px rgba(0, 0, 0, 0.4);
+        z-index: 2;
+        
+        img, video {
+          transform: scale(1.05);
+        }
+      }
+    }
+    
+    // Format carré (4x4)
+    &.portfolio-item-carre {
+      grid-column: span 4;
+      aspect-ratio: 1/1;
+      
+      @media (max-width: 768px) {
+        grid-column: span 3;
+      }
+      
+      @media (max-width: 480px) {
+        grid-column: span 2;
+      }
+    }
+    
+    // Format paysage (6x3)
+    &.portfolio-item-paysage {
+      grid-column: span 6;
+      aspect-ratio: 16/9;
+      
+      @media (max-width: 768px) {
+        grid-column: span 6;
+      }
+      
+      @media (max-width: 480px) {
+        grid-column: span 2;
+      }
+    }
+    
+    // Format portrait (3x6)
+    &.portfolio-item-portrait {
+      grid-column: span 3;
+      aspect-ratio: 3/4;
+      
+      @media (max-width: 768px) {
+        grid-column: span 3;
+      }
+      
+      @media (max-width: 480px) {
+        grid-column: span 2;
+      }
+    }
+    
+    // Effet de brillance au survol
+    &::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+      opacity: 0;
+      transform: scale(0.5);
+      transition: transform 0.5s ease, opacity 0.5s ease;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    &:hover::after {
+      opacity: 1;
+      transform: scale(1);
+    }
+    
+    // Style pour les badges de catégorie
+    .rounded-full {
+      backdrop-filter: blur(4px);
+      transition: all 0.3s ease;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    &:hover .rounded-full {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    // Style pour le titre du projet (visible uniquement au survol)
+    h3 {
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      position: relative;
+      display: inline-block;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: linear-gradient(90deg, #ffffff, transparent);
+        transition: width 0.3s ease;
+      }
+    }
+    
+    &:hover h3::after {
+      width: 100%;
+    }
+    
+    // Gradient pour le titre (visible uniquement au survol)
+    .bg-gradient-to-t {
+      background: linear-gradient(to top, 
+        rgba(0, 0, 0, 0.9) 0%, 
+        rgba(0, 0, 0, 0.7) 40%, 
+        rgba(0, 0, 0, 0) 100%
+      );
+      transform: translateY(10px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    
+    &:hover .bg-gradient-to-t {
+      transform: translateY(0);
+    }
+    
+    // Style pour les contrôles vidéo
+    .w-16 {
+      transform: scale(0.9);
+      transition: transform 0.3s ease, background-color 0.3s ease;
+      
+      &:hover {
+        transform: scale(1.1);
+        background-color: rgba(255, 255, 255, 0.3);
+      }
+    }
+    
+    // Bouton de pause pour les vidéos en lecture
+    .p-2 {
+      transition: all 0.3s ease;
+      opacity: 0.7;
+      
+      &:hover {
+        opacity: 1;
+        transform: scale(1.1);
+      }
+    }
+  }
+}
+
+// Animation pour les vidéos en lecture
+@keyframes playing-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+.portfolio-item video:not([paused]) + div {
+  animation: playing-pulse 2s infinite;
 }
