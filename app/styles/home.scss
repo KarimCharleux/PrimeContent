@@ -185,15 +185,63 @@ h1, h2, h3, h4, h5, h6 {
     }
   }
   
-  // Style pour les photos de profil
-  .rounded-full {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border: 2px solid transparent;
+  // Style pour les cartes de profil client
+  .client-profile-card {
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: linear-gradient(to bottom, 
+        rgba(0, 0, 0, 0) 0%, 
+        rgba(0, 0, 0, 0.2) 50%, 
+        rgba(0, 0, 0, 0.7) 100%
+      );
+      opacity: 0.8;
+      transition: opacity 0.3s ease;
+    }
     
     &:hover {
-      transform: scale(1.05);
-      border-color: rgba(255, 255, 255, 0.2);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      &::before {
+        opacity: 0.6;
+      }
+      
+      .client-text {
+        transform: translateY(-5px);
+      }
+    }
+    
+    .client-image {
+      transform-style: preserve-3d;
+      transform: translateZ(20px);
+      will-change: transform;
+    }
+    
+    .client-text {
+      transform-style: preserve-3d;
+      transform: translateZ(40px);
+      will-change: transform;
+      transition: transform 0.3s ease;
+      
+      h3 {
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        position: relative;
+        display: inline-block;
+        color: white;
+      }
+      
+      p {
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        color: white;
+      }
+    }
+    
+    &:hover h3::after {
+      width: 50px;
     }
   }
   

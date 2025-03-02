@@ -1,11 +1,10 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import gsap from './lib/gsap-config';
 import Gallery from './components/Gallery';
 import ScrambleText from './components/ScrambleText';
 import ExpertiseCard from './components/ExpertiseCard';
 import ClientProfile from './components/ClientProfile';
-import BrandLogo from './components/BrandLogo';
 import InfiniteLogoCarousel from './components/InfiniteLogoCarousel';
 
 // Importation des styles
@@ -119,13 +118,13 @@ export default function Page() {
 
     // Données des clients
     const clients = [
-        { name: 'Adil Rami', imageSrc: '/images/clients/adil-rami.jpg' },
-        { name: 'Adriana Karembeu', imageSrc: '/images/clients/adriana-karembeu.jpg' },
-        { name: 'Ricky Whittle', imageSrc: '/images/clients/ricky-whittle.jpg' },
-        { name: 'Maxim Derimez', imageSrc: '/images/clients/maxim-derimez.jpg' },
-        { name: 'Yoann Huget', imageSrc: '/images/clients/yoann-huget.jpg' },
-        { name: 'Eric Judor', imageSrc: '/images/clients/eric-judor.png', imageBackground: '/images/clients/eric-judor-bg.png' },
-        { name: 'Malik Amraoui', imageSrc: '/images/clients/malik-amraoui.jpg' }
+        { name: 'Adil Rami', domain: 'Football International', imageSrc: '/images/clients/adil-rami.png', imageBackground: '/images/clients/adil-rami-bg.jpg' },
+        { name: 'Adriana Karembeu', domain: 'Mannequin & Actrice', imageSrc: '/images/clients/adriana-karembeu.png', imageBackground: '/images/clients/adriana-karembeu-bg.jpg' },
+        { name: 'Ricky Whittle', domain: 'Acteur', imageSrc: '/images/clients/ricky-whittle.png', imageBackground: '/images/clients/ricky-whittle-bg.jpg' },
+        { name: 'Maxime Dereymez', domain: 'Danseur', imageSrc: '/images/clients/maxime-dereymez.png', imageBackground: '/images/clients/maxime-dereymez-bg.jpg' },
+        { name: 'Yoann Huget', domain: 'Rugby International', imageSrc: '/images/clients/yoann-huget.png', imageBackground: '/images/clients/yoann-huget-bg.jpg' },
+        { name: 'Éric Judor', domain: 'Acteur & Réalisateur', imageSrc: '/images/clients/eric-judor.png', imageBackground: '/images/clients/eric-judor-bg.jpg' },
+        { name: 'Malik Amraoui', domain: 'Acteur', imageSrc: '/images/clients/malik-amraoui.png', imageBackground: '/images/clients/malik-amraoui-bg.jpg' },
     ];
 
     return (
@@ -337,10 +336,12 @@ export default function Page() {
                     {/* Profils des clients */}
                     <div ref={clientsRef} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-16">
                         {clients.map((client, index) => (
-                            <div key={index} ref={(el) => addClientRef(el, index)} className="opacity-0">
+                            <div key={`${client.name}-${index}`} ref={(el) => addClientRef(el, index)} className="opacity-0">
                                 <ClientProfile 
-                                    name={client.name} 
-                                    imageSrc={`/images/clients/${client.name.toLowerCase().replace(/[^\w]/g, '-')}.jpg`} 
+                                    name={client.name}
+                                    domain={client.domain}
+                                    imageSrc={client.imageSrc}
+                                    imageBackground={client.imageBackground}
                                 />
                             </div>
                         ))}
