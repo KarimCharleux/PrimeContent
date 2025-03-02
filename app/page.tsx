@@ -124,7 +124,7 @@ export default function Page() {
         { name: 'Ricky Whittle', imageSrc: '/images/clients/ricky-whittle.jpg' },
         { name: 'Maxim Derimez', imageSrc: '/images/clients/maxim-derimez.jpg' },
         { name: 'Yoann Huget', imageSrc: '/images/clients/yoann-huget.jpg' },
-        { name: 'Eric Judor', imageSrc: '/images/clients/eric-judor.jpg' },
+        { name: 'Eric Judor', imageSrc: '/images/clients/eric-judor.png', imageBackground: '/images/clients/eric-judor-bg.png' },
         { name: 'Malik Amraoui', imageSrc: '/images/clients/malik-amraoui.jpg' }
     ];
 
@@ -330,7 +330,7 @@ export default function Page() {
                     </div>
 
                     {/* Carrousel de logos */}
-                    <div className="mb-16 logo-carousel">
+                    <div className="mb-16 logo-carousel overflow-hidden">
                         <InfiniteLogoCarousel brands={brands} speed={40} />
                     </div>
 

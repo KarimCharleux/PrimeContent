@@ -5,10 +5,11 @@ import Image from 'next/image';
 interface ClientProfileProps {
   name: string;
   imageSrc?: string;
+  imageBackground?: string;
   className?: string;
 }
 
-export default function ClientProfile({ name, imageSrc, className = '' }: ClientProfileProps) {
+export default function ClientProfile({ name, imageSrc, imageBackground, className = '' }: ClientProfileProps) {
   const [imageError, setImageError] = useState(false);
   
   return (

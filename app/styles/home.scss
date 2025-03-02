@@ -176,24 +176,12 @@ h1, h2, h3, h4, h5, h6 {
     
     &::before {
       left: 0;
-      background: linear-gradient(90deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%);
+      background: linear-gradient(90deg, #0B0F1A 0%, #0B0F1A10 100%);
     }
     
     &::after {
       right: 0;
-      background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 100%);
-    }
-    
-    // Styles pour les logos individuels
-    .brand-logo-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      &:hover {
-        background-color: rgba(255, 255, 255, 0.01);
-        border-color: rgba(255, 255, 255, 0.2);
-      }
+      background: linear-gradient(90deg, #0B0F1A00 0%, #0B0F1A 100%);
     }
   }
   
