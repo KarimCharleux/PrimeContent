@@ -3,6 +3,7 @@ $content-z-index: 3;
 $primary-blue: #0f3460;
 $secondary-blue: #1a4b8c;
 $accent-blue: #2c6cb0;
+$header-height: 80px;
 
 // Mixins
 @mixin flex-center {
@@ -27,6 +28,16 @@ $accent-blue: #2c6cb0;
 h1, h2, h3, h4, h5, h6 {
   cursor: default;
   user-select: none;
+}
+
+// Ajustement pour le header sticky
+body {
+  padding-top: $header-height;
+}
+
+// Ajustement pour la section hero
+section.relative:first-of-type {
+  margin-top: -$header-height; // Annule le padding pour la section hero uniquement
 }
 
 // Contenu du hero

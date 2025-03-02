@@ -10,6 +10,7 @@ import PortfolioSection from './components/PortfolioSection';
 import PrimaryButton from './components/PrimaryButton';
 import AnimatedStat from './components/AnimatedStat';
 import Footer from './components/Footer';
+import Header from './components/Header';
 
 // Importation des styles
 import './styles/gallery.scss';
@@ -166,40 +167,8 @@ export default function Page() {
 
     return (
         <div className="min-h-screen bg-black text-white">
-            {/* Navigation */}
-            <nav className="w-full absolute z-50">
-                <div className="max-w-7xl mx-auto px-8 py-4">
-                    <div className="flex justify-between items-center">
-                        <div className="text-2xl font-bold">PrimeContent.</div>
-                        <div className="hidden md:flex space-x-10">
-                            <a
-                                href="/photos"
-                                className="hover:translate-y-1 transition-transform duration-300"
-                            >
-                                Photos
-                            </a>
-                            <a
-                                href="/videos"
-                                className="hover:translate-y-1 transition-transform duration-300"
-                            >
-                                Vidéos
-                            </a>
-                            <a
-                                href="/events"
-                                className="hover:translate-y-1 transition-transform duration-300"
-                            >
-                                Événements
-                            </a>
-                            <a
-                                href="/contact"
-                                className="hover:translate-y-1 transition-transform duration-300"
-                            >
-                                Contact
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </nav>
+            {/* Header */}
+            <Header />
 
             {/* Hero Section avec Galerie */}
             <section className="relative">
@@ -222,7 +191,7 @@ export default function Page() {
                         text="CONTACTEZ-NOUS" 
                         href="/contact" 
                         animateOnMount={true} 
-                        delay={1} // Délai augmenté pour s'assurer que le bouton apparaît après les autres éléments
+                        delay={1.2} // Délai augmenté pour s'assurer que le bouton apparaît après les autres éléments
                     />
                 </div>
             </section>
