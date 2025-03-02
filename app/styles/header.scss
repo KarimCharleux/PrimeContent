@@ -87,21 +87,6 @@ $backdrop-color: rgba(0, 0, 0, 0.75);
       color: #f3f3f3;
       transform: scale(1.05);
     }
-    
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -4px;
-      left: 0;
-      width: 0;
-      height: 2px;
-      background: linear-gradient(90deg, #ffffff, transparent);
-      transition: width 0.3s ease;
-    }
-    
-    &:hover::after {
-      width: 100%;
-    }
   }
   
   .nav-links {
@@ -263,23 +248,8 @@ $backdrop-color: rgba(0, 0, 0, 0.75);
         width: 100%;
         padding: 0.5rem 0;
         
-        &::after {
-          content: '';
-          position: absolute;
-          bottom: -8px;
-          left: 0;
-          width: 0;
-          height: 2px;
-          background: linear-gradient(90deg, #ffffff, transparent);
-          transition: width 0.3s ease;
-        }
-        
         &:hover {
           transform: translateY(-5px);
-          
-          &::after {
-            width: 100%;
-          }
         }
       }
     }

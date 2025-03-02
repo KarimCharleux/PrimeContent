@@ -93,8 +93,7 @@ export default function ClientProfile({
           <Image
             src={imageBackground}
             alt={`${name} background`}
-            width={278}
-            height={278}
+            fill
             style={{ objectFit: 'cover', opacity: 0.6 }}
             quality={80}
             className="client-background transition-transform duration-300"
@@ -110,8 +109,7 @@ export default function ClientProfile({
           <Image
             src={imageSrc}
             alt={name}
-            width={278}
-            height={278}
+            fill
             style={{ objectFit: 'cover' }}
             quality={90}
             onError={() => setImageError(true)}
