@@ -213,12 +213,17 @@ export default function Page() {
                     </h1>
                     <p
                         ref={heroTextRef}
-                        className="text-lg md:text-xl max-w-2xl mb-8 text-gray-300 opacity-0"
+                        className="text-lg md:text-xl max-w-2xl mb-16 text-gray-300 opacity-0"
                     >
                         Chaque image devient une œuvre d'art. Nos vidéos, photos et créations
                         graphiques racontent des histoires qui valorisent votre entreprise.
                     </p>
-                    <PrimaryButton text="CONTACTEZ-NOUS" href="/contact" animateOnMount={true} />
+                    <PrimaryButton 
+                        text="CONTACTEZ-NOUS" 
+                        href="/contact" 
+                        animateOnMount={true} 
+                        delay={1} // Délai augmenté pour s'assurer que le bouton apparaît après les autres éléments
+                    />
                 </div>
             </section>
 
@@ -412,7 +417,7 @@ export default function Page() {
                             NOS RÉALISATIONS
                         </h2>
                     </div>
-                    <PortfolioSection projects={homePortfolioProjects} showFilter={false} />
+                    <PortfolioSection projects={homePortfolioProjects} showFilter={true} />
                 </div>
             </section>
             {/* Footer */}

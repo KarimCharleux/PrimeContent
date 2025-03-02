@@ -3,6 +3,7 @@ import { useRef, useEffect } from 'react';
 import Link from 'next/link';
 import ScrambleText from './ScrambleText';
 import gsap from '../lib/gsap-config';
+import '../styles/primary-button.scss';
 
 interface PrimaryButtonProps {
   text: string;
@@ -11,6 +12,7 @@ interface PrimaryButtonProps {
   onClick?: () => void;
   animateOnMount?: boolean;
   icon?: React.ReactNode;
+  delay?: number;
 }
 
 export default function PrimaryButton({
@@ -19,19 +21,59 @@ export default function PrimaryButton({
   className = '',
   onClick,
   animateOnMount = false,
-  icon
+  icon,
+  delay = 0
 }: PrimaryButtonProps) {
   const buttonRef = useRef<HTMLButtonElement | HTMLAnchorElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
+  // Masquer le bouton immédiatement au montage du composant
   useEffect(() => {
-    if (animateOnMount && buttonRef.current) {
-      gsap.fromTo(
-        buttonRef.current,
-        { y: 20, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6 }
-      );
+    if (animateOnMount && containerRef.current) {
+      // Masquer le bouton immédiatement
+      gsap.set(containerRef.current, { 
+        y: 30, 
+        opacity: 0,
+        scale: 0.95
+      });
     }
-  }, [animateOnMount]);
+  }, []); // Ce useEffect s'exécute une seule fois au montage
+
+  // Animation d'entrée avec délai
+  useEffect(() => {
+    if (animateOnMount && containerRef.current) {
+      // Animation d'entrée avec timeline
+      const tl = gsap.timeline({ 
+        delay: delay || 0.8, // Délai par défaut après les autres éléments du hero
+        defaults: { ease: 'power3.out' } 
+      });
+      
+      // Animation du conteneur
+      tl.to(containerRef.current, {
+        y: 0,
+        opacity: 1,
+        scale: 1,
+        duration: 0.8,
+        onComplete: () => {
+          // Animation de la bordure après l'apparition
+          if (containerRef.current) {
+            const border = containerRef.current.querySelector('.animated-border');
+            if (border) {
+              gsap.fromTo(
+                border,
+                { opacity: 0 },
+                { 
+                  opacity: 0.8, 
+                  duration: 1.2,
+                  ease: 'power2.inOut'
+                }
+              );
+            }
+          }
+        }
+      });
+    }
+  }, [animateOnMount, delay]);
 
   // Icône de flèche par défaut
   const defaultIcon = (
@@ -50,33 +92,38 @@ export default function PrimaryButton({
   );
 
   // Classes de base pour le bouton
-  const baseClasses = "px-8 py-4 w-72 bg-white text-black hover:bg-gray-200 rounded-full transition duration-300 transform flex items-center justify-center space-x-2";
-  const buttonClasses = `${baseClasses} ${className}`;
+  const buttonClasses = `primary-button-content ${className}`;
 
   // Si un lien est fourni, rendre un composant Link
   if (href) {
     return (
-      <Link
-        href={href}
-        ref={buttonRef as React.RefObject<HTMLAnchorElement>}
-        className={buttonClasses}
-        onClick={onClick}
-      >
-        <ScrambleText text={text} className="inline-block w-40 hover:font-bold transition-all duration-300" />
-        <span className="ml-2">{icon || defaultIcon}</span>
-      </Link>
+      <div ref={containerRef} className="primary-button-container" style={animateOnMount ? {opacity: 0} : undefined}>
+        <Link
+          href={href}
+          ref={buttonRef as React.RefObject<HTMLAnchorElement>}
+          className={buttonClasses}
+          onClick={onClick}
+        >
+          <ScrambleText text={text} className="inline-block w-40 hover:font-bold transition-all duration-300" />
+          <span className="ml-2">{icon || defaultIcon}</span>
+        </Link>
+        <span className="animated-border"></span>
+      </div>
     );
   }
 
   // Sinon, rendre un bouton standard
   return (
-    <button
-      ref={buttonRef as React.RefObject<HTMLButtonElement>}
-      className={buttonClasses}
-      onClick={onClick}
-    >
-      <ScrambleText text={text} className="inline-block w-40 hover:font-bold transition-all duration-300" />
-      <span className="ml-2">{icon || defaultIcon}</span>
-    </button>
+    <div ref={containerRef} className="primary-button-container" style={animateOnMount ? {opacity: 0} : undefined}>
+      <button
+        ref={buttonRef as React.RefObject<HTMLButtonElement>}
+        className={buttonClasses}
+        onClick={onClick}
+      >
+        <ScrambleText text={text} className="inline-block w-40 hover:font-bold transition-all duration-300" />
+        <span className="ml-2">{icon || defaultIcon}</span>
+      </button>
+      <span className="animated-border"></span>
+    </div>
   );
 } 
