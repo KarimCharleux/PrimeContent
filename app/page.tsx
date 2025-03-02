@@ -25,6 +25,10 @@ export default function Page() {
     const clientsRef = useRef<HTMLDivElement>(null);
     const clientRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+    // Références pour les statistiques
+    const statsRef = useRef<HTMLDivElement>(null);
+    const statRefs = useRef<(HTMLDivElement | null)[]>([]);
+
     useEffect(() => {
         // Animation des textes du hero
         const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
@@ -90,6 +94,58 @@ export default function Page() {
                 );
             });
         }
+
+        // Animation des statistiques au scroll
+        if (statsRef.current && statRefs.current.length > 0) {
+            statRefs.current.forEach((stat, index) => {
+                // Animation de l'entrée
+                gsap.fromTo(
+                    stat,
+                    {
+                        y: 30,
+                        opacity: 0,
+                    },
+                    {
+                        y: 0,
+                        opacity: 1,
+                        duration: 0.6,
+                        delay: index * 0.1,
+                        scrollTrigger: {
+                            trigger: stat,
+                            start: 'top 80%',
+                            toggleActions: 'play none none none',
+                        },
+                    },
+                );
+                
+                // Animation du compteur pour les chiffres
+                const numberElement = stat?.querySelector('.stat-number');
+                if (numberElement) {
+                    const finalValue = numberElement.textContent?.replace(/[^\d]/g, '') || '0';
+                    const prefix = numberElement.textContent?.replace(/\d/g, '') || '';
+                    
+                    gsap.fromTo(
+                        numberElement,
+                        { textContent: '0' },
+                        {
+                            textContent: finalValue,
+                            duration: 2,
+                            delay: index * 0.1 + 0.3,
+                            ease: 'power2.out',
+                            scrollTrigger: {
+                                trigger: stat,
+                                start: 'top 80%',
+                                toggleActions: 'play none none none',
+                            },
+                            onUpdate: function() {
+                                const value = Math.round(parseFloat(this.targets()[0].textContent));
+                                this.targets()[0].textContent = prefix + value;
+                            }
+                        }
+                    );
+                }
+            });
+        }
     }, []);
 
     // Fonction pour ajouter les références aux services
@@ -102,29 +158,70 @@ export default function Page() {
         clientRefs.current[index] = el;
     };
 
+    // Fonction pour ajouter les références aux statistiques
+    const addStatRef = (el: HTMLDivElement | null, index: number) => {
+        statRefs.current[index] = el;
+    };
+
     // Données des marques
     const brands = [
-        { name: 'Ben & Jerry\'s', imageSrc: '/images/brands/ben-and-jerrys.png' },
+        { name: "Ben & Jerry's", imageSrc: '/images/brands/ben-and-jerrys.png' },
         { name: 'Festival de Monte-Carlo', imageSrc: '/images/brands/festival-monte-carlo.png' },
-        { name: 'O\'Tacos', imageSrc: '/images/brands/o-tacos.png' },
+        { name: "O'Tacos", imageSrc: '/images/brands/o-tacos.png' },
         { name: 'Make-A-Wish', imageSrc: '/images/brands/make-a-wish.png' },
         { name: 'TopModel International', imageSrc: '/images/brands/topmodel-international.png' },
         { name: 'Tellus', imageSrc: '/images/brands/tellus.png' },
         { name: 'Orus Bijoux', imageSrc: '/images/brands/orus-bijoux.png' },
         { name: 'OnePlace', imageSrc: '/images/brands/oneplace.png' },
         { name: 'Neuilly-Poissy', imageSrc: '/images/brands/neuilly-poissy.png' },
-        { name: 'Kamera Kastros', imageSrc: '/images/brands/kamera-kastros.png' }
+        { name: 'Kamera Kastros', imageSrc: '/images/brands/kamera-kastros.png' },
+        { name: 'Jamel Comedy Club', imageSrc: '/images/brands/jamel-comedy-club.png' },
     ];
 
     // Données des clients
     const clients = [
-        { name: 'Adil Rami', domain: 'Football International', imageSrc: '/images/clients/adil-rami.png', imageBackground: '/images/clients/adil-rami-bg.jpg' },
-        { name: 'Adriana Karembeu', domain: 'Mannequin & Actrice', imageSrc: '/images/clients/adriana-karembeu.png', imageBackground: '/images/clients/adriana-karembeu-bg.jpg' },
-        { name: 'Ricky Whittle', domain: 'Acteur', imageSrc: '/images/clients/ricky-whittle.png', imageBackground: '/images/clients/ricky-whittle-bg.jpg' },
-        { name: 'Maxime Dereymez', domain: 'Danseur', imageSrc: '/images/clients/maxime-dereymez.png', imageBackground: '/images/clients/maxime-dereymez-bg.jpg' },
-        { name: 'Yoann Huget', domain: 'Rugby International', imageSrc: '/images/clients/yoann-huget.png', imageBackground: '/images/clients/yoann-huget-bg.jpg' },
-        { name: 'Éric Judor', domain: 'Acteur & Réalisateur', imageSrc: '/images/clients/eric-judor.png', imageBackground: '/images/clients/eric-judor-bg.jpg' },
-        { name: 'Malik Amraoui', domain: 'Acteur', imageSrc: '/images/clients/malik-amraoui.png', imageBackground: '/images/clients/malik-amraoui-bg.jpg' },
+        {
+            name: 'Adil Rami',
+            domain: 'Football International',
+            imageSrc: '/images/clients/adil-rami.png',
+            imageBackground: '/images/clients/adil-rami-bg.jpg',
+        },
+        {
+            name: 'Adriana Karembeu',
+            domain: 'Mannequin & Actrice',
+            imageSrc: '/images/clients/adriana-karembeu.png',
+            imageBackground: '/images/clients/adriana-karembeu-bg.jpg',
+        },
+        {
+            name: 'Ricky Whittle',
+            domain: 'Acteur',
+            imageSrc: '/images/clients/ricky-whittle.png',
+            imageBackground: '/images/clients/ricky-whittle-bg.jpg',
+        },
+        {
+            name: 'Maxime Dereymez',
+            domain: 'Danseur',
+            imageSrc: '/images/clients/maxime-dereymez.png',
+            imageBackground: '/images/clients/maxime-dereymez-bg.jpg',
+        },
+        {
+            name: 'Yoann Huget',
+            domain: 'Rugby International',
+            imageSrc: '/images/clients/yoann-huget.png',
+            imageBackground: '/images/clients/yoann-huget-bg.jpg',
+        },
+        {
+            name: 'Éric Judor',
+            domain: 'Acteur & Réalisateur',
+            imageSrc: '/images/clients/eric-judor.png',
+            imageBackground: '/images/clients/eric-judor-bg.jpg',
+        },
+        {
+            name: 'Malik Amraoui',
+            domain: 'Acteur',
+            imageSrc: '/images/clients/malik-amraoui.png',
+            imageBackground: '/images/clients/malik-amraoui-bg.jpg',
+        },
     ];
 
     return (
@@ -183,7 +280,7 @@ export default function Page() {
                     </p>
                     <button
                         ref={heroButtonRef}
-                        className="hero-contact-btn px-8 py-4 w-72 bg-white text-black rounded-full transition transform flex items-center justify-center space-x-2"
+                        className="px-8 py-4 w-72 bg-white text-black hover:bg-gray-200 rounded-full transition duration-300 transform flex items-center justify-center space-x-2"
                     >
                         <ScrambleText text="CONTACTEZ-NOUS" className="inline-block w-40" />
                         <svg
@@ -215,7 +312,10 @@ export default function Page() {
                         </p>
                     </div>
 
-                    <div ref={servicesRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 expertise-grid">
+                    <div
+                        ref={servicesRef}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 expertise-grid"
+                    >
                         <div ref={(el) => addServiceRef(el, 0)} className="opacity-0">
                             <ExpertiseCard
                                 title="Production Vidéo"
@@ -270,7 +370,7 @@ export default function Page() {
                             <ExpertiseCard
                                 title="Stratégie Digitale"
                                 description="Renforcez votre présence en ligne avec une stratégie cohérente de branding et gestion des réseaux sociaux."
-                                backgroundImage="/images/expertises/social-bg.jpeg"
+                                backgroundImage="/images/expertises/social-bg.jpg"
                                 className="expertise-card"
                                 icon={
                                     <svg
@@ -295,7 +395,7 @@ export default function Page() {
                             <ExpertiseCard
                                 title="Création Web"
                                 description="Démarquez-vous avec des interfaces web et mobile innovantes, intuitives et esthétiques."
-                                backgroundImage="/images/expertises/web-bg.jpeg"
+                                backgroundImage="/images/expertises/web-bg.jpg"
                                 className="expertise-card"
                                 icon={
                                     <svg
@@ -334,10 +434,17 @@ export default function Page() {
                     </div>
 
                     {/* Profils des clients */}
-                    <div ref={clientsRef} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-16">
+                    <div
+                        ref={clientsRef}
+                        className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-16"
+                    >
                         {clients.map((client, index) => (
-                            <div key={`${client.name}-${index}`} ref={(el) => addClientRef(el, index)} className="opacity-0">
-                                <ClientProfile 
+                            <div
+                                key={`${client.name}-${index}`}
+                                ref={(el) => addClientRef(el, index)}
+                                className="opacity-0"
+                            >
+                                <ClientProfile
                                     name={client.name}
                                     domain={client.domain}
                                     imageSrc={client.imageSrc}
@@ -347,10 +454,58 @@ export default function Page() {
                         ))}
                     </div>
 
-                    <div className="text-center">
-                        <button className="px-8 py-4 bg-white text-black rounded-full hover:bg-gray-200 transition duration-300">
-                            Explorer davantage
-                        </button>
+                    <button className="mx-auto px-8 py-4 w-72 bg-white text-black hover:bg-gray-200 rounded-full transition duration-300 transform flex items-center justify-center space-x-2"                        >
+                        <ScrambleText text="EXPLOREZ PLUS" className="inline-block w-40" />
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            <path
+                                fillRule="evenodd"
+                                d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                                clipRule="evenodd"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+            {/* Section PRIMECONTENT EN CHIFFRES */}
+            <section className="py-24 bg-black stats-section">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 stats-title">
+                            PRIMECONTENT EN CHIFFRES
+                        </h2>
+                    </div>
+
+                    <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8 stats-grid">
+                        <div ref={(el) => addStatRef(el, 0)} className="stat-item text-center opacity-0">
+                            <div className="text-5xl md:text-6xl font-bold mb-4 stat-number">+70</div>
+                            <div className="text-sm md:text-base font-light text-center">Millions De Vues Sur Les Réseaux</div>
+                        </div>
+
+                        <div ref={(el) => addStatRef(el, 1)} className="stat-item text-center opacity-0">
+                            <div className="text-5xl md:text-6xl font-bold mb-4 stat-number">+70</div>
+                            <div className="text-sm md:text-base font-light text-center">Clients Satisfaits</div>
+                        </div>
+
+                        <div ref={(el) => addStatRef(el, 2)} className="stat-item text-center opacity-0">
+                            <div className="text-5xl md:text-6xl font-bold mb-4 stat-number">+70</div>
+                            <div className="text-sm md:text-base font-light text-center">Projets Réalisés</div>
+                        </div>
+
+                        <div ref={(el) => addStatRef(el, 3)} className="stat-item text-center opacity-0">
+                            <div className="text-5xl md:text-6xl font-bold mb-4 stat-number">+200</div>
+                            <div className="text-sm md:text-base font-light text-center">Abonnés & communautés</div>
+                        </div>
+
+                        <div ref={(el) => addStatRef(el, 4)} className="stat-item text-center opacity-0">
+                            <div className="text-5xl md:text-6xl font-bold mb-4 stat-number">+70</div>
+                            <div className="text-sm md:text-base font-light text-center">Célébrités Dans Notre Réseau</div>
+                        </div>
                     </div>
                 </div>
             </section>

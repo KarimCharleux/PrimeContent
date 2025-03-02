@@ -93,7 +93,8 @@ export default function ClientProfile({
           <Image
             src={imageBackground}
             alt={`${name} background`}
-            fill
+            width={278}
+            height={278}
             style={{ objectFit: 'cover', opacity: 0.6 }}
             quality={80}
             className="client-background transition-transform duration-300"
@@ -109,7 +110,8 @@ export default function ClientProfile({
           <Image
             src={imageSrc}
             alt={name}
-            fill
+            width={278}
+            height={278}
             style={{ objectFit: 'cover' }}
             quality={90}
             onError={() => setImageError(true)}
@@ -121,14 +123,14 @@ export default function ClientProfile({
         )}
       </div>
       
-      {/* Overlay avec dégradé */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
+      {/* Overlay avec dégradé plus foncé pour améliorer le contraste */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
       
-      {/* Texte */}
-      <div className="client-text absolute bottom-0 left-0 w-full p-6 transition-transform duration-200 ease-out text-center">
-        <h3 className="text-2xl font-bold text-white mb">{name}</h3>
+      {/* Texte avec styles renforcés */}
+      <div className="client-text absolute bottom-0 left-0 w-full p-6 transition-transform duration-200 ease-out text-center z-10">
+        <h3 className="text-2xl font-bold !text-white mb-1" style={{ color: 'white' }}>{name}</h3>
         {domain && (
-          <p className="text-sm text-white">{domain}</p>
+          <p className="text-sm !text-white font-light opacity-90" style={{ color: 'white' }}>{domain}</p>
         )}
       </div>
     </div>

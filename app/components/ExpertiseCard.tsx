@@ -47,7 +47,8 @@ export default function ExpertiseCard({
           <Image
             src={backgroundImage}
             alt={title}
-            fill
+            width={320}
+            height={400}
             style={{ objectFit: 'cover' }}
             quality={80}
             onError={() => setImageError(true)}

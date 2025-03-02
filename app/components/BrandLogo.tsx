@@ -19,7 +19,8 @@ export default function BrandLogo({ name, imageSrc, className = '' }: BrandLogoP
             <Image
               src={imageSrc}
               alt={name}
-              fill
+              width={500}
+              height={260}
               style={{ objectFit: 'contain' }}
               quality={80}
               onError={() => setImageError(true)}
