@@ -5,14 +5,18 @@ import gsap from '../lib/gsap-config';
 import PrimaryButton from './PrimaryButton';
 import '../styles/footer.scss';
 
-export default function Footer() {
+interface FooterProps {
+  hideCTA?: boolean;
+}
+
+export default function Footer({ hideCTA = false }: FooterProps) {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const textRef = useRef<HTMLParagraphElement>(null);
   const socialRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
   useEffect(() => {
     // Animation du titre et du texte
-    if (titleRef.current && textRef.current) {
+    if (!hideCTA && titleRef.current && textRef.current) {
       gsap.fromTo(
         titleRef.current,
         { y: 30, opacity: 0 },
@@ -68,7 +72,7 @@ export default function Footer() {
         }
       });
     }
-  }, []);
+  }, [hideCTA]);
 
   const addSocialRef = (el: HTMLAnchorElement | null, index: number) => {
     socialRefs.current[index] = el;
@@ -76,18 +80,20 @@ export default function Footer() {
 
   return (
     <footer className="footer-container">
-      {/* Section CTA */}
-      <div className="cta-section">
-        <h2 ref={titleRef} className="cta-title">Boostez Votre Présence Aujourd'hui !</h2>
-        <p ref={textRef} className="cta-text">
-          Votre image mérite d'être vue, entendue, ressentie. Rejoignez <b>PrimeContent</b> pour propulser votre présence visuelle et numérique au niveau supérieur.
-        </p>
-        <PrimaryButton 
-          text="CONTACTEZ-NOUS" 
-          href="/contact" 
-          className="cta-button"
-        />
-      </div>
+      {/* Section CTA - conditionnellement affichée */}
+      {!hideCTA && (
+        <div className="cta-section">
+          <h2 ref={titleRef} className="cta-title">Boostez Votre Présence Aujourd'hui !</h2>
+          <p ref={textRef} className="cta-text">
+            Votre image mérite d'être vue, entendue, ressentie. Rejoignez <b>PrimeContent</b> pour propulser votre présence visuelle et numérique au niveau supérieur.
+          </p>
+          <PrimaryButton 
+            text="CONTACTEZ-NOUS" 
+            href="/contact" 
+            className="cta-button"
+          />
+        </div>
+      )}
 
       {/* Section Info */}
       <div className="info-section">

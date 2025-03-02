@@ -1,0 +1,265 @@
+// Styles pour la page de contact
+.contact-page {
+  background-color: #000;
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-hero {
+  flex: 1;
+  padding: 120px 0 80px;
+  
+  @media (max-width: 768px) {
+    padding: 100px 0 60px;
+  }
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.contact-title {
+  font-size: 3rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 60px;
+  letter-spacing: 2px;
+  position: relative;
+  
+  &:after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 2px;
+    background-color: #fff;
+  }
+}
+
+.contact-content {
+  display: flex;
+  gap: 40px;
+  
+  @media (max-width: 992px) {
+    flex-direction: column;
+  }
+}
+
+// Colonne d'informations de contact
+.contact-info-column {
+  flex: 1;
+  background-color: #111;
+  border-radius: 12px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  
+  @media (max-width: 768px) {
+    padding: 30px;
+  }
+}
+
+.info-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.info-subtitle {
+  font-size: 1rem;
+  color: #aaa;
+  margin-bottom: 40px;
+}
+
+.contact-details {
+  margin-bottom: 40px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 25px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.icon-container {
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+}
+
+.contact-icon {
+  width: 20px;
+  height: 20px;
+  color: #fff;
+}
+
+.contact-link {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: color 0.3s ease;
+  
+  &:hover {
+    color: #ccc;
+  }
+}
+
+.calendly-section {
+  margin-top: auto;
+}
+
+.calendly-button {
+  display: flex;
+  align-items: center;
+  color: #fff;
+  text-decoration: none;
+  padding: 15px 30px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background-color: rgba(0, 0, 0, 0.3);
+  
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+.calendly-icon {
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  
+  svg {
+    transition: transform 0.3s ease;
+  }
+  
+  .calendly-button:hover & svg {
+    transform: rotate(15deg);
+  }
+}
+
+// Colonne du formulaire
+.contact-form-column {
+  flex: 1.5;
+  background-color: #111;
+  border-radius: 12px;
+  padding: 40px;
+  
+  @media (max-width: 768px) {
+    padding: 30px;
+  }
+}
+
+.form-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.form-subtitle {
+  font-size: 1rem;
+  color: #aaa;
+  margin-bottom: 30px;
+  line-height: 1.5;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+  
+  @media (max-width: 576px) {
+    flex-direction: column;
+  }
+}
+
+.form-group {
+  flex: 1;
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 15px;
+  color: #fff;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.submit-button {
+  background-color: #fff;
+  color: #000;
+  border-radius: 8px;
+  padding: 15px 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  margin-top: 10px;
+  border: 3px solid #666666e0;
+  width: 100%;
+  
+  &:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-2px);
+
+    .arrow-icon {
+      transform: translateX(5px);
+    }
+  }
+  
+  @media (max-width: 576px) {
+    align-self: stretch;
+  }
+}
+
+.arrow-icon {
+  margin-left: 10px;
+  font-size: 1.2rem;
+  transition: transform 0.3s ease;
+} 
