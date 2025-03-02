@@ -190,9 +190,9 @@ export default function ContactPage() {
 
                         {/* Colonne droite - Formulaire de contact */}
                         <div className="contact-form-column">
-                            <h2 className="form-title">Boostez Votre Présence Aujourd'hui !</h2>
+                            <h2 className="form-title">Boostez Votre Présence Aujourd&apos;hui !</h2>
                             <p className="form-subtitle">
-                                Votre image mérite d'être vue, entendue, ressentie. Rejoignez
+                                Votre image mérite d&apos;être vue, entendue, ressentie. Rejoignez
                                 PrimeContent pour propulser votre présence visuelle et numérique au
                                 niveau supérieur.
                             </p>

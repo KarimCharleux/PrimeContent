@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import evenementsData, { Evenement } from '../data/evenementsData';
@@ -46,11 +47,16 @@ export default function EvenementsPage() {
               {evenements.map((evenement) => (
                 <Link href={`/evenements/${evenement.id}`} key={evenement.id}>
                   <div className="evenement-card">
-                    <img 
-                      src={evenement.imageSrc} 
-                      alt={evenement.titre} 
-                      className="evenement-image"
-                    />
+                    <div className="image-container">
+                      <Image 
+                        src={evenement.imageSrc} 
+                        alt={evenement.titre} 
+                        className="evenement-image"
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        style={{ objectFit: 'cover' }}
+                      />
+                    </div>
                     <div className="evenement-overlay">
                       <h3 className="evenement-title">{evenement.titre}</h3>
                     </div>

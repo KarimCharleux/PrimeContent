@@ -1,6 +1,5 @@
 'use client';
 import { ReactNode, useState } from 'react';
-import ScrambleText from './ScrambleText';
 import Image from 'next/image';
 
 interface ExpertiseCardProps {

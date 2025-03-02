@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import gsap from '../lib/gsap-config';
 import ScrambleText from './ScrambleText';
+import Image from 'next/image';
 
 // Types pour les projets
 export interface Project {
@@ -123,6 +124,20 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
             },
         });
     }, [activeFilter, projects]);
+
+    // Gestion de la lecture des vidéos
+    useEffect(() => {
+        // Pause toutes les vidéos sauf celle active
+        videoRefs.current.forEach((video, idx) => {
+            if (video) {
+                if (idx === activeVideoIndex) {
+                    video.play().catch(err => console.error('Erreur de lecture vidéo:', err));
+                } else {
+                    video.pause();
+                }
+            }
+        });
+    }, [activeVideoIndex]);
 
     // Extraire les catégories uniques des projets
     const categories = [
@@ -248,11 +263,16 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
                                     )}
                                 </>
                             ) : (
-                                <img
-                                    src={project.source}
-                                    alt={project.title ?? ''}
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                />
+                                <div className="portfolio-image-container">
+                                    <Image
+                                        src={project.source}
+                                        alt={project.title ?? ''}
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                        fill
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                        style={{ objectFit: 'cover' }}
+                                    />
+                                </div>
                             )}
 
                             <div className="absolute top-4 left-4 z-20 bg-black/50 backdrop-blur-sm px-4 py-1 rounded-full text-sm">

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import evenementsData, { Evenement } from '../../data/evenementsData';
@@ -60,17 +61,22 @@ export default function EvenementDetailPage() {
 
           <div className="evenement-detail">
             <div className="evenement-image-container">
-              <img 
-                src={evenement?.imageSrc} 
-                alt={evenement?.titre} 
-                className="evenement-detail-image"
-              />
+              <div className="detail-image-wrapper">
+                <Image 
+                  src={evenement?.imageSrc || ''} 
+                  alt={evenement?.titre || ''} 
+                  className="evenement-detail-image"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  style={{ objectFit: 'cover' }}
+                />
+              </div>
             </div>
             
             <div className="evenement-info">
               <h2 className="evenement-subtitle">À propos de cet événement</h2>
               <p className="evenement-description">
-                Le Bal des Fous est un événement emblématique qui rassemble des personnes de tous horizons pour célébrer la créativité et la liberté d'expression. Dans une ambiance festive et colorée, les participants profitent d'une programmation musicale variée, d'installations artistiques surprenantes et d'une atmosphère unique.
+                Le Bal des Fous est un événement emblématique qui rassemble des personnes de tous horizons pour célébrer la créativité et la liberté d&apos;expression. Dans une ambiance festive et colorée, les participants profitent d&apos;une programmation musicale variée, d&apos;installations artistiques surprenantes et d&apos;une atmosphère unique.
               </p>
               
               <div className="evenement-metadata">

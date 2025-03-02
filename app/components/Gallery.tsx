@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 export default function Gallery() {
     // Référence pour le conteneur de la galerie
     const galleryContainerRef = useRef<HTMLDivElement>(null);
+    const mainSliderRequestFrameAnimationRef = useRef<number | null>(null);
     
     // Variable pour stocker l'animation
     let mainSliderRequestFrameAnimation: number | null = null;
@@ -346,7 +347,7 @@ export default function Gallery() {
                 (sliderClone as any).transX = newCloneTransX;
             });
 
-            mainSliderRequestFrameAnimation = requestAnimationFrame(mainSlidingAnimation);
+            mainSliderRequestFrameAnimationRef.current = requestAnimationFrame(mainSlidingAnimation);
         }
 
         // Initialiser la galerie après le chargement de la page
@@ -354,8 +355,8 @@ export default function Gallery() {
 
         // Nettoyage lors du démontage du composant
         return () => {
-            if (mainSliderRequestFrameAnimation) {
-                cancelAnimationFrame(mainSliderRequestFrameAnimation);
+            if (mainSliderRequestFrameAnimationRef.current) {
+                cancelAnimationFrame(mainSliderRequestFrameAnimationRef.current);
             }
         };
     }, []);

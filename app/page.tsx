@@ -2,7 +2,6 @@
 import { useEffect, useRef } from 'react';
 import gsap from './lib/gsap-config';
 import Gallery from './components/Gallery';
-import ScrambleText from './components/ScrambleText';
 import ExpertiseCard from './components/ExpertiseCard';
 import ClientProfile from './components/ClientProfile';
 import InfiniteLogoCarousel from './components/InfiniteLogoCarousel';
@@ -184,7 +183,7 @@ export default function Page() {
                         ref={heroTextRef}
                         className="text-lg md:text-xl max-w-2xl mb-16 text-gray-300 opacity-0"
                     >
-                        Chaque image devient une œuvre d'art. Nos vidéos, photos et créations
+                        Chaque image devient une œuvre d&apos;art. Nos vidéos, photos et créations
                         graphiques racontent des histoires qui valorisent votre entreprise.
                     </p>
                     <PrimaryButton 

@@ -545,6 +545,13 @@ section.relative:first-of-type {
       }
     }
     
+    // Conteneur pour les images Next.js
+    .portfolio-image-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    
     // Effet de brillance au survol
     &::after {
       content: '';

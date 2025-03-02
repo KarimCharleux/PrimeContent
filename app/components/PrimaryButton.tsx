@@ -43,37 +43,17 @@ export default function PrimaryButton({
   useEffect(() => {
     if (animateOnMount && containerRef.current) {
       // Animation d'entrée avec timeline
-      const tl = gsap.timeline({ 
-        delay: delay || 0.8, // Délai par défaut après les autres éléments du hero
-        defaults: { ease: 'power3.out' } 
-      });
+      const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
       
-      // Animation du conteneur
       tl.to(containerRef.current, {
-        y: 0,
         opacity: 1,
+        y: 0,
         scale: 1,
         duration: 0.8,
-        onComplete: () => {
-          // Animation de la bordure après l'apparition
-          if (containerRef.current) {
-            const border = containerRef.current.querySelector('.animated-border');
-            if (border) {
-              gsap.fromTo(
-                border,
-                { opacity: 0 },
-                { 
-                  opacity: 0.8, 
-                  duration: 1.2,
-                  ease: 'power2.inOut'
-                }
-              );
-            }
-          }
-        }
+        delay: delay
       });
     }
-  }, [animateOnMount, delay]);
+  }, [animateOnMount, delay]); // Ajout des dépendances animateOnMount et delay
 
   // Icône de flèche par défaut
   const defaultIcon = (
