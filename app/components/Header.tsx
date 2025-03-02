@@ -70,7 +70,7 @@ export default function Header() {
                             Vidéos
                         </Link>
                         <Link
-                            href="/events"
+                            href="/evenements"
                             className="nav-link hover:translate-y-1 transition-transform duration-300"
                         >
                             Événements
@@ -144,7 +144,7 @@ export default function Header() {
                         Vidéos
                     </Link>
                     <Link
-                        href="/events"
+                        href="/evenements"
                         className="mobile-nav-link"
                         onClick={() => setMobileMenuOpen(false)}
                     >
