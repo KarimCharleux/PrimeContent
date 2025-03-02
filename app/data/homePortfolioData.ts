@@ -4,9 +4,9 @@ import { Project } from '../components/PortfolioSection';
 const homePortfolioProjects: Project[] = [
   {
     category: 'Clip Musical',
-    source: '/images/portfolio/crocodile.mp4',
+    source: '/images/portfolio/Nass Batiment2.mp4',
     isVideo: true,
-    title: "J1CKBOY - CROCODILE",
+    title: "Nass - Batiment",
     format: 'paysage',
   },
   {

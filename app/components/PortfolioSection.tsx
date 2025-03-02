@@ -208,7 +208,7 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
                             <div
                                 key={`${project.title || project.category}-${index}`}
                                 ref={(el) => addProjectRef(el, index)}
-                                className={`portfolio-item ${getItemSizeClass(project)}`}
+                                className={`portfolio-item group ${getItemSizeClass(project)}`}
                             >
                                 {project.isVideo ? (
                                     <>
@@ -225,7 +225,7 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
                                             }}
                                         />
                                         <div 
-                                            className="absolute inset-0 bg-black/30 z-10 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity duration-300 cursor-pointer"
+                                            className={`absolute inset-0 bg-black/30 z-10 flex items-center justify-center cursor-pointer transition-opacity duration-300 ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
                                             onClick={() => handleVideoPlay(index)}
                                         >
                                             <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -279,27 +279,6 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
                         </div>
                     )}
                 </div>
-
-                {/* Bouton Voir Plus */}
-                {showAllButton && filteredProjects.length > 0 && (
-                    <div className="text-center mt-12">
-                        <button className="px-8 py-4 w-72 bg-white text-black hover:bg-gray-200 rounded-full transition duration-300 transform flex items-center justify-center space-x-2 mx-auto">
-                            <ScrambleText text="VOIR PLUS" className="inline-block w-40" />
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                            >
-                                <path
-                                    fillRule="evenodd"
-                                    d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                                    clipRule="evenodd"
-                                />
-                            </svg>
-                        </button>
-                    </div>
-                )}
             </div>
         </section>
     );

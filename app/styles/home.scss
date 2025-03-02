@@ -462,6 +462,7 @@ h1, h2, h3, h4, h5, h6 {
     overflow: hidden;
     position: relative;
     border-radius: 8px;
+    cursor: pointer;
     
     // Styles communs pour tous les formats
     &.portfolio-item-carre,
@@ -570,17 +571,8 @@ h1, h2, h3, h4, h5, h6 {
       position: relative;
       display: inline-block;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-      
-      &::after {
-        content: '';
-        position: absolute;
-        bottom: -4px;
-        left: 0;
-        width: 0;
-        height: 2px;
-        background: linear-gradient(90deg, #ffffff, transparent);
-        transition: width 0.3s ease;
-      }
+      color: white;
+  
     }
     
     &:hover h3::after {
@@ -595,11 +587,13 @@ h1, h2, h3, h4, h5, h6 {
         rgba(0, 0, 0, 0) 100%
       );
       transform: translateY(10px);
+      opacity: 0;
       transition: opacity 0.3s ease, transform 0.3s ease;
     }
     
     &:hover .bg-gradient-to-t {
       transform: translateY(0);
+      opacity: 1;
     }
     
     // Style pour les contrôles vidéo
