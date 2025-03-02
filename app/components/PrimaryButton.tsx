@@ -6,13 +6,13 @@ import gsap from '../lib/gsap-config';
 import '../styles/primary-button.scss';
 
 interface PrimaryButtonProps {
-  text: string;
-  href?: string;
-  className?: string;
-  onClick?: () => void;
-  animateOnMount?: boolean;
-  icon?: React.ReactNode;
-  delay?: number;
+  readonly text: string;
+  readonly href?: string;
+  readonly className?: string;
+  readonly onClick?: () => void;
+  readonly animateOnMount?: boolean;
+  readonly icon?: React.ReactNode;
+  readonly delay?: number;
 }
 
 export default function PrimaryButton({

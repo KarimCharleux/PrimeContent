@@ -40,15 +40,14 @@ export default function ExpertiseCard({
     >
       {/* Image d'arrière-plan avec fallback sur un dégradé */}
       <div 
-        className="absolute inset-0 z-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500"
+        className="absolute inset-0 z-0 opacity-40 group-hover:opacity-50 transition-opacity duration-500"
         style={imageError ? { background: generateGradient() } : undefined}
       >
         {!imageError && (
           <Image
             src={backgroundImage}
             alt={title}
-            width={320}
-            height={400}
+            fill
             style={{ objectFit: 'cover' }}
             quality={80}
             onError={() => setImageError(true)}
@@ -65,7 +64,7 @@ export default function ExpertiseCard({
           {icon}
         </div>
         
-        <h3 className="text-xl font-bold mb-3 group-hover:text-blue-200 transition-colors duration-300">
+        <h3 className="text-xl font-bold mb-3 transition-colors duration-300">
           {title}
         </h3>
         

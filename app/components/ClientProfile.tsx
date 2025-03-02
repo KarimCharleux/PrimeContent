@@ -3,11 +3,11 @@ import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 
 interface ClientProfileProps {
-  name: string;
-  domain?: string;
-  imageSrc?: string;
-  imageBackground?: string;
-  className?: string;
+  readonly name: string;
+  readonly domain?: string;
+  readonly imageSrc?: string;
+  readonly imageBackground?: string;
+  readonly className?: string;
 }
 
 export default function ClientProfile({ 

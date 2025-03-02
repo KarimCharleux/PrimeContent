@@ -29,6 +29,7 @@
   margin-bottom: 60px;
   letter-spacing: 2px;
   position: relative;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8), 0 4px 20px rgba(0, 0, 0, 0.6);
   
   &:after {
     content: '';
@@ -69,12 +70,14 @@
   font-size: 1.8rem;
   font-weight: 600;
   margin-bottom: 10px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
 }
 
 .info-subtitle {
   font-size: 1rem;
   color: #aaa;
   margin-bottom: 40px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
 .contact-details {
@@ -134,11 +137,13 @@
   transition: all 0.3s ease;
   border: 1px solid rgba(255, 255, 255, 0.4);
   background-color: rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   
   &:hover {
     background-color: rgba(255, 255, 255, 0.05);
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
     border-color: rgba(255, 255, 255, 0.6);
   }
 }
@@ -243,10 +248,12 @@
   margin-top: 10px;
   border: 3px solid #666666e0;
   width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   
   &:hover {
     background-color: #f0f0f0;
     transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
 
     .arrow-icon {
       transform: translateX(5px);

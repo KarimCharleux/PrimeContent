@@ -327,7 +327,7 @@ export default function Page() {
 
                     {/* Carrousel de logos */}
                     <div className="mb-16 logo-carousel overflow-hidden">
-                        <InfiniteLogoCarousel brands={brands} speed={40} />
+                        <InfiniteLogoCarousel brands={brands} speed={60} />
                     </div>
 
                     {/* Profils des clients */}

@@ -3,14 +3,14 @@ import { useRef, useEffect, useState } from 'react';
 import BrandLogo from './BrandLogo';
 
 interface Brand {
-  name: string;
-  imageSrc?: string;
+  readonly name: string;
+  readonly imageSrc?: string;
 }
 
 interface InfiniteLogoCarouselProps {
-  brands: Brand[];
-  speed?: number; // Vitesse de défilement en pixels par seconde
-  className?: string;
+  readonly brands: Brand[];
+  readonly speed?: number; // Vitesse de défilement en pixels par seconde
+  readonly className?: string;
 }
 
 export default function InfiniteLogoCarousel({ 

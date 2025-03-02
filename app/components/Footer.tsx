@@ -6,7 +6,7 @@ import PrimaryButton from './PrimaryButton';
 import '../styles/footer.scss';
 
 interface FooterProps {
-  hideCTA?: boolean;
+  readonly hideCTA?: boolean;
 }
 
 export default function Footer({ hideCTA = false }: FooterProps) {
