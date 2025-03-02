@@ -160,7 +160,6 @@ h1, h2, h3, h4, h5, h6 {
   // Style pour le carrousel de logos
   .logo-carousel {
     position: relative;
-    margin: 0 -20px;
     padding: 20px 0;
     
     // Effet de fondu sur les bords
@@ -234,17 +233,6 @@ h1, h2, h3, h4, h5, h6 {
         display: inline-block;
         color: #ffffff !important;
         font-weight: 700;
-        
-        &::after {
-          content: '';
-          position: absolute;
-          bottom: -5px;
-          left: 0;
-          width: 30px;
-          height: 2px;
-          background: linear-gradient(90deg, $accent-blue, transparent);
-          transition: width 0.3s ease;
-        }
       }
       
       p {
