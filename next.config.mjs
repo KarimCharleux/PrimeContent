@@ -5,7 +5,7 @@ const nextConfig = {
     images: {
         unoptimized: true,
     },
-    distDir: '.next',
+    distDir: 'build',
     trailingSlash: true,
 };
 export default nextConfig;
