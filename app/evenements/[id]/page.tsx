@@ -1,9 +1,5 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import evenementsData, { Evenement } from '../../data/evenementsData';
@@ -11,34 +7,36 @@ import evenementsData, { Evenement } from '../../data/evenementsData';
 // Importation des styles
 import '../../styles/evenements/evenements.scss';
 
-export default function EvenementDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const [evenement, setEvenement] = useState<Evenement | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+// Fonction pour générer les paramètres statiques
+export async function generateStaticParams() {
+  return evenementsData.map((evenement) => ({
+    id: evenement.id,
+  }));
+}
 
-  useEffect(() => {
-    // Récupérer l'événement correspondant à l'ID
-    const id = params.id as string;
-    const foundEvenement = evenementsData.find(e => e.id === id);
-    
-    if (foundEvenement) {
-      setEvenement(foundEvenement);
-      setIsLoading(false);
-    } else {
-      // Rediriger vers la page des événements si l'ID n'existe pas
-      router.push('/evenements');
-    }
-  }, [params.id, router]);
+// Types pour les props de la page
+type Props = {
+  params: {
+    id: string;
+  };
+};
 
-  if (isLoading) {
+// Fonction pour obtenir l'événement
+function getEvenement(id: string): Evenement | undefined {
+  return evenementsData.find(e => e.id === id);
+}
+
+export default function EvenementDetailPage({ params }: Props) {
+  const evenement = getEvenement(params.id);
+
+  if (!evenement) {
     return (
       <main className="evenements-page">
         <Header />
         <section className="evenements-hero">
           <div className="container">
             <div className="loading-container">
-              <div className="loading-spinner"></div>
+              <div>Événement non trouvé</div>
             </div>
           </div>
         </section>
@@ -57,14 +55,14 @@ export default function EvenementDetailPage() {
             &larr; Retour aux événements
           </Link>
           
-          <h1 className="evenements-title">{evenement?.titre}</h1>
+          <h1 className="evenements-title">{evenement.titre}</h1>
 
           <div className="evenement-detail">
             <div className="evenement-image-container">
               <div className="detail-image-wrapper">
                 <Image 
-                  src={evenement?.imageSrc || ''} 
-                  alt={evenement?.titre || ''} 
+                  src={evenement.imageSrc} 
+                  alt={evenement.titre} 
                   className="evenement-detail-image"
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
@@ -82,7 +80,7 @@ export default function EvenementDetailPage() {
               <div className="evenement-metadata">
                 <div className="metadata-item">
                   <span className="metadata-label">Catégorie:</span>
-                  <span className="metadata-value">{evenement?.categorie || 'Festival'}</span>
+                  <span className="metadata-value">{evenement.categorie || 'Festival'}</span>
                 </div>
               </div>
             </div>
