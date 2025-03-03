@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import gsap from './lib/gsap-config';
 import Gallery from './components/Gallery';
 import ExpertiseCard from './components/ExpertiseCard';
@@ -29,19 +29,75 @@ export default function Page() {
     const clientsRef = useRef<HTMLDivElement>(null);
     const clientRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+    // État pour contrôler le démarrage des animations
+    const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
+
     useEffect(() => {
-        // Animation des textes du hero
+        // Vérifie si le splash screen est terminé via le localStorage
+        const checkSplashScreen = () => {
+            const splashScreenComplete = localStorage.getItem('splashScreenComplete');
+            if (splashScreenComplete === 'true') {
+                setShouldStartAnimations(true);
+                localStorage.removeItem('splashScreenComplete');
+            }
+        };
+
+        // Vérifie toutes les 100ms si le splash screen est terminé
+        const interval = setInterval(checkSplashScreen, 100);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+        if (!shouldStartAnimations) return;
+
+        // Animation des mots du titre
+        const words = gsap.utils.toArray<HTMLElement>('.hero-word');
         const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-        tl.fromTo(
-            heroTitleRef.current,
-            { y: 50, opacity: 0 },
-            { y: 0, opacity: 1, duration: 1 },
-        ).fromTo(
+        // Réinitialise les états initiaux
+        words.forEach(word => {
+            gsap.set(word, {
+                yPercent: 100,
+                opacity: 0,
+                filter: 'blur(10px)',
+                visibility: 'visible'
+            });
+        });
+
+        gsap.set(heroTextRef.current, {
+            yPercent: 100,
+            opacity: 0,
+            filter: 'blur(10px)',
+            visibility: 'visible'
+        });
+
+        // Animation des mots
+        words.forEach((word, index) => {
+            tl.to(
+                word,
+                {
+                    yPercent: 0,
+                    opacity: 1,
+                    filter: 'blur(0px)',
+                    duration: 1,
+                    visibility: 'visible'
+                },
+                index * 0.2
+            );
+        });
+
+        // Animation du texte du hero
+        tl.to(
             heroTextRef.current,
-            { y: 30, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.8 },
-            '-=0.6', // Commence un peu avant que l'animation précédente ne soit terminée
+            { 
+                yPercent: 0,
+                opacity: 1,
+                filter: 'blur(0px)',
+                duration: 1,
+                visibility: 'visible'
+            },
+            '-=0.4'
         );
 
         // Animation des services au scroll
@@ -57,10 +113,10 @@ export default function Page() {
                         y: 0,
                         opacity: 1,
                         duration: 0.8,
-                        delay: index * 0.2, // Délai progressif pour chaque service
+                        delay: index * 0.2,
                         scrollTrigger: {
                             trigger: service,
-                            start: 'top 80%', // Commence l'animation quand le haut de l'élément atteint 80% de la fenêtre
+                            start: 'top 80%',
                             toggleActions: 'play none none none',
                         },
                     },
@@ -91,7 +147,7 @@ export default function Page() {
                 );
             });
         }
-    }, []);
+    }, [shouldStartAnimations]);
 
     // Fonction pour ajouter les références aux services
     const addServiceRef = (el: HTMLDivElement | null, index: number) => {
@@ -175,9 +231,14 @@ export default function Page() {
                 <div className="hero-content">
                     <h1
                         ref={heroTitleRef}
-                        className="text-4xl md:text-6xl font-bold mb-6 max-w-4xl opacity-0"
+                        className="text-4xl md:text-6xl font-bold mb-6 max-w-4xl"
                     >
-                        OÙ LA CRÉATIVITÉ RENCONTRE LA STRATÉGIE
+                        <span className="hero-word" style={{ display: 'inline-block', transform: 'translateY(0px)' }}>OÙ</span>{' '}
+                        <span className="hero-word" style={{ display: 'inline-block', transform: 'translateY(0px)' }}>LA</span>{' '}
+                        <span className="hero-word" style={{ display: 'inline-block', transform: 'translateY(0px)' }}>CRÉATIVITÉ</span>{' '}
+                        <span className="hero-word" style={{ display: 'inline-block', transform: 'translateY(0px)' }}>RENCONTRE</span>{' '}
+                        <span className="hero-word" style={{ display: 'inline-block', transform: 'translateY(0px)' }}>LA</span>{' '}
+                        <span className="hero-word" style={{ display: 'inline-block', transform: 'translateY(0px)' }}>STRATÉGIE</span>
                     </h1>
                     <p
                         ref={heroTextRef}
