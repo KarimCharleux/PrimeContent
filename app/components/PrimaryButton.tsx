@@ -4,6 +4,8 @@ import Link from 'next/link';
 import ScrambleText from './ScrambleText';
 import gsap from '../lib/gsap-config';
 import '../styles/primary-button.scss';
+import { motion } from 'framer-motion';
+import { useAnimationControl } from '../hooks/useAnimationControl';
 
 interface PrimaryButtonProps {
   readonly text: string;
@@ -26,6 +28,7 @@ export default function PrimaryButton({
 }: PrimaryButtonProps) {
   const buttonRef = useRef<HTMLButtonElement | HTMLAnchorElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const shouldAnimate = useAnimationControl();
 
   // Masquer le bouton immédiatement au montage du composant
   useEffect(() => {
@@ -74,10 +77,31 @@ export default function PrimaryButton({
   // Classes de base pour le bouton
   const buttonClasses = `primary-button-content ${className}`;
 
+  const buttonVariants = {
+    hidden: {
+      y: 20,
+      opacity: 0,
+    },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.6,
+        ease: "easeOut",
+        delay: delay,
+      },
+    },
+  };
+
   // Si un lien est fourni, rendre un composant Link
   if (href) {
     return (
-      <div ref={containerRef} className="primary-button-container" style={animateOnMount ? {opacity: 0} : undefined}>
+      <motion.div
+        initial={animateOnMount ? "hidden" : "visible"}
+        animate={shouldAnimate ? "visible" : "hidden"}
+        variants={buttonVariants}
+        className={`primary-button-container ${className}`}
+      >
         <Link
           href={href}
           ref={buttonRef as React.RefObject<HTMLAnchorElement>}
@@ -88,13 +112,18 @@ export default function PrimaryButton({
           <span className="ml-2">{icon || defaultIcon}</span>
         </Link>
         <span className="animated-border"></span>
-      </div>
+      </motion.div>
     );
   }
 
   // Sinon, rendre un bouton standard
   return (
-    <div ref={containerRef} className="primary-button-container" style={animateOnMount ? {opacity: 0} : undefined}>
+    <motion.div
+      initial={animateOnMount ? "hidden" : "visible"}
+      animate={shouldAnimate ? "visible" : "hidden"}
+      variants={buttonVariants}
+      className={`primary-button-container ${className}`}
+    >
       <button
         ref={buttonRef as React.RefObject<HTMLButtonElement>}
         className={buttonClasses}
@@ -104,6 +133,6 @@ export default function PrimaryButton({
         <span className="ml-2">{icon || defaultIcon}</span>
       </button>
       <span className="animated-border"></span>
-    </div>
+    </motion.div>
   );
 } 

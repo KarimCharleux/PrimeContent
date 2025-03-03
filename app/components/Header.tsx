@@ -2,9 +2,12 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import '../styles/header.scss';
+import { motion } from 'framer-motion';
+import { useAnimationControl } from '../hooks/useAnimationControl';
 
 export default function Header() {
-    const [scrolled, setScrolled] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
+    const shouldAnimate = useAnimationControl();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     // Empêcher le défilement du body lorsque le menu mobile est ouvert
@@ -22,143 +25,155 @@ export default function Header() {
 
     useEffect(() => {
         const handleScroll = () => {
-            const isScrolled = window.scrollY > 50;
-            if (isScrolled !== scrolled) {
-                setScrolled(isScrolled);
-            }
+            setIsScrolled(window.scrollY > 50);
         };
 
-        // Ajouter l'écouteur d'événement
         window.addEventListener('scroll', handleScroll);
-
-        // Vérifier l'état initial
-        handleScroll();
-
-        // Nettoyer l'écouteur d'événement
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-        };
-    }, [scrolled]);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const toggleMobileMenu = () => {
         setMobileMenuOpen(!mobileMenuOpen);
     };
 
+    const headerVariants = {
+        hidden: {
+            y: -100,
+            opacity: 0
+        },
+        visible: {
+            y: 0,
+            opacity: 1,
+            transition: {
+                duration: 0.6,
+                ease: "easeOut",
+                delay: 0.2
+            }
+        }
+    };
+
+    const navItems = [
+        { name: 'ACCUEIL', href: '/' },
+        { name: 'PORTFOLIO', href: '/portfolio' },
+        { name: 'ÉVÉNEMENTS', href: '/evenements' },
+        { name: 'CONTACT', href: '/contact' }
+    ];
+
     return (
-        <header
-            className={`header ${scrolled ? 'scrolled' : ''} ${mobileMenuOpen ? 'menu-open' : ''}`}
+        <motion.header
+            initial="hidden"
+            animate={shouldAnimate ? "visible" : "hidden"}
+            variants={headerVariants}
+            className={`fixed w-full z-50 transition-all duration-300 ${
+                isScrolled ? 'bg-black/80 backdrop-blur-md py-4' : 'bg-transparent py-6'
+            }`}
         >
-            <div className="header-backdrop"></div>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 relative z-10">
-                <div className="flex justify-between items-center">
-                    <Link href="/" className="logo text-2xl font-bold">
-                        PrimeContent.
-                    </Link>
+            <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
+                <Link href="/" className="text-white font-bold text-xl">
+                    PRIMECONTENT
+                </Link>
 
-                    {/* Menu desktop */}
-                    <div className="hidden md:flex space-x-10 nav-links">
-                        <Link
-                            href="/photos"
-                            className="nav-link hover:translate-y-1 transition-transform duration-300"
-                        >
-                            Photos
-                        </Link>
-                        <Link
-                            href="/videos"
-                            className="nav-link hover:translate-y-1 transition-transform duration-300"
-                        >
-                            Vidéos
-                        </Link>
-                        <Link
-                            href="/evenements"
-                            className="nav-link hover:translate-y-1 transition-transform duration-300"
-                        >
-                            Événements
-                        </Link>
-                        <Link
-                            href="/contact"
-                            className="nav-link hover:translate-y-1 transition-transform duration-300"
-                        >
-                            Contact
-                        </Link>
-                    </div>
+                {/* Navigation Desktop */}
+                <nav className="hidden md:block">
+                    <ul className="flex space-x-8">
+                        {navItems.map((item, index) => (
+                            <motion.li
+                                key={item.name}
+                                initial={{ opacity: 0, y: -20 }}
+                                animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
+                                transition={{
+                                    duration: 0.3,
+                                    delay: 0.3 + index * 0.1
+                                }}
+                            >
+                                <Link
+                                    href={item.href}
+                                    className="text-white hover:text-gray-300 transition-colors duration-300"
+                                >
+                                    {item.name}
+                                </Link>
+                            </motion.li>
+                        ))}
+                    </ul>
+                </nav>
 
-                    {/* Bouton hamburger pour mobile */}
-                    <button
-                        className="md:hidden hamburger-button flex flex-col justify-center items-center w-10 h-10 p-2 rounded-md bg-gray-900 bg-opacity-50"
-                        onClick={toggleMobileMenu}
-                        aria-label="Menu"
-                        aria-expanded={mobileMenuOpen}
-                    >
-                        <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`}></span>
-                        <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`}></span>
-                        <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`}></span>
-                    </button>
-                </div>
-            </div>
-
-            {/* Menu mobile */}
-            <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
-                {/* Bouton de fermeture (croix) */}
+                {/* Bouton Menu Mobile */}
                 <button
-                    className="close-button"
-                    onClick={() => setMobileMenuOpen(false)}
-                    aria-label="Fermer le menu"
+                    className="md:hidden text-white p-2"
+                    onClick={toggleMobileMenu}
+                    aria-label="Menu"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
+                        className="h-6 w-6"
                         fill="none"
+                        viewBox="0 0 24 24"
                         stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
                     >
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 6h16M4 12h16M4 18h16"
+                        />
                     </svg>
                 </button>
+            </div>
 
-                <div className="mobile-menu-links">
-                    <Link
-                        href="/"
-                        className="mobile-nav-link"
+            {/* Menu Mobile */}
+            <div 
+                className={`fixed inset-0 bg-black bg-opacity-95 z-50 transform transition-transform duration-300 md:hidden ${
+                    mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+                }`}
+            >
+                <div className="flex flex-col h-full">
+                    {/* Bouton de fermeture */}
+                    <button
+                        className="absolute top-6 right-6 text-white p-2"
                         onClick={() => setMobileMenuOpen(false)}
+                        aria-label="Fermer le menu"
                     >
-                        Accueil
-                    </Link>
-                    <Link
-                        href="/photos"
-                        className="mobile-nav-link"
-                        onClick={() => setMobileMenuOpen(false)}
-                    >
-                        Photos
-                    </Link>
-                    <Link
-                        href="/videos"
-                        className="mobile-nav-link"
-                        onClick={() => setMobileMenuOpen(false)}
-                    >
-                        Vidéos
-                    </Link>
-                    <Link
-                        href="/evenements"
-                        className="mobile-nav-link"
-                        onClick={() => setMobileMenuOpen(false)}
-                    >
-                        Événements
-                    </Link>
-                    <Link
-                        href="/contact"
-                        className="mobile-nav-link"
-                        onClick={() => setMobileMenuOpen(false)}
-                    >
-                        Contact
-                    </Link>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                            />
+                        </svg>
+                    </button>
+
+                    {/* Liens du menu mobile */}
+                    <nav className="flex flex-col items-center justify-center h-full">
+                        {navItems.map((item, index) => (
+                            <motion.div
+                                key={item.name}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={mobileMenuOpen ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
+                                transition={{
+                                    duration: 0.3,
+                                    delay: 0.1 * index
+                                }}
+                                className="mb-8"
+                            >
+                                <Link
+                                    href={item.href}
+                                    className="text-white text-2xl hover:text-gray-300 transition-colors duration-300"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    {item.name}
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </nav>
                 </div>
             </div>
-        </header>
+        </motion.header>
     );
 }
