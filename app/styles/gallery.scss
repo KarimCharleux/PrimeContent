@@ -133,7 +133,7 @@ $content-z-index: 3;
     @extend .gallery-overlay;
     background: linear-gradient(
       115deg,
-      rgba(0, 0, 0, 0.9) 0%,
+      rgba(0, 0, 0, 1) 0%,
       rgba(255, 255, 255, 0) 50%
     );
     z-index: $overlay-z-index-base + 1;

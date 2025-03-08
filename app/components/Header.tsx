@@ -76,7 +76,7 @@ export default function Header() {
                 {/* Navigation Desktop */}
                 <nav className="hidden md:block">
                     <ul className="flex space-x-8">
-                        {navItems.map((item, index) => (
+                        {navItems.map((item, index) => (  
                             <motion.li
                                 key={item.name}
                                 initial={{ opacity: 0, y: -20 }}

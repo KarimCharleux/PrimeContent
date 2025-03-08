@@ -1,10 +1,12 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import { useImageStore } from '../store/imageStore';
 
 export default function Gallery() {
     // Référence pour le conteneur de la galerie
     const galleryContainerRef = useRef<HTMLDivElement>(null);
     const mainSliderRequestFrameAnimationRef = useRef<number | null>(null);
+    const preloadedImages = useImageStore(state => state.preloadedImages);
     
     // Variable pour stocker l'animation
     let mainSliderRequestFrameAnimation: number | null = null;
@@ -45,30 +47,11 @@ export default function Gallery() {
             }
 
             try {
-                // Récupérer dynamiquement les images du dossier gallery
-                const response = await fetch('/api/gallery-images');
-                const data = await response.json();
-                const imageUrls = data.images.map((image: string) => `/gallery/${image}`);
-                
-                const preloadedImages = await preloadImages(imageUrls);
                 createRowsContainer(rowsNumber);
-                createMainImagesGallery(preloadedImages as HTMLImageElement[], rowsNumber);
+                createMainImagesGallery(preloadedImages, rowsNumber);
             } catch (error) {
-                console.error('Erreur lors du chargement des images:', error);
+                console.error('Erreur lors de la préparation de la galerie:', error);
             }
-        }
-
-        function preloadImages(imageUrls: string[]) {
-            return Promise.all(
-                imageUrls.map((url) => {
-                    return new Promise((resolve, reject) => {
-                        const img = new Image();
-                        img.src = url;
-                        img.onload = () => resolve(img);
-                        img.onerror = reject;
-                    });
-                }),
-            );
         }
 
         function createRowsContainer(rowsNumber: number) {
@@ -350,8 +333,10 @@ export default function Gallery() {
             mainSliderRequestFrameAnimationRef.current = requestAnimationFrame(mainSlidingAnimation);
         }
 
-        // Initialiser la galerie après le chargement de la page
-        prepareAllGalleryImages();
+        // Initialiser la galerie si les images sont disponibles
+        if (preloadedImages.length > 0) {
+            prepareAllGalleryImages();
+        }
 
         // Nettoyage lors du démontage du composant
         return () => {
@@ -359,7 +344,7 @@ export default function Gallery() {
                 cancelAnimationFrame(mainSliderRequestFrameAnimationRef.current);
             }
         };
-    }, []);
+    }, [preloadedImages]);
 
     return (
         <div className="gallery-hero-section">
