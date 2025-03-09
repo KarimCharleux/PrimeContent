@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { useImageStore } from '../store/imageStore';
-import { log } from 'console';
 
 interface SplashScreenProps {
   readonly onLoadingComplete: () => void;
