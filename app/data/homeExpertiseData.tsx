@@ -31,7 +31,7 @@ const expertiseData: ExpertiseData[] = [
   },
   {
     title: "Photographie",
-    description: "Sublimez votre image avec des photographies qui capturent l'essence de votre marque.",
+    description: "Sublimez votre image avec des photos qui captent l'essence de votre marque.",
     backgroundImage: "/images/expertises/photo-bg.jpg",
     icon: (
       <svg

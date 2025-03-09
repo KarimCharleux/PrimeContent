@@ -57,7 +57,6 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
               loadedCount++;
               setLoadingProgress(Math.round((loadedCount / totalImages) * 100));
               resolve(img);
-              console.log('Img:', src , ' - ', loadedCount, '/', totalImages);
             };
             img.onerror = reject;
             img.src = `/gallery/${src}`;

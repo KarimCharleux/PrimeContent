@@ -4,13 +4,15 @@ import gsap from './lib/gsap-config';
 import Gallery from './components/Gallery';
 import ExpertiseCard from './components/ExpertiseCard';
 import ClientProfile from './components/ClientProfile';
-import InfiniteLogoCarousel from './components/InfiniteLogoCarousel';
 import PortfolioSection from './components/PortfolioSection';
 import PrimaryButton from './components/PrimaryButton';
 import AnimatedStat from './components/AnimatedStat';
 import Footer from './components/Footer';
 import Header from './components/Header';
-import expertiseData from './data/expertiseData';
+import expertiseData from './data/homeExpertiseData';
+import BrandLogo from './components/BrandLogo';
+import homeBrandsData from './data/homeBrandsData';
+import homeClientsData from './data/homeClientsData';
 
 // Importation des styles
 import './styles/gallery.scss';
@@ -160,67 +162,6 @@ export default function Page() {
         clientRefs.current[index] = el;
     };
 
-    // Données des marques
-    const brands = [
-        { name: "Ben & Jerry's", imageSrc: '/images/brands/ben-and-jerrys.png' },
-        { name: 'Festival de Monte-Carlo', imageSrc: '/images/brands/festival-monte-carlo.png' },
-        { name: "O'Tacos", imageSrc: '/images/brands/o-tacos.png' },
-        { name: 'Make-A-Wish', imageSrc: '/images/brands/make-a-wish.png' },
-        { name: 'TopModel International', imageSrc: '/images/brands/topmodel-international.png' },
-        { name: 'Tellus', imageSrc: '/images/brands/tellus.png' },
-        { name: 'Orus Bijoux', imageSrc: '/images/brands/orus-bijoux.png' },
-        { name: 'OnePlace', imageSrc: '/images/brands/oneplace.png' },
-        { name: 'Neuilly-Poissy', imageSrc: '/images/brands/neuilly-poissy.png' },
-        { name: 'Kamera Kastros', imageSrc: '/images/brands/kamera-kastros.png' },
-        { name: 'Jamel Comedy Club', imageSrc: '/images/brands/jamel-comedy-club.png' },
-    ];
-
-    // Données des clients
-    const clients = [
-        {
-            name: 'Adil Rami',
-            domain: 'Football International',
-            imageSrc: '/images/clients/adil-rami.png',
-            imageBackground: '/images/clients/adil-rami-bg.jpg',
-        },
-        {
-            name: 'Adriana Karembeu',
-            domain: 'Mannequin & Actrice',
-            imageSrc: '/images/clients/adriana-karembeu.png',
-            imageBackground: '/images/clients/adriana-karembeu-bg.jpg',
-        },
-        {
-            name: 'Ricky Whittle',
-            domain: 'Acteur',
-            imageSrc: '/images/clients/ricky-whittle.png',
-            imageBackground: '/images/clients/ricky-whittle-bg.jpg',
-        },
-        {
-            name: 'Maxime Dereymez',
-            domain: 'Danseur',
-            imageSrc: '/images/clients/maxime-dereymez.png',
-            imageBackground: '/images/clients/maxime-dereymez-bg.jpg',
-        },
-        {
-            name: 'Yoann Huget',
-            domain: 'Rugby International',
-            imageSrc: '/images/clients/yoann-huget.png',
-            imageBackground: '/images/clients/yoann-huget-bg.jpg',
-        },
-        {
-            name: 'Éric Judor',
-            domain: 'Acteur & Réalisateur',
-            imageSrc: '/images/clients/eric-judor.png',
-            imageBackground: '/images/clients/eric-judor-bg.jpg',
-        },
-        {
-            name: 'Malik Amraoui',
-            domain: 'Acteur',
-            imageSrc: '/images/clients/malik-amraoui.png',
-            imageBackground: '/images/clients/malik-amraoui-bg.jpg',
-        },
-    ];
-
     return (
         <div className="min-h-screen bg-black text-white">
             {/* Header */}
@@ -295,40 +236,98 @@ export default function Page() {
 
             {/* Section Ils nous ont fait confiance */}
             <section className="py-24 bg-gradient-to-b from-gray-900 to-black trust-section">
-                <div className="max-w-7xl mx-auto px-4">
+                <div className="mx-auto px-7">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 trust-title">
                             ILS NOUS ONT FAIT CONFIANCE
                         </h2>
                     </div>
 
-                    {/* Carrousel de logos */}
-                    <div className="mb-16 logo-carousel overflow-hidden">
-                        <InfiniteLogoCarousel brands={brands} speed={60} />
-                    </div>
+                    <div className="flex flex-col 2xl:flex-row 2xl:items-center 2xl:justify-center gap-4 2xl:gap-6">
+                        {/* Marques à gauche - visible uniquement sur desktop */}
+                        <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
+                            {homeBrandsData.slice(0, 4).map((brand) => (
+                                <div key={brand.name} className="aspect-square">
+                                    <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
+                                </div>
+                            ))}
+                            <div className="aspect-square"></div>
+                            {homeBrandsData.slice(4, 5).map((brand) => (
+                                <div key={brand.name} className="aspect-square">
+                                    <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
+                                </div>
+                            ))}
+                        </div>
 
-                    {/* Profils des clients */}
-                    <div
-                        ref={clientsRef}
-                        className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-16"
-                    >
-                        {clients.map((client, index) => (
-                            <div
-                                key={`${client.name}-${index}`}
-                                ref={(el) => addClientRef(el, index)}
-                                className="opacity-0"
-                            >
-                                <ClientProfile
-                                    name={client.name}
-                                    domain={client.domain}
-                                    imageSrc={client.imageSrc}
-                                    imageBackground={client.imageBackground}
-                                />
+                        {/* Marques en haut - visible uniquement sur mobile */}
+                        <div className="grid grid-cols-3 gap-4 mb-8 2xl:hidden">
+                            {homeBrandsData.slice(0, 6).map((brand) => (
+                                <div key={brand.name} className="aspect-square">
+                                    <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Profils des clients au centre */}
+                        <div className="flex flex-col items-center w-full 2xl:max-w-4xl">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 w-full mb-4 md:mb-6">
+                                {homeClientsData.slice(0, 4).map((client, index) => (
+                                    <div
+                                        key={`${client.name}-${index}`}
+                                        ref={(el) => addClientRef(el, index)}
+                                        className="h-[200px] md:h-[250px]"
+                                    >
+                                        <ClientProfile
+                                            name={client.name}
+                                            domain={client.domain}
+                                            imageSrc={client.imageSrc}
+                                            imageBackground={client.imageBackground}
+                                            className="h-full"
+                                        />
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                                {homeClientsData.slice(4).map((client, index) => (
+                                    <div
+                                        key={`${client.name}-${index + 4}`}
+                                        ref={(el) => addClientRef(el, index + 4)}
+                                        className="h-[200px] md:h-[250px]"
+                                    >
+                                        <ClientProfile
+                                            name={client.name}
+                                            domain={client.domain}
+                                            imageSrc={client.imageSrc}
+                                            imageBackground={client.imageBackground}
+                                            className="h-full"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Marques à droite - visible uniquement sur desktop */}
+                        <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
+                            {homeBrandsData.slice(5, 10).map((brand) => (
+                                <div key={brand.name} className="aspect-square">
+                                    <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Marques en bas - visible uniquement sur mobile */}
+                        <div className="grid grid-cols-3 gap-4 mt-8 2xl:hidden">
+                            {homeBrandsData.slice(6).map((brand) => (
+                                <div key={brand.name} className="aspect-square">
+                                    <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
-                    <PrimaryButton text="EXPLOREZ PLUS" href="/portfolio" className="mx-auto" />
+                    <div className="text-center mt-16">
+                        <PrimaryButton text="EXPLOREZ PLUS" href="/portfolio" className="mx-auto" />
+                    </div>
                 </div>
             </section>
 
