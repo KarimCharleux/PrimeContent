@@ -8,6 +8,7 @@ interface AnimatedStatProps {
   suffix?: string;
   description: string;
   className?: string;
+  isPercentage?: boolean;
 }
 
 export default function AnimatedStat({
@@ -15,7 +16,8 @@ export default function AnimatedStat({
   prefix = '+',
   suffix = '',
   description,
-  className = ''
+  className = '',
+  isPercentage = false
 }: AnimatedStatProps) {
   const statRef = useRef<HTMLDivElement>(null);
   const numberRef = useRef<HTMLDivElement>(null);
@@ -57,11 +59,11 @@ export default function AnimatedStat({
       },
       onUpdate: function() {
         if (numberRef.current) {
-          numberRef.current.textContent = prefix + Math.round(obj.val) + suffix;
+          numberRef.current.textContent = `${prefix}${Math.round(obj.val)}${isPercentage ? '%' : suffix}`;
         }
       }
     });
-  }, [value, prefix, suffix]);
+  }, [value, prefix, suffix, isPercentage]);
 
   return (
     <div ref={statRef} className={`stat-item text-center opacity-0 ${className}`}>
@@ -69,7 +71,7 @@ export default function AnimatedStat({
         ref={numberRef} 
         className="text-5xl md:text-6xl font-bold mb-4 stat-number"
       >
-        {prefix}{value}{suffix}
+        {prefix}{value}{isPercentage ? '%' : suffix}
       </div>
       <div className="text-sm md:text-base font-light text-center">
         {description}

@@ -343,13 +343,13 @@ export default function Page() {
                     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8 stats-grid">
                         <AnimatedStat value={70} description="Millions De Vues Sur Les Réseaux" />
 
-                        <AnimatedStat value={70} description="Clients Satisfaits" />
+                        <AnimatedStat value={150} description="Clients Satisfaits" />
 
-                        <AnimatedStat value={70} description="Projets Réalisés" />
+                        <AnimatedStat value={200} description="Projets Réalisés" />
 
-                        <AnimatedStat value={200} description="Abonnés & communautés" />
+                        <AnimatedStat value={10} description="Abonnés & communautés" isPercentage={true} />
 
-                        <AnimatedStat value={70} description="Célébrités Dans Notre Réseau" />
+                        <AnimatedStat value={50} description="Célébrités Dans Notre Réseau" />
                     </div>
                 </div>
             </section>
