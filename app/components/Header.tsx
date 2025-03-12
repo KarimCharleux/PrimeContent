@@ -53,10 +53,10 @@ export default function Header() {
     };
 
     const navItems = [
-        { name: 'ACCUEIL', href: '/' },
-        { name: 'PORTFOLIO', href: '/portfolio' },
-        { name: 'ÉVÉNEMENTS', href: '/evenements' },
-        { name: 'CONTACT', href: '/contact' }
+        { name: 'Accueil', href: '/' },
+        { name: 'Portfolio', href: '/portfolio' },
+        { name: 'Événements', href: '/evenements' },
+        { name: 'Contact', href: '/contact' }
     ];
 
     return (
@@ -69,8 +69,8 @@ export default function Header() {
             }`}
         >
             <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
-                <Link href="/" className="text-white font-bold text-xl">
-                    PRIMECONTENT
+                <Link href="/" className="font-bold text-xl">
+                    <span className="text-white">Prime</span><span className="text-gray-400">content.</span>
                 </Link>
 
                 {/* Navigation Desktop */}
