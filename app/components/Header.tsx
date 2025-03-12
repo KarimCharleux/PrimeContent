@@ -122,7 +122,7 @@ export default function Header() {
 
             {/* Menu Mobile */}
             <div 
-                className={`fixed inset-0 bg-black bg-opacity-95 z-50 transform transition-transform duration-300 md:hidden ${
+                className={`fixed inset-0 bg-black bg-opacity-95 z-50 transform transition-transform duration-300 h-screen md:hidden ${
                     mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
                 }`}
             >

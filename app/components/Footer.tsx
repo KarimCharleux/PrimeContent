@@ -169,7 +169,9 @@ export default function Footer({ hideCTA = false }: FooterProps) {
       {/* Section Copyright */}
       <div className="copyright-section">
         <div className="copyright-content">
-          <p className="brand-name">Primecontent.</p>
+          <p className="brand-name">
+            <span className="text-white">Prime</span><span className="text-gray-400">content.</span>
+          </p>
           <p className="copyright-text">© 2024 Primecontent. All rights reserved</p>
         </div>
       </div>
