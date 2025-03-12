@@ -58,7 +58,7 @@ export default function EvenementsPage() {
                       />
                     </div>
                     <div className="evenement-overlay">
-                      <h3 className="evenement-title">{evenement.titre}</h3>
+                      <h3 className="text-center text-3xl md:text-4xl font-bold mb-4">{evenement.titre}</h3>
                     </div>
                   </div>
                 </Link>

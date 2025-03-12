@@ -64,7 +64,7 @@ export default function Header() {
             initial="hidden"
             animate={shouldAnimate ? "visible" : "hidden"}
             variants={headerVariants}
-            className={`fixed w-full z-50 transition-all duration-300 ${
+            className={`fixed w-full z-50 transition-all duration-300 top-0 ${
                 isScrolled ? 'bg-black/80 backdrop-blur-md py-4' : 'bg-transparent py-6'
             }`}
         >
