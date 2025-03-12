@@ -15,6 +15,8 @@ import homeBrandsData from './data/homeBrandsData';
 import homeClientsData from './data/homeClientsData';
 import LatestProjects from './components/LatestProjects';
 import latestProjectsData from './data/latestProjectsData';
+import CustomerReviews from './components/CustomerReviews';
+import customerReviewsData from './data/customerReviewsData';
 
 // Importation des styles
 import './styles/gallery.scss';
@@ -408,6 +410,16 @@ export default function Page() {
                     </div>
                     <LatestProjects projects={latestProjectsData} />
                 </div>
+            </section>
+
+            {/* Section CE QUE NOS CLIENTS DISENT DE NOUS */}
+            <section className="py-24 bg-gradient-to-b from-black via-gray-900 to-black reviews-section">
+                <div className="text-center mb-16">
+                    <h2 className="text-3xl md:text-4xl font-bold mb-4 home-section-title">
+                        CE QUE NOS CLIENTS DISENT DE NOUS
+                    </h2>
+                </div>
+                <CustomerReviews reviews={customerReviewsData} autoplaySpeed={13000} />
             </section>
 
             {/* Footer */}
