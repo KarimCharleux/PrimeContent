@@ -41,6 +41,23 @@ section.relative:first-of-type {
   margin-top: -$header-height; // Annule le padding pour la section hero uniquement
 }
 
+.home-section-title {
+  position: relative;
+  display: inline-block;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 3px;
+    background: linear-gradient(90deg, #ffffff, #b9b9b9);
+    border-radius: 5px;
+  }
+}
+
 // Contenu du hero
 .hero-content {
   @include flex-column-center;
@@ -108,23 +125,6 @@ section.relative:first-of-type {
     pointer-events: none;
   }
   
-  .expertise-title {
-    position: relative;
-    display: inline-block;
-    
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 50px;
-      height: 3px;
-      background: linear-gradient(90deg, #1a4b8c, #2c6cb0);
-      border-radius: 3px;
-    }
-  }
-  
   .expertise-grid {
     position: relative;
     z-index: 1;
@@ -166,23 +166,6 @@ section.relative:first-of-type {
   
   &::after {
     bottom: 0;
-  }
-  
-  .trust-title {
-    position: relative;
-    display: inline-block;
-    
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 50px;
-      height: 3px;
-      background: linear-gradient(90deg, #1a4b8c, #2c6cb0);
-      border-radius: 3px;
-    }
   }
   
   // Style pour le carrousel de logos
@@ -317,23 +300,6 @@ section.relative:first-of-type {
     pointer-events: none;
   }
   
-  .stats-title {
-    position: relative;
-    display: inline-block;
-    
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 50px;
-      height: 3px;
-      background: linear-gradient(90deg, #1a4b8c, #2c6cb0);
-      border-radius: 3px;
-    }
-  }
-  
   .stats-grid {
     position: relative;
     z-index: 1;
@@ -379,23 +345,6 @@ section.relative:first-of-type {
       radial-gradient(circle at 35% 75%, rgba(15, 52, 96, 0.05) 0, rgba(15, 52, 96, 0.05) 1px, transparent 1px);
     background-size: 90px 90px, 110px 110px, 95px 95px;
     pointer-events: none;
-  }
-  
-  .portfolio-title {
-    position: relative;
-    display: inline-block;
-    
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 50px;
-      height: 3px;
-      background: linear-gradient(90deg, #1a4b8c, #2c6cb0);
-      border-radius: 3px;
-    }
   }
   
   // Style pour les boutons de filtre

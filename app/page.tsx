@@ -13,6 +13,8 @@ import expertiseData from './data/homeExpertiseData';
 import BrandLogo from './components/BrandLogo';
 import homeBrandsData from './data/homeBrandsData';
 import homeClientsData from './data/homeClientsData';
+import LatestProjects from './components/LatestProjects';
+import latestProjectsData from './data/latestProjectsData';
 
 // Importation des styles
 import './styles/gallery.scss';
@@ -202,7 +204,7 @@ export default function Page() {
             <section className="py-12 md:py-24 bg-gradient-to-b from-black to-gray-900 expertise-section">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="text-center mb-8 md:mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 expertise-title">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 home-section-title">
                             NOS EXPERTISES
                         </h2>
                         <p className="text-gray-400 max-w-2xl mx-auto text-sm md:text-base">
@@ -238,7 +240,7 @@ export default function Page() {
             <section className="py-24 bg-gradient-to-b from-gray-900 to-black trust-section">
                 <div className="mx-auto px-7">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 trust-title">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 home-section-title">
                             ILS NOUS ONT FAIT CONFIANCE
                         </h2>
                     </div>
@@ -333,23 +335,44 @@ export default function Page() {
 
             {/* Section PRIMECONTENT EN CHIFFRES */}
             <section className="py-24 bg-black stats-section">
-                <div className="max-w-7xl mx-auto px-4">
+                <div className="mx-auto px-4">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 stats-title">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 home-section-title">
                             NOS CHIFFRES
                         </h2>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8 stats-grid">
-                        <AnimatedStat value={70} description="Millions De Vues Sur Les Réseaux" />
+                    <div className="flex flex-row flex-wrap justify-center gap-8 stats-grid">
+                        <AnimatedStat 
+                            value={70} 
+                            description="Millions De Vues Sur Les Réseaux" 
+                            delay={0}
+                        />
 
-                        <AnimatedStat value={150} description="Clients Satisfaits" />
+                        <AnimatedStat 
+                            value={150} 
+                            description="Clients Satisfaits" 
+                            delay={0.2}
+                        />
 
-                        <AnimatedStat value={200} description="Projets Réalisés" />
+                        <AnimatedStat 
+                            value={200} 
+                            description="Projets Réalisés" 
+                            delay={0.4}
+                        />
 
-                        <AnimatedStat value={10} description="Abonnés & communautés" isPercentage={true} />
+                        <AnimatedStat 
+                            value={10} 
+                            description="Abonnés & communautés" 
+                            isPercentage={true} 
+                            delay={0.6}
+                        />
 
-                        <AnimatedStat value={50} description="Célébrités Dans Notre Réseau" />
+                        <AnimatedStat 
+                            value={50} 
+                            description="Célébrités Dans Notre Réseau" 
+                            delay={0.8}
+                        />
                     </div>
                 </div>
             </section>
@@ -358,13 +381,26 @@ export default function Page() {
             <section className="py-24 bg-gradient-to-b from-black via-gray-900 to-black portfolio-section">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 portfolio-title">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 home-section-title">
                             NOS RÉALISATIONS
                         </h2>
                     </div>
                     <PortfolioSection projects={homePortfolioProjects} showFilter={true} />
                 </div>
             </section>
+
+            {/* Section NOS DERNIÈRES RÉALISATIONS */}
+            <section className="py-24 bg-black latest-projects-section">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 home-section-title">
+                            NOS DERNIÈRES RÉALISATIONS
+                        </h2>
+                    </div>
+                    <LatestProjects projects={latestProjectsData} />
+                </div>
+            </section>
+
             {/* Footer */}
             <Footer />
         </div>
