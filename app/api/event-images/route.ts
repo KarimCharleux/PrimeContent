@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Chemin vers le dossier des images de l'événement
-    const eventDir = path.join(process.cwd(), 'public', eventFolder);
+    const eventDir = path.join(process.cwd(), 'public', 'events', eventFolder);
     
     // Vérifier si le dossier existe
     if (!fs.existsSync(eventDir)) {

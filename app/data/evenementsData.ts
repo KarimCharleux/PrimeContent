@@ -25,20 +25,46 @@ const evenementsData: Evenement[] = [
 // Fonction pour récupérer les images d'un événement via l'API
 export const getImagesForEvent = async (dossierImages: string): Promise<string[]> => {
   try {
-    // Appel à notre API pour récupérer les images
-    const response = await fetch(`/api/event-images?folder=${dossierImages}`);
+    // Extraire le dernier segment du chemin pour l'API
+    const folderSegment = dossierImages.split('/').pop() || dossierImages;
+    console.log('Requesting images for folder:', folderSegment);
+    
+    // Appel à notre API pour récupérer les images avec le paramètre dans le chemin
+    const encodedFolder = encodeURIComponent(folderSegment);
+    const response = await fetch(`/api/event-images/${encodedFolder}`);
     
     if (!response.ok) {
-      console.error('Erreur lors de la récupération des images:', await response.text());
-      return [];
+      const errorText = await response.text();
+      console.error('Erreur lors de la récupération des images:', errorText);
+      return getFallbackImages();
     }
     
     const data = await response.json();
+    console.log('Images récupérées:', data.count);
     return data.images;
   } catch (error) {
     console.error('Erreur lors de la récupération des images:', error);
-    return [];
+    return getFallbackImages();
   }
 };
+
+// Images de secours en cas d'erreur
+function getFallbackImages(): string[] {
+  console.log('Utilisation des images de secours');
+  return [
+    '/images/portfolio/9a3506ee4d1e113be30139812503ba81.jpg',
+    '/images/portfolio/PATRICK MOURATOGLOU - AMBIANCE - 2 - © bastian huber.jpg',
+    '/images/portfolio/96d697f275c1e8452a5d386629888723_avatar.jpg',
+    '/images/portfolio/-25.jpg',
+    '/images/portfolio/GRAND PRIX MONACO (8).jpg',
+    '/images/portfolio/9a3506ee4d1e113be30139812503ba81.jpg',
+    '/images/portfolio/PATRICK MOURATOGLOU - AMBIANCE - 2 - © bastian huber.jpg',
+    '/images/portfolio/96d697f275c1e8452a5d386629888723_avatar.jpg',
+    '/images/portfolio/-25.jpg',
+    '/images/portfolio/GRAND PRIX MONACO (8).jpg',
+    '/images/portfolio/9a3506ee4d1e113be30139812503ba81.jpg',
+    '/images/portfolio/PATRICK MOURATOGLOU - AMBIANCE - 2 - © bastian huber.jpg'
+  ];
+}
 
 export default evenementsData; 
