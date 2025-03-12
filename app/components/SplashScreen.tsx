@@ -23,11 +23,9 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
     const updateZoomPosition = () => {
       const width = window.innerWidth;
       if (width <= 480) { // Mobile
-        setZoomPosition({ x: -600, scale: 80 });
-      } else if (width <= 768) { // Tablet
-        setZoomPosition({ x: -650, scale: 90 });
-      } else if (width <= 1024) { // Small laptop
-        setZoomPosition({ x: -1200, scale: 100 });
+        setZoomPosition({ x: -1900, scale: 110 });
+      } else if (width <= 550) { // Tablet
+        setZoomPosition({ x: -2400, scale: 110 });
       } else { // Desktop
         setZoomPosition({ x: -2690, scale: 110 });
       }
