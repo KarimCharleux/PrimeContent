@@ -126,9 +126,9 @@ export default function ClientProfile({
       
       {/* Texte avec styles renforcés */}
       <div className="client-text absolute bottom-0 left-0 w-full p-6 transition-transform duration-200 ease-out text-center z-10">
-        <h3 className="text-2xl font-bold !text-white mb-1" style={{ color: 'white' }}>{name}</h3>
+        <h3 className="text-2xl font-bold !text-white mb-1 max-md:text-lg" style={{ color: 'white' }}>{name}</h3>
         {domain && (
-          <p className="text-sm !text-white font-light opacity-90" style={{ color: 'white' }}>{domain}</p>
+          <p className="text-sm !text-white font-light opacity-90 max-md:hidden" style={{ color: 'white' }}>{domain}</p>
         )}
       </div>
     </div>

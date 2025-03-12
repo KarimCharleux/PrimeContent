@@ -5,15 +5,14 @@ import Image from 'next/image';
 interface BrandLogoProps {
   readonly name: string;
   readonly imageSrc?: string;
-  readonly className?: string;
 }
 
-export default function BrandLogo({ name, imageSrc, className = '' }: BrandLogoProps) {
+export default function BrandLogo({ name, imageSrc }: BrandLogoProps) {
   const [imageError, setImageError] = useState(false);
   
   return (
-    <div className={`brand-logo-container ${className}`}>
-      <div className="p-4 rounded-lg w-full h-32 flex items-center justify-center relative overflow-hidden group transition-all duration-300 border border-white/10 hover:border-white/30">
+    <div className="brand-logo-container w-full h-full">
+      <div className="p-4 rounded-lg w-full h-full w-full flex items-center justify-center relative overflow-hidden group transition-all duration-300 border border-white/10 hover:border-white/30">
         {imageSrc && !imageError ? (
           <div className="relative w-fit h-fit transition-all duration-300 group-hover:scale-105">
             <Image

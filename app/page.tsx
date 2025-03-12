@@ -262,16 +262,16 @@ export default function Page() {
                         </div>
 
                         {/* Marques en haut - visible uniquement sur mobile */}
-                        <div className="grid grid-cols-3 gap-4 mb-8 2xl:hidden">
-                            {homeBrandsData.slice(0, 6).map((brand) => (
-                                <div key={brand.name} className="aspect-square">
+                        <div className="flex flex-wrap justify-center gap-4 mb-8 2xl:hidden">
+                            {homeBrandsData.slice(0, 5).map((brand) => (
+                                <div key={brand.name} className="aspect-square w-1/5 max-md:w-1/4 max-sm:w-2/5">
                                     <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
                                 </div>
                             ))}
                         </div>
 
-                        {/* Profils des clients au centre */}
-                        <div className="flex flex-col items-center w-full 2xl:max-w-4xl">
+                        {/* Profils des clients au centre sur desktop */}
+                        <div className="hidden 2xl:flex flex-col items-center w-full 2xl:max-w-4xl">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 w-full mb-4 md:mb-6">
                                 {homeClientsData.slice(0, 4).map((client, index) => (
                                     <div
@@ -307,6 +307,15 @@ export default function Page() {
                                 ))}
                             </div>
                         </div>
+                
+                        {/* Profils des clients au centre sur mobile */}
+                        <div className="flex flex-wrap justify-center gap-4 mb-8 2xl:hidden">
+                            {homeClientsData.map((client, index) => (
+                                <div key={`${client.name}-${index}`} className="h-[150px] md:h-[250px]">
+                                    <ClientProfile name={client.name} domain={client.domain} imageSrc={client.imageSrc} imageBackground={client.imageBackground} className="h-full" />
+                                </div>
+                            ))}
+                        </div>
 
                         {/* Marques à droite - visible uniquement sur desktop */}
                         <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
@@ -318,9 +327,9 @@ export default function Page() {
                         </div>
 
                         {/* Marques en bas - visible uniquement sur mobile */}
-                        <div className="grid grid-cols-3 gap-4 mt-8 2xl:hidden">
-                            {homeBrandsData.slice(6).map((brand) => (
-                                <div key={brand.name} className="aspect-square">
+                        <div className="flex flex-wrap justify-center gap-4 mt-8 2xl:hidden">
+                            {homeBrandsData.slice(5).map((brand) => (
+                                <div key={brand.name} className="aspect-square w-1/5 max-md:w-1/4 max-sm:w-2/5">
                                     <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
                                 </div>
                             ))}
