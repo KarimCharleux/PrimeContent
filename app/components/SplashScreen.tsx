@@ -22,7 +22,9 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
   useEffect(() => {
     const updateZoomPosition = () => {
       const width = window.innerWidth;
-      if (width <= 480) { // Mobile
+      if(width <= 400) {
+        setZoomPosition({ x: -1750, scale: 110 });
+      } else if (width <= 480) { // Mobile
         setZoomPosition({ x: -1900, scale: 110 });
       } else if (width <= 550) { // Tablet
         setZoomPosition({ x: -2400, scale: 110 });
