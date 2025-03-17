@@ -46,6 +46,8 @@ export default function Page() {
             if (splashScreenComplete === 'true') {
                 setShouldStartAnimations(true);
                 localStorage.removeItem('splashScreenComplete');
+                // Réinitialiser la position de défilement à 0
+                window.scrollTo(0, 0);
             }
         };
 

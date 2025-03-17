@@ -9,7 +9,7 @@ export default function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
     const shouldAnimate = useAnimationControl();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+    
     // Empêcher le défilement du body lorsque le menu mobile est ouvert
     useEffect(() => {
         if (mobileMenuOpen) {
@@ -45,9 +45,8 @@ export default function Header() {
             y: 0,
             opacity: 1,
             transition: {
-                duration: 0.6,
+                duration: 0.2,
                 ease: "easeOut",
-                delay: 0.2
             }
         }
     };
