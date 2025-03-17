@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import evenementsData, { Evenement } from '../../data/evenementsData';
-import ClientEventPage from './ClientEventPage';
+import EventPage from './EventPage';
 
 // Importation des styles
 import '../../styles/evenements/evenements.scss';
@@ -55,7 +55,7 @@ export default function EvenementDetailPage({ params }: Props) {
           </div>
         </div>
       }>
-        <ClientEventPage evenement={evenement} />
+        <EventPage evenement={evenement} />
       </Suspense>
       <Footer hideCTA={true} />
     </main>
