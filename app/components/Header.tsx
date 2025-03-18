@@ -52,11 +52,20 @@ export default function Header() {
     };
 
     const navItems = [
-        { name: 'Accueil', href: '/' },
-        { name: 'Portfolio', href: '/portfolio' },
+        { name: 'Photos', href: '/photos' },
+        { name: 'Vidéos', href: '/videos' },
         { name: 'Événements', href: '/evenements' },
+        { name: 'Mariages', href: '/mariages' },
         { name: 'Contact', href: '/contact' }
     ];
+
+    // Items supplémentaires pour mobile uniquement
+    const mobileOnlyItems = [
+        { name: 'Accueil', href: '/' }
+    ];
+
+    // Tous les items pour l'affichage mobile
+    const allMobileItems = [...mobileOnlyItems, ...navItems];
 
     return (
         <motion.header
@@ -150,7 +159,7 @@ export default function Header() {
 
                     {/* Liens du menu mobile */}
                     <nav className="flex flex-col items-center justify-center h-full">
-                        {navItems.map((item, index) => (
+                        {allMobileItems.map((item, index) => (
                             <motion.div
                                 key={item.name}
                                 initial={{ opacity: 0, x: -20 }}

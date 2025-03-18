@@ -262,7 +262,7 @@ export default function CustomerReviews({
         {duplicatedReviews.map((review, index) => (
           <div 
             key={`${review.id}-${index}`}
-            className="review-item flex-shrink-0 w-80"
+            className="review-item flex-shrink-0 w-96"
           >
             <div className="bg-gray-900/50 backdrop-blur-sm p-6 rounded-xl shadow-lg h-full">
               <div className="flex flex-col h-full">

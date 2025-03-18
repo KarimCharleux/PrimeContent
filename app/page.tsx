@@ -206,7 +206,7 @@ export default function Page() {
 
             {/* Section Expertises */}
             <section className="py-12 md:py-24 bg-gradient-to-b from-black to-gray-900 expertise-section">
-                <div className="max-w-7xl mx-auto px-4">
+                <div className="mx-auto px-4">
                     <div className="text-center mb-8 md:mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 home-section-title">
                             NOS EXPERTISES
@@ -219,20 +219,20 @@ export default function Page() {
 
                     <div
                         ref={servicesRef}
-                        className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 expertise-grid"
+                        className="flex flex-wrap justify-center gap-3 md:gap-4 lg:gap-5"
                     >
                         {expertiseData.map((expertise, index) => (
                             <div 
                                 key={expertise.title}
                                 ref={(el) => addServiceRef(el, index)} 
-                                className="opacity-0 aspect-square md:aspect-auto"
+                                className="opacity-0 w-[30%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[250px]"
                             >
                                 <ExpertiseCard
                                     title={expertise.title}
                                     description={expertise.description}
                                     backgroundImage={expertise.backgroundImage}
                                     icon={expertise.icon}
-                                    className="expertise-card h-full"
+                                    className="expertise-card"
                                 />
                             </div>
                         ))}
@@ -268,7 +268,7 @@ export default function Page() {
                         {/* Marques en haut - visible uniquement sur mobile */}
                         <div className="flex flex-wrap justify-center gap-4 mb-8 2xl:hidden">
                             {homeBrandsData.slice(0, 5).map((brand) => (
-                                <div key={brand.name} className="aspect-square w-1/5 max-md:w-1/4 max-sm:w-2/5">
+                                <div key={brand.name} className="aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4">
                                     <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
                                 </div>
                             ))}
@@ -333,7 +333,7 @@ export default function Page() {
                         {/* Marques en bas - visible uniquement sur mobile */}
                         <div className="flex flex-wrap justify-center gap-4 mt-8 2xl:hidden">
                             {homeBrandsData.slice(5).map((brand) => (
-                                <div key={brand.name} className="aspect-square w-1/5 max-md:w-1/4 max-sm:w-2/5">
+                                <div key={brand.name} className="aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4">
                                     <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
                                 </div>
                             ))}

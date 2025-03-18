@@ -5,6 +5,7 @@ interface ExpertiseData {
   description: string;
   backgroundImage: string;
   icon: ReactNode;
+  href: string;
 }
 
 const expertiseData: ExpertiseData[] = [
@@ -12,6 +13,7 @@ const expertiseData: ExpertiseData[] = [
     title: "Production Vidéo",
     description: "Captez l'attention avec des vidéos percutantes qui racontent votre histoire.",
     backgroundImage: "/images/expertises/video-bg.jpg",
+    href: "/production-video",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -33,6 +35,7 @@ const expertiseData: ExpertiseData[] = [
     title: "Photographie",
     description: "Sublimez votre image avec des photos qui captent l'essence de votre marque.",
     backgroundImage: "/images/expertises/photo-bg.jpg",
+    href: "/photographie",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -51,9 +54,10 @@ const expertiseData: ExpertiseData[] = [
     ),
   },
   {
-    title: "Stratégie Digitale",
-    description: "Gestion de vos réseaux sociaux avec une stratégie cohérente de branding.",
+    title: "Réseaux Sociaux",
+    description: "Gestion complète et stratégique de votre présence sur les réseaux sociaux.",
     backgroundImage: "/images/expertises/social-bg.jpg",
+    href: "/reseaux-sociaux",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -72,9 +76,32 @@ const expertiseData: ExpertiseData[] = [
     ),
   },
   {
+    title: "Branding",
+    description: "Création d'une identité visuelle cohérente qui reflète les valeurs de votre marque.",
+    backgroundImage: "/images/expertises/branding-bg.jpg",
+    href: "/branding",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5 md:h-7 md:w-7"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="black"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+        />
+      </svg>
+    ),
+  },
+  {
     title: "Création Web",
     description: "Démarquez-vous avec des interfaces web et mobile innovantes.",
     backgroundImage: "/images/expertises/web-bg.jpg",
+    href: "/creation-web",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
