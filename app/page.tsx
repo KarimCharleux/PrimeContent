@@ -208,7 +208,7 @@ export default function Page() {
             <section className="py-12 md:py-24 bg-gradient-to-b from-black to-gray-900 expertise-section">
                 <div className="mx-auto px-4">
                     <div className="text-center mb-8 md:mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 home-section-title">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
                             NOS EXPERTISES
                         </h2>
                         <p className="text-gray-400 max-w-2xl mx-auto text-sm md:text-base">
@@ -244,7 +244,7 @@ export default function Page() {
             <section className="py-24 bg-gradient-to-b from-gray-900 to-black trust-section">
                 <div className="mx-auto px-7">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 home-section-title">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
                             ILS NOUS ONT FAIT CONFIANCE
                         </h2>
                     </div>
@@ -350,7 +350,7 @@ export default function Page() {
             <section className="py-24 bg-black stats-section">
                 <div className="mx-auto px-4">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 home-section-title">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
                             NOS CHIFFRES
                         </h2>
                     </div>
@@ -394,7 +394,7 @@ export default function Page() {
             <section className="py-24 bg-gradient-to-b from-black via-gray-900 to-black portfolio-section">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 home-section-title">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
                             NOS RÉALISATIONS
                         </h2>
                     </div>
@@ -406,7 +406,7 @@ export default function Page() {
             <section className="py-24 bg-black latest-projects-section">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 home-section-title">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
                             NOS DERNIÈRES RÉALISATIONS
                         </h2>
                     </div>
@@ -417,7 +417,7 @@ export default function Page() {
             {/* Section CE QUE NOS CLIENTS DISENT DE NOUS */}
             <section className="py-24 bg-gradient-to-b from-black via-gray-900 to-black reviews-section">
                 <div className="text-center mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-4 home-section-title">
+                    <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
                         CE QUE NOS CLIENTS DISENT DE NOUS
                     </h2>
                 </div>
