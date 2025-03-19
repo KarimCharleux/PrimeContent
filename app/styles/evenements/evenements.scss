@@ -39,6 +39,31 @@
   }
 }
 
+.evenement-page-title {
+  font-size: 2rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 60px;
+  letter-spacing: 2px;
+  position: relative;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8), 0 4px 20px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  
+  a {
+    font-size: 2.3rem;
+    color: rgb(195, 195, 195);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  &.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 // Grille d'événements
 .evenements-grid {
   display: grid;
@@ -370,28 +395,6 @@
   margin-bottom: 20px;
 }
 
-.event-breadcrumb {
-  display: flex;
-  align-items: center;
-  font-size: 14px;
-  margin-bottom: 10px;
-  
-  a {
-    color: #fff;
-    text-decoration: none;
-    transition: color 0.2s;
-    
-    &:hover {
-      color: #ccc;
-    }
-  }
-  
-  .separator {
-    margin: 0 10px;
-    color: rgba(255, 255, 255, 0.5);
-  }
-}
-
 .event-title {
   font-size: 24px;
   font-weight: 600;
@@ -456,6 +459,7 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 15px;
   margin-bottom: 40px;
+  min-height: calc(100vh - 200px);
   
   @media (max-width: 992px) {
     grid-template-columns: repeat(2, 1fr);
@@ -474,7 +478,7 @@
   cursor: pointer;
   
   &:hover .photo-overlay {
-    opacity: 1;
+    opacity: 0.4;
   }
   
   &.selected {

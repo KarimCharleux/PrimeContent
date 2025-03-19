@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import gsap from '../lib/gsap-config';
+import { motion } from 'framer-motion';
 
 interface Review {
   id: string;
@@ -242,6 +243,28 @@ export default function CustomerReviews({
   // Dupliquer les avis pour créer un effet de défilement infini
   const duplicatedReviews = [...reviews, ...reviews];
 
+  // Générer un gradient légèrement différent basé sur l'ID de l'avis
+  const generateGradient = (id: string) => {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    // Variations subtiles de bleus
+    const hue1 = 210 + (hash % 20); // Base bleue
+    const sat1 = 70 + (hash % 20);
+    const light1 = 15 + (hash % 10);
+    
+    const hue2 = 220 + (hash % 30); // Bleu-indigo
+    const sat2 = 80 + (hash % 10);
+    const light2 = 10 + (hash % 8);
+    
+    return {
+      normal: `linear-gradient(135deg, hsla(${hue1}, ${sat1}%, ${light1}%, 0.7), hsla(${hue2}, ${sat2}%, ${light2}%, 0.9))`,
+      hover: `linear-gradient(135deg, hsla(${hue1}, ${sat1+10}%, ${light1+5}%, 0.8), hsla(${hue2}, ${sat2+5}%, ${light2+3}%, 0.95))`
+    };
+  };
+
   return (
     <div 
       ref={sliderRef} 
@@ -259,48 +282,69 @@ export default function CustomerReviews({
         className="flex gap-6 py-4"
         style={{ touchAction: 'pan-y' }}
       >
-        {duplicatedReviews.map((review, index) => (
-          <div 
-            key={`${review.id}-${index}`}
-            className="review-item flex-shrink-0 w-96"
-          >
-            <div className="bg-gray-900/50 backdrop-blur-sm p-6 rounded-xl shadow-lg h-full">
-              <div className="flex flex-col h-full">
-                <div className="mb-4">
-                  <svg className="w-8 h-8 text-gray-400 mb-2" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                  </svg>
-                  <p className="text-gray-200 text-base md:text-lg leading-relaxed select-none">
-                    {review.text}
-                  </p>
-                </div>
+        {duplicatedReviews.map((review, index) => {
+          const gradient = generateGradient(review.id);
+          return (
+            <motion.div 
+              key={`${review.id}-${index}`}
+              className="review-item flex-shrink-0 w-96"
+              whileHover={{ y: -5 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div 
+                className="group relative p-6 rounded-xl h-full overflow-hidden"
+                style={{ 
+                  background: gradient.normal
+                }}
+              >
+                {/* Effet de brillance */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-blue-300/0 to-white/0 group-hover:via-blue-300/10 transition-all duration-700 opacity-0 group-hover:opacity-100"></div>
                 
-                <div className="mt-auto flex items-center gap-4">
-                  {review.imageSrc && (
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full overflow-hidden relative">
-                        <Image 
-                          src={review.imageSrc} 
-                          alt={review.name}
-                          fill
-                          sizes="48px"
-                          className="object-cover select-none"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <p className="font-bold text-white select-none">{review.name}</p>
-                    <p className="text-gray-400 text-sm select-none">
-                      {review.role}, {review.company}
+                {/* Bordure brillante */}
+                <div className="absolute inset-0 rounded-xl border border-white/10 group-hover:border-white/20 transition-all duration-500"></div>
+                
+                {/* Effet de halo */}
+                <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-400/0 group-hover:bg-blue-400/10 rounded-full blur-xl transition-all duration-700 transform group-hover:scale-150"></div>
+                
+                {/* Background overlay with a glass effect */}
+                <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-black/30 backdrop-blur-[2px] opacity-70 group-hover:opacity-40 transition-all duration-500"></div>
+                
+                {/* Content */}
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className="mb-4">
+                    <div className="text-white text-lg md:text-xl font-light italic mb-4">❝</div>
+                    <p className="text-white/90 group-hover:text-white text-base md:text-lg leading-relaxed select-none transition-colors duration-300">
+                      {review.text}
                     </p>
+                  </div>
+                  
+                  <div className="mt-auto flex items-center gap-4">
+                    {review.imageSrc && (
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 rounded-full overflow-hidden relative border-2 border-white/20 group-hover:border-white/40 transition-all duration-300 shadow-lg">
+                          <Image 
+                            src={review.imageSrc} 
+                            alt={review.name}
+                            fill
+                            sizes="48px"
+                            className="object-cover select-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <p className="font-bold text-white select-none">{review.name}</p>
+                      <p className="text-blue-100/70 group-hover:text-blue-100 text-sm select-none transition-colors duration-300">
+                        {review.role}, {review.company}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        ))}
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );

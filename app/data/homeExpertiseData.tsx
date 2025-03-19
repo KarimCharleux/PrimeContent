@@ -55,7 +55,7 @@ const expertiseData: ExpertiseData[] = [
   },
   {
     title: "Réseaux Sociaux",
-    description: "Gestion complète et stratégique de votre présence sur les réseaux sociaux.",
+    description: "Gestion complète et stratégique de votre présence sur les réseaux.",
     backgroundImage: "/images/expertises/social-bg.jpg",
     href: "/reseaux-sociaux",
     icon: (

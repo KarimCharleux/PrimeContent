@@ -225,7 +225,7 @@ export default function Page() {
                             <div 
                                 key={expertise.title}
                                 ref={(el) => addServiceRef(el, index)} 
-                                className="opacity-0 w-[30%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[250px]"
+                                className="opacity-0 w-[47%] sm:w-[22%] md:w-[22%] lg:w-[18%] min-w-[150px]"
                             >
                                 <ExpertiseCard
                                     title={expertise.title}

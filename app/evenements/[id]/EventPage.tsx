@@ -73,6 +73,13 @@ export default function EventPage({ evenement }: EventPageProps) {
     };
 
     preloadAllImages();
+    // Animation du titre
+    const titleElement = document.querySelector('.evenement-page-title');
+    if (titleElement) {
+      setTimeout(() => {
+        titleElement.classList.add('visible');
+      }, 300);
+    }
   }, [evenement]);
 
   const toggleImageSelection = (imageSrc: string) => {
@@ -88,12 +95,9 @@ export default function EventPage({ evenement }: EventPageProps) {
   return (
     <div className="container">
       <div className="event-header">
-        <div className="event-breadcrumb">
-          <Link href="/evenements">Événements</Link>
-          <span className="separator">/</span>
-          <span>{evenement.titre}</span>
-        </div>
-        <h1 className="event-title">{evenement.titre}</h1>
+        <h2 className="evenement-page-title underline-title">
+          <Link href="/evenements">Événements</Link> / {evenement.titre}
+        </h2>
       </div>
 
       {evenement.type === 'selection' && (
