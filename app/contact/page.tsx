@@ -1,8 +1,34 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import '../styles/contact/contact.scss';
+
+// Variants pour les animations
+const fadeInUp = {
+    hidden: { opacity: 0, y: 30 },
+    visible: (custom: number) => ({
+        opacity: 1,
+        y: 0,
+        transition: { 
+            duration: 0.6, 
+            delay: custom * 0.1,
+            ease: [0.25, 0.1, 0.25, 1]
+        }
+    })
+};
+
+const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.12,
+            delayChildren: 0.3
+        }
+    }
+};
 
 export default function ContactPage() {
     const [formData, setFormData] = useState({
@@ -12,7 +38,7 @@ export default function ContactPage() {
         telephone: '',
         message: '',
     });
-
+    
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({
@@ -35,45 +61,60 @@ export default function ContactPage() {
         });
     };
 
-    // Animation au chargement de la page
-    useEffect(() => {
-        // Simuler un chargement progressif des éléments
-        const timer1 = setTimeout(() => {
-            const title = document.querySelector('.contact-title');
-            if (title) title.classList.add('fade-in');
-        }, 300);
-
-        const timer2 = setTimeout(() => {
-            const columns = document.querySelectorAll('.contact-info-column, .contact-form-column');
-            columns.forEach((col, index) => {
-                setTimeout(() => {
-                    col.classList.add('fade-in');
-                }, index * 200);
-            });
-        }, 500);
-
-        return () => {
-            clearTimeout(timer1);
-            clearTimeout(timer2);
-        };
-    }, []);
-
     return (
         <main className="contact-page">
             <Header />
 
             <section className="contact-hero">
                 <div className="container">
-                    <h1 className="contact-title">CONTACT</h1>
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+                        className="title-container relative overflow-hidden"
+                    >
+                        <motion.h1 
+                            className="contact-title"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.8, delay: 0.2 }}
+                        >
+                            CONTACT
+                        </motion.h1>
+                    </motion.div>
 
                     <div className="contact-content">
                         {/* Colonne gauche - Informations de contact */}
-                        <div className="contact-info-column">
-                            <h2 className="info-title">Contact Information</h2>
-                            <p className="info-subtitle">Un événement en tête? Contactez-nous!</p>
+                        <motion.div 
+                            className="contact-info-column"
+                            initial="hidden"
+                            animate="visible"
+                            variants={staggerContainer}
+                        >
+                            <motion.h2 
+                                className="info-title"
+                                variants={fadeInUp}
+                                custom={0}
+                            >
+                                Contact Information
+                            </motion.h2>
+                            
+                            <motion.p 
+                                className="info-subtitle"
+                                variants={fadeInUp} 
+                                custom={1}
+                            >
+                                Un événement en tête? Contactez-nous!
+                            </motion.p>
 
-                            <div className="contact-details">
-                                <div className="contact-item">
+                            <motion.div className="contact-details" variants={staggerContainer}>
+                                <motion.div 
+                                    className="contact-item"
+                                    variants={fadeInUp}
+                                    custom={2}
+                                    whileHover={{ scale: 1.05, x: 5 }}
+                                    transition={{ duration: 0.3 }}
+                                >
                                     <div className="icon-container">
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
@@ -91,9 +132,15 @@ export default function ContactPage() {
                                     <a href="tel:+9779876543210" className="contact-link">
                                         +977-9876543210
                                     </a>
-                                </div>
+                                </motion.div>
 
-                                <div className="contact-item">
+                                <motion.div 
+                                    className="contact-item"
+                                    variants={fadeInUp}
+                                    custom={3}
+                                    whileHover={{ scale: 1.05, x: 5 }}
+                                    transition={{ duration: 0.3 }}
+                                >
                                     <div className="icon-container">
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
@@ -108,9 +155,15 @@ export default function ContactPage() {
                                     <a href="mailto:contact@mk.com" className="contact-link">
                                         contact@mk.com
                                     </a>
-                                </div>
+                                </motion.div>
 
-                                <div className="contact-item">
+                                <motion.div 
+                                    className="contact-item"
+                                    variants={fadeInUp}
+                                    custom={4}
+                                    whileHover={{ scale: 1.05, x: 5 }}
+                                    transition={{ duration: 0.3 }}
+                                >
                                     <div className="icon-container">
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
@@ -133,10 +186,18 @@ export default function ContactPage() {
                                     >
                                         Paris, France
                                     </a>
-                                </div>
-                            </div>
+                                </motion.div>
+                            </motion.div>
 
-                            <div className="calendly-section">
+                            <motion.div 
+                                className="calendly-section"
+                                variants={fadeInUp}
+                                custom={6}
+                                initial="hidden"
+                                animate="visible"
+                                whileHover={{ scale: 1.03 }}
+                                transition={{ duration: 0.3 }}
+                            >
                                 <a
                                     href="https://calendly.com"
                                     target="_blank"
@@ -185,21 +246,64 @@ export default function ContactPage() {
                                     </span>
                                     Book a meeting with Calendly
                                 </a>
-                            </div>
-                        </div>
+                            </motion.div>
+                            
+                            {/* Effet de brillance de fond */}
+                            <motion.div 
+                                className="absolute -top-20 -right-20 w-72 h-72 bg-blue-400/5 rounded-full blur-3xl z-0"
+                                animate={{ 
+                                    scale: [1, 1.2, 1],
+                                    opacity: [0.3, 0.6, 0.3]
+                                }}
+                                transition={{ 
+                                    duration: 8, 
+                                    repeat: Infinity,
+                                    repeatType: "reverse"
+                                }}
+                            />
+                        </motion.div>
 
                         {/* Colonne droite - Formulaire de contact */}
-                        <div className="contact-form-column">
-                            <h2 className="form-title">Boostez Votre Présence Aujourd&apos;hui !</h2>
-                            <p className="form-subtitle">
+                        <motion.div 
+                            className="contact-form-column"
+                            initial="hidden"
+                            animate="visible"
+                            variants={staggerContainer}
+                        >
+                            <motion.h2 
+                                className="form-title"
+                                variants={fadeInUp}
+                                custom={0}
+                            >
+                                Boostez Votre Présence Aujourd&apos;hui !
+                            </motion.h2>
+                            
+                            <motion.p 
+                                className="form-subtitle"
+                                variants={fadeInUp}
+                                custom={1}
+                            >
                                 Votre image mérite d&apos;être vue, entendue, ressentie. Rejoignez
                                 PrimeContent pour propulser votre présence visuelle et numérique au
                                 niveau supérieur.
-                            </p>
+                            </motion.p>
 
-                            <form onSubmit={handleSubmit} className="contact-form">
-                                <div className="form-row">
-                                    <div className="form-group">
+                            <motion.form 
+                                onSubmit={handleSubmit} 
+                                className="contact-form relative"
+                                variants={staggerContainer}
+                                initial="hidden"
+                                animate="visible"
+                            >
+                                <motion.div 
+                                    className="form-row"
+                                    variants={staggerContainer}
+                                >
+                                    <motion.div 
+                                        className="form-group relative"
+                                        variants={fadeInUp}
+                                        custom={2}
+                                    >
                                         <input
                                             type="text"
                                             id="nom"
@@ -210,8 +314,13 @@ export default function ContactPage() {
                                             required
                                             className="form-input"
                                         />
-                                    </div>
-                                    <div className="form-group">
+                                    </motion.div>
+                                    
+                                    <motion.div 
+                                        className="form-group relative"
+                                        variants={fadeInUp}
+                                        custom={3}
+                                    >
                                         <input
                                             type="text"
                                             id="prenom"
@@ -222,10 +331,14 @@ export default function ContactPage() {
                                             required
                                             className="form-input"
                                         />
-                                    </div>
-                                </div>
+                                    </motion.div>
+                                </motion.div>
 
-                                <div className="form-group">
+                                <motion.div 
+                                    className="form-group relative"
+                                    variants={fadeInUp}
+                                    custom={4}
+                                >
                                     <input
                                         type="email"
                                         id="email"
@@ -236,9 +349,13 @@ export default function ContactPage() {
                                         required
                                         className="form-input"
                                     />
-                                </div>
+                                </motion.div>
 
-                                <div className="form-group">
+                                <motion.div 
+                                    className="form-group relative"
+                                    variants={fadeInUp}
+                                    custom={5}
+                                >
                                     <input
                                         type="tel"
                                         id="telephone"
@@ -248,9 +365,13 @@ export default function ContactPage() {
                                         placeholder="Téléphone"
                                         className="form-input"
                                     />
-                                </div>
+                                </motion.div>
 
-                                <div className="form-group">
+                                <motion.div 
+                                    className="form-group relative"
+                                    variants={fadeInUp}
+                                    custom={6}
+                                >
                                     <textarea
                                         id="message"
                                         name="message"
@@ -261,14 +382,42 @@ export default function ContactPage() {
                                         className="form-textarea"
                                         rows={5}
                                     ></textarea>
-                                </div>
-                                <span className="font-light text-sm text-gray-500">* Champs obligatoires</span>
+                                </motion.div>
+                                <motion.span 
+                                    className="font-light text-sm text-gray-500"
+                                    variants={fadeInUp}
+                                    custom={7}
+                                >
+                                    * Champs obligatoires
+                                </motion.span>
 
-                                <button type="submit" className="submit-button">
+                                <motion.button 
+                                    type="submit" 
+                                    className="submit-button"
+                                    variants={fadeInUp}
+                                    custom={8}
+                                    whileHover={{ scale: 1.03, x: 5 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    transition={{ duration: 0.2 }}
+                                >
                                     Contactez-nous <span className="arrow-icon">→</span>
-                                </button>
-                            </form>
-                        </div>
+                                </motion.button>
+                            </motion.form>
+                            
+                            {/* Effet de brillance de fond */}
+                            <motion.div 
+                                className="absolute -bottom-20 -right-20 w-80 h-80 bg-blue-400/5 rounded-full blur-3xl z-0"
+                                animate={{ 
+                                    scale: [1, 1.3, 1],
+                                    opacity: [0.2, 0.5, 0.2]
+                                }}
+                                transition={{ 
+                                    duration: 10, 
+                                    repeat: Infinity,
+                                    repeatType: "reverse"
+                                }}
+                            />
+                        </motion.div>
                     </div>
                 </div>
             </section>
