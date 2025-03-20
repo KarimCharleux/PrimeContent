@@ -18,6 +18,12 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
     // Store pour les images préchargées
     const setPreloadedImages = useImageStore((state) => state.setPreloadedImages);
 
+    // Définir l'état d'attente du SplashScreen au démarrage
+    useEffect(() => {
+        // Indiquer que le SplashScreen est en attente
+        localStorage.setItem('splashScreenComplete', 'waiting');
+    }, []);
+
     // Préchargement des images
     useEffect(() => {
         const preloadImages = async () => {
@@ -63,8 +69,9 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                     if (typeof window !== 'undefined') {
                         window.scrollTo(0, 0);
                     }
-                    onLoadingComplete();
+                    // Définir que le SplashScreen est terminé
                     localStorage.setItem('splashScreenComplete', 'true');
+                    onLoadingComplete();
                 }, 600);
             }, 1500);
 

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import Image from 'next/image';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -36,32 +37,31 @@ export default function MariagesPage() {
     // État pour contrôler le démarrage des animations
     const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
     
-    // Référence pour le titre principal
-    const titleRef = useRef<HTMLHeadingElement>(null);
-
-    // Vérifier si le SplashScreen est terminé
+    // Vérifier si le SplashScreen est terminé ou si on vient d'une autre page
     useEffect(() => {
         // Vérifie si le splash screen est terminé via le localStorage
         const checkSplashScreen = () => {
             const splashScreenComplete = localStorage.getItem('splashScreenComplete');
+            
+            // Si on vient du SplashScreen
             if (splashScreenComplete === 'true') {
                 setShouldStartAnimations(true);
                 localStorage.removeItem('splashScreenComplete');
                 // Réinitialiser la position de défilement à 0
                 window.scrollTo(0, 0);
+            } 
+            // Si on vient d'une autre page (pas de SplashScreen)
+            else if (splashScreenComplete !== 'waiting') {
+                // On active les animations après un petit délai pour laisser la page se charger
+                setTimeout(() => {
+                    setShouldStartAnimations(true);
+                }, 100);
             }
         };
 
         // Vérifie immédiatement et toutes les 100ms si le splash screen est terminé
         checkSplashScreen();
         const interval = setInterval(checkSplashScreen, 100);
-
-        // Animation du titre
-        if (titleRef.current) {
-            setTimeout(() => {
-                titleRef.current?.classList.add('visible');
-            }, 300);
-        }
 
         return () => clearInterval(interval);
     }, []);
@@ -71,12 +71,21 @@ export default function MariagesPage() {
             <Header />
 
             <section className="hero-section text-center px-4 py-12">
-                <h1 
-                    ref={titleRef}
-                    className="page-title underline-title"
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
+                    transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+                    className="title-container relative overflow-hidden"
                 >
-                    MARIAGES
-                </h1>
+                    <motion.h1 
+                        className="page-title underline-title"
+                        initial={{ opacity: 0 }}
+                        animate={shouldStartAnimations ? { opacity: 1 } : { opacity: 0 }}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                    >
+                        MARIAGES
+                    </motion.h1>
+                </motion.div>
                 <p className="max-w-3xl mx-auto text-base md:text-lg text-gray-200">
                     Nous vous accompagnons dans votre grand jour pour capturer en photos chaque moment précieux et 
                     créer des souvenirs intemporels ✨

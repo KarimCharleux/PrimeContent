@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '../components/Header';
@@ -13,6 +14,8 @@ import '../styles/evenements/evenements.scss';
 export default function EvenementsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [evenements, setEvenements] = useState<Evenement[]>([]);
+  // État pour contrôler le démarrage des animations
+  const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
 
   useEffect(() => {
     // Simuler un chargement
@@ -21,13 +24,31 @@ export default function EvenementsPage() {
       setIsLoading(false);
     }, 500);
 
-    // Animation du titre
-    const titleElement = document.querySelector('.evenements-title');
-    if (titleElement) {
-      setTimeout(() => {
-        titleElement.classList.add('visible');
-      }, 300);
-    }
+    // Vérifier si le SplashScreen est terminé ou si on vient d'une autre page
+    const checkSplashScreen = () => {
+      const splashScreenComplete = localStorage.getItem('splashScreenComplete');
+      
+      // Si on vient du SplashScreen
+      if (splashScreenComplete === 'true') {
+        setShouldStartAnimations(true);
+        localStorage.removeItem('splashScreenComplete');
+        // Réinitialiser la position de défilement à 0
+        window.scrollTo(0, 0);
+      } 
+      // Si on vient d'une autre page (pas de SplashScreen)
+      else if (splashScreenComplete !== 'waiting') {
+        // On active les animations après un petit délai pour laisser la page se charger
+        setTimeout(() => {
+          setShouldStartAnimations(true);
+        }, 100);
+      }
+    };
+
+    // Vérifie immédiatement et toutes les 100ms si le splash screen est terminé
+    checkSplashScreen();
+    const interval = setInterval(checkSplashScreen, 100);
+
+    return () => clearInterval(interval);
   }, []);
 
   const EventCard = ({ evenement }: { evenement: Evenement }) => {
@@ -124,12 +145,26 @@ export default function EvenementsPage() {
   };
 
   return (
-    <main className="evenements-page">
+    <main className="evenements-page pt-24 min-h-screen bg-black">
       <Header />
 
-      <section className="evenements-hero">
+      <section className="evenements-hero px-4 py-12">
         <div className="container">
-          <h1 className="page-title underline-title">ÉVÉNEMENTS</h1>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
+            transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+            className="title-container relative overflow-hidden"
+          >
+            <motion.h1
+              className="page-title underline-title"
+              initial={{ opacity: 0 }}
+              animate={shouldStartAnimations ? { opacity: 1 } : { opacity: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              ÉVÉNEMENTS
+            </motion.h1>
+          </motion.div>
 
           {isLoading ? (
             <div className="loading-container">

@@ -42,16 +42,25 @@ export default function ContactPage() {
         message: '',
     });
     
-    // Vérifier si le SplashScreen est terminé
+    // Vérifier si le SplashScreen est terminé ou si on vient d'une autre page
     useEffect(() => {
         // Vérifie si le splash screen est terminé via le localStorage
         const checkSplashScreen = () => {
             const splashScreenComplete = localStorage.getItem('splashScreenComplete');
+            
+            // Si on vient du SplashScreen
             if (splashScreenComplete === 'true') {
                 setShouldStartAnimations(true);
                 localStorage.removeItem('splashScreenComplete');
                 // Réinitialiser la position de défilement à 0
                 window.scrollTo(0, 0);
+            } 
+            // Si on vient d'une autre page (pas de SplashScreen)
+            else if (splashScreenComplete !== 'waiting') {
+                // On active les animations après un petit délai pour laisser la page se charger
+                setTimeout(() => {
+                    setShouldStartAnimations(true);
+                }, 100);
             }
         };
 
@@ -85,10 +94,10 @@ export default function ContactPage() {
     };
 
     return (
-        <main className="contact-page">
+        <main className="contact-page pt-24 min-h-screen bg-black">
             <Header />
 
-            <section className="contact-hero">
+            <section className="contact-hero px-4 py-12">
                 <div className="container">
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
