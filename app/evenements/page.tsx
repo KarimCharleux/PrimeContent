@@ -129,7 +129,7 @@ export default function EvenementsPage() {
 
       <section className="evenements-hero">
         <div className="container">
-          <h1 className="evenements-title underline-title">ÉVÉNEMENTS</h1>
+          <h1 className="page-title underline-title">ÉVÉNEMENTS</h1>
 
           {isLoading ? (
             <div className="loading-container">

@@ -22,27 +22,6 @@
   padding: 0 20px;
 }
 
-.contact-title {
-  font-size: 3rem;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 60px;
-  letter-spacing: 2px;
-  position: relative;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8), 0 4px 20px rgba(0, 0, 0, 0.6);
-  
-  &:after {
-    content: '';
-    position: absolute;
-    bottom: -15px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80px;
-    height: 2px;
-    background-color: #fff;
-  }
-}
-
 .contact-content {
   display: flex;
   gap: 40px;

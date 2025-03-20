@@ -31,6 +31,9 @@ const staggerContainer = {
 };
 
 export default function ContactPage() {
+    // État pour contrôler le démarrage des animations
+    const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
+    
     const [formData, setFormData] = useState({
         nom: '',
         prenom: '',
@@ -38,6 +41,26 @@ export default function ContactPage() {
         telephone: '',
         message: '',
     });
+    
+    // Vérifier si le SplashScreen est terminé
+    useEffect(() => {
+        // Vérifie si le splash screen est terminé via le localStorage
+        const checkSplashScreen = () => {
+            const splashScreenComplete = localStorage.getItem('splashScreenComplete');
+            if (splashScreenComplete === 'true') {
+                setShouldStartAnimations(true);
+                localStorage.removeItem('splashScreenComplete');
+                // Réinitialiser la position de défilement à 0
+                window.scrollTo(0, 0);
+            }
+        };
+
+        // Vérifie immédiatement et toutes les 100ms si le splash screen est terminé
+        checkSplashScreen();
+        const interval = setInterval(checkSplashScreen, 100);
+
+        return () => clearInterval(interval);
+    }, []);
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -69,14 +92,14 @@ export default function ContactPage() {
                 <div className="container">
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
                         transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
                         className="title-container relative overflow-hidden"
                     >
                         <motion.h1 
-                            className="contact-title"
+                            className="page-title underline-title"
                             initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
+                            animate={shouldStartAnimations ? { opacity: 1 } : { opacity: 0 }}
                             transition={{ duration: 0.8, delay: 0.2 }}
                         >
                             CONTACT
@@ -88,7 +111,7 @@ export default function ContactPage() {
                         <motion.div 
                             className="contact-info-column"
                             initial="hidden"
-                            animate="visible"
+                            animate={shouldStartAnimations ? "visible" : "hidden"}
                             variants={staggerContainer}
                         >
                             <motion.h2 
@@ -194,7 +217,7 @@ export default function ContactPage() {
                                 variants={fadeInUp}
                                 custom={6}
                                 initial="hidden"
-                                animate="visible"
+                                animate={shouldStartAnimations ? "visible" : "hidden"}
                                 whileHover={{ scale: 1.03 }}
                                 transition={{ duration: 0.3 }}
                             >
@@ -267,7 +290,7 @@ export default function ContactPage() {
                         <motion.div 
                             className="contact-form-column"
                             initial="hidden"
-                            animate="visible"
+                            animate={shouldStartAnimations ? "visible" : "hidden"}
                             variants={staggerContainer}
                         >
                             <motion.h2 
@@ -293,7 +316,7 @@ export default function ContactPage() {
                                 className="contact-form relative"
                                 variants={staggerContainer}
                                 initial="hidden"
-                                animate="visible"
+                                animate={shouldStartAnimations ? "visible" : "hidden"}
                             >
                                 <motion.div 
                                     className="form-row"
