@@ -1,9 +1,35 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Evenement } from '../../data/evenementsData';
+
+// Variants pour les animations
+const fadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: (custom: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      delay: custom * 0.1,
+      ease: [0.25, 0.1, 0.25, 1]
+    }
+  })
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.3
+    }
+  }
+};
 
 interface EventPageProps {
   readonly evenement: Evenement;
@@ -15,6 +41,7 @@ export default function EventPage({ evenement }: EventPageProps) {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
 
   useEffect(() => {
     // Réinitialiser l'état lors du changement d'événement
@@ -23,6 +50,11 @@ export default function EventPage({ evenement }: EventPageProps) {
     setLoadingProgress(0);
     setSelectedImages(new Set());
     setErrorMessage(null);
+
+    // Activer les animations
+    setTimeout(() => {
+      setShouldStartAnimations(true);
+    }, 100);
 
     // Vérifier si l'événement a des images
     if (!evenement.images || evenement.images.length === 0) {
@@ -73,13 +105,6 @@ export default function EventPage({ evenement }: EventPageProps) {
     };
 
     preloadAllImages();
-    // Animation du titre
-    const titleElement = document.querySelector('.evenement-page-title');
-    if (titleElement) {
-      setTimeout(() => {
-        titleElement.classList.add('visible');
-      }, 300);
-    }
   }, [evenement]);
 
   const toggleImageSelection = (imageSrc: string) => {
@@ -95,13 +120,30 @@ export default function EventPage({ evenement }: EventPageProps) {
   return (
     <div className="container">
       <div className="event-header">
-        <h2 className="evenement-page-title underline-title">
-          <Link href="/evenements">Événements</Link> / {evenement.titre}
-        </h2>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
+          transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+          className="title-container relative overflow-hidden"
+        >
+          <motion.h2
+            className="evenement-page-title underline-title"
+            initial={{ opacity: 0 }}
+            animate={shouldStartAnimations ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <Link href="/evenements">Événements</Link> / {evenement.titre}
+          </motion.h2>
+        </motion.div>
       </div>
 
       {evenement.type === 'selection' && (
-        <div className="photo-selection-info">
+        <motion.div 
+          className="photo-selection-info"
+          initial={{ opacity: 0, y: 20 }}
+          animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
           <div className="info-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
@@ -112,10 +154,15 @@ export default function EventPage({ evenement }: EventPageProps) {
           <div className="info-text">
             Sélectionnez vos photos préférées ({evenement.prixParPhoto}€ par photo), puis procédez au paiement pour pouvoir les télécharger.
           </div>
-        </div>
+        </motion.div>
       )}
 
-      <div className="selection-counter">
+      <motion.div 
+        className="selection-counter"
+        initial={{ opacity: 0, y: 20 }}
+        animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+        transition={{ duration: 0.6, delay: 0.4 }}
+      >
         <div className="counter-text">
           {selectedImages.size} / {loadedImages.length} Sélectionné(s)
         </div>
@@ -126,10 +173,15 @@ export default function EventPage({ evenement }: EventPageProps) {
         >
           procéder au paiement
         </button>
-      </div>
+      </motion.div>
 
       {isLoading ? (
-        <div className="photos-loader">
+        <motion.div 
+          className="photos-loader"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6 }}
+        >
           <div className="loader-spinner"></div>
           <div className="loading-progress">
             <div className="progress-bar">
@@ -142,23 +194,35 @@ export default function EventPage({ evenement }: EventPageProps) {
               Chargement des images: {loadingProgress}% ({loadedImages.length}/{evenement.images.length})
             </div>
           </div>
-        </div>
+        </motion.div>
       ) : errorMessage ? (
-        <div className="error-message">
+        <motion.div 
+          className="error-message"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="8" x2="12" y2="12"></line>
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
           </svg>
           <p>{errorMessage}</p>
-        </div>
+        </motion.div>
       ) : (
-        <div className="photos-grid">
+        <motion.div 
+          className="photos-grid"
+          initial="hidden"
+          animate={shouldStartAnimations ? "visible" : "hidden"}
+          variants={staggerContainer}
+        >
           {loadedImages.map((imageSrc, index) => (
-            <div 
+            <motion.div 
               key={index} 
               className={`photo-item ${selectedImages.has(imageSrc) ? 'selected' : ''}`}
               onClick={() => toggleImageSelection(imageSrc)}
+              variants={fadeInUp}
+              custom={index}
             >
               <Image 
                 src={imageSrc} 
@@ -170,9 +234,9 @@ export default function EventPage({ evenement }: EventPageProps) {
               <div className="photo-overlay">
                 <div className={`selection-checkbox ${selectedImages.has(imageSrc) ? 'checked' : ''}`}></div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
     </div>
   );

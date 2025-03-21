@@ -33,7 +33,7 @@ export default function EvenementDetailPage({ params }: Props) {
     return (
       <main className="evenements-page">
         <Header />
-        <section className="evenements-hero">
+        <section className="px-4 py-12">
           <div className="container">
             <div className="loading-container">
               <div>Événement non trouvé</div>

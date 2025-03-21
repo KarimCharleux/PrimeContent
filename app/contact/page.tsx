@@ -94,10 +94,10 @@ export default function ContactPage() {
     };
 
     return (
-        <main className="contact-page pt-24 min-h-screen bg-black">
+        <main className="flex flex-col pt-24 min-h-screen bg-black text-white w-screen">
             <Header />
 
-            <section className="contact-hero px-4 py-12">
+            <section className="px-4 py-12">
                 <div className="container">
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}

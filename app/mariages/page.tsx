@@ -86,10 +86,16 @@ export default function MariagesPage() {
                         MARIAGES
                     </motion.h1>
                 </motion.div>
-                <p className="max-w-3xl mx-auto text-base md:text-lg text-gray-200">
+                
+                <motion.p 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                    transition={{ duration: 0.8, delay: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+                    className="max-w-3xl mx-auto text-base md:text-lg text-gray-200"
+                >
                     Nous vous accompagnons dans votre grand jour pour capturer en photos chaque moment précieux et 
                     créer des souvenirs intemporels ✨
-                </p>
+                </motion.p>
             </section>
 
             <motion.div 

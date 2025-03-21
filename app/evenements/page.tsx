@@ -11,6 +11,31 @@ import evenementsData, { Evenement } from '../data/evenementsData';
 // Importation des styles
 import '../styles/evenements/evenements.scss';
 
+// Variants pour les animations
+const fadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: (custom: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      delay: custom * 0.1,
+      ease: [0.25, 0.1, 0.25, 1]
+    }
+  })
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.3
+    }
+  }
+};
+
 export default function EvenementsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [evenements, setEvenements] = useState<Evenement[]>([]);
@@ -51,7 +76,7 @@ export default function EvenementsPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const EventCard = ({ evenement }: { evenement: Evenement }) => {
+  const EventCard = ({ evenement, index }: { evenement: Evenement, index: number }) => {
     const cardRef = useRef<HTMLDivElement>(null);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -98,11 +123,13 @@ export default function EvenementsPage() {
 
     return (
       <Link href={`/evenements/${evenement.id}`}>
-        <div 
+        <motion.div 
           ref={cardRef}
           className="evenement-card"
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
+          variants={fadeInUp}
+          custom={index}
         >
           <div className="card-inner">
             <div className="card-shine"></div>
@@ -139,7 +166,7 @@ export default function EvenementsPage() {
               <div className="event-category">{evenement.categorie || 'Événement'}</div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </Link>
     );
   };
@@ -148,7 +175,7 @@ export default function EvenementsPage() {
     <main className="evenements-page pt-24 min-h-screen bg-black">
       <Header />
 
-      <section className="evenements-hero px-4 py-12">
+      <section className="px-4 py-12">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -171,11 +198,16 @@ export default function EvenementsPage() {
               <div className="loading-spinner"></div>
             </div>
           ) : (
-            <div className="evenements-grid">
-              {evenements.map((evenement) => (
-                <EventCard key={evenement.id} evenement={evenement} />
+            <motion.div 
+              className="evenements-grid"
+              initial="hidden"
+              animate={shouldStartAnimations ? "visible" : "hidden"}
+              variants={staggerContainer}
+            >
+              {evenements.map((evenement, index) => (
+                <EventCard key={evenement.id} evenement={evenement} index={index} />
               ))}
-            </div>
+            </motion.div>
           )}
         </div>
       </section>
