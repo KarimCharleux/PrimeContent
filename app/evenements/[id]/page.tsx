@@ -46,7 +46,7 @@ export default function EvenementDetailPage({ params }: Props) {
   }
 
   return (
-    <main className="event-photos-page">
+    <main className="event-photos-page min-h-screen bg-black">
       <Header />
       <Suspense fallback={
         <div className="container">
@@ -55,7 +55,7 @@ export default function EvenementDetailPage({ params }: Props) {
           </div>
         </div>
       }>
-        <EventPage evenement={evenement} />
+        <EventPage evenement={evenement} key={`event-${evenement.id}`} />
       </Suspense>
       <Footer hideCTA={true} />
     </main>

@@ -172,7 +172,7 @@ export default function EvenementsPage() {
   };
 
   return (
-    <main className="evenements-page pt-24 min-h-screen bg-black">
+    <main className="evenements-page min-h-screen bg-black">
       <Header />
 
       <section className="px-4 py-12">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -42,6 +42,8 @@ export default function EventPage({ evenement }: EventPageProps) {
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
+  // Utiliser une ref pour suivre si le chargement initial a été fait
+  const initialLoadDone = useRef(false);
 
   useEffect(() => {
     // Réinitialiser l'état lors du changement d'événement
@@ -50,6 +52,8 @@ export default function EventPage({ evenement }: EventPageProps) {
     setLoadingProgress(0);
     setSelectedImages(new Set());
     setErrorMessage(null);
+    // Réinitialiser le flag de chargement initial
+    initialLoadDone.current = false;
 
     // Activer les animations
     setTimeout(() => {
@@ -59,6 +63,12 @@ export default function EventPage({ evenement }: EventPageProps) {
     // Vérifier si l'événement a des images
     if (!evenement.images || evenement.images.length === 0) {
       setErrorMessage("Aucune image n'a été trouvée pour cet événement.");
+      setIsLoading(false);
+      return;
+    }
+
+    // Si le chargement initial a déjà été fait, ne pas continuer
+    if (initialLoadDone.current) {
       setIsLoading(false);
       return;
     }
@@ -85,13 +95,17 @@ export default function EventPage({ evenement }: EventPageProps) {
 
     // Précharger toutes les images avec un délai pour ne pas surcharger le navigateur
     const preloadAllImages = async () => {
+      // S'assurer que le tableau d'images est vide avant de commencer
+      setLoadedImages([]);
+      
       const validImages: string[] = [];
       
       for (const imageSrc of evenement.images) {
         try {
           const loadedSrc = await preloadImage(imageSrc);
           validImages.push(loadedSrc);
-          setLoadedImages(prev => [...prev, loadedSrc]);
+          // Au lieu d'ajouter à l'état précédent, nous remplaçons complètement l'état à chaque fois
+          // pour éviter les doublons lors des re-renders
         } catch (error) {
           console.error(`Impossible de charger l'image: ${imageSrc}`);
         }
@@ -101,7 +115,13 @@ export default function EventPage({ evenement }: EventPageProps) {
         setErrorMessage("Aucune image n'a pu être chargée pour cet événement.");
       }
       
+      // Mettre à jour les images en une seule fois avec un tableau complet
+      setLoadedImages(validImages);
       setIsLoading(false);
+      // Assurons-nous que les animations sont activées une fois les images chargées
+      setShouldStartAnimations(true);
+      // Marquer le chargement initial comme terminé
+      initialLoadDone.current = true;
     };
 
     preloadAllImages();
@@ -212,8 +232,8 @@ export default function EventPage({ evenement }: EventPageProps) {
       ) : (
         <motion.div 
           className="photos-grid"
-          initial="hidden"
-          animate={shouldStartAnimations ? "visible" : "hidden"}
+          initial={{ opacity: 1 }}
+          animate={shouldStartAnimations ? "visible" : { opacity: 1 }}
           variants={staggerContainer}
         >
           {loadedImages.map((imageSrc, index) => (
@@ -222,6 +242,8 @@ export default function EventPage({ evenement }: EventPageProps) {
               className={`photo-item ${selectedImages.has(imageSrc) ? 'selected' : ''}`}
               onClick={() => toggleImageSelection(imageSrc)}
               variants={fadeInUp}
+              initial={{ opacity: 1, y: 0 }}
+              animate={shouldStartAnimations ? undefined : { opacity: 1, y: 0 }}
               custom={index}
             >
               <Image 

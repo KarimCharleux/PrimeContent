@@ -67,7 +67,7 @@ export default function MariagesPage() {
     }, []);
 
     return (
-        <main className="mariages-page pt-24 min-h-screen bg-black">
+        <main className="mariages-page min-h-screen bg-black">
             <Header />
 
             <section className="hero-section text-center px-4 py-12">
