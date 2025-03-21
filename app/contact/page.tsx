@@ -316,7 +316,7 @@ export default function ContactPage() {
                                 custom={1}
                             >
                                 Votre image mérite d&apos;être vue, entendue, ressentie. Rejoignez
-                                PrimeContent pour propulser votre présence visuelle et numérique au
+                                <span className="primecontent-title"> Primecontent. </span> pour propulser votre présence visuelle et numérique au
                                 niveau supérieur.
                             </motion.p>
 

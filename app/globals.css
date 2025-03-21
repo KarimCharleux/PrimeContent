@@ -6,6 +6,9 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
+  /* Polices de caractères */
+  --font-sora: 'Sora', sans-serif;
+  --font-manrope: 'Manrope', sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -75,6 +78,14 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sora);
+  }
+  
+  .primecontent-title {
+    font-family: var(--font-manrope);
   }
 }
 

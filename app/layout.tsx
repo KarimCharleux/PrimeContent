@@ -1,20 +1,30 @@
 'use client';
 
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Sora, Manrope } from 'next/font/google';
 import './globals.css';
 import { useState } from 'react';
 import SplashScreen from './components/SplashScreen';
 
-const inter = Inter({ subsets: ['latin'] });
+// Configuration de la police Sora pour tout le site
+const sora = Sora({ 
+    subsets: ['latin'],
+    display: 'swap',
+    variable: '--font-sora',
+});
 
+// Configuration de la police Manrope pour le titre "Primecontent"
+export const manrope = Manrope({
+    subsets: ['latin'],
+    display: 'swap',
+    variable: '--font-manrope',
+});
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
     const [isLoading, setIsLoading] = useState(true);
 
     return (
-        <html lang="en" data-oid="b5x4lok" suppressHydrationWarning={true}>
-            <body className={inter.className} data-oid="sgp8axh">
+        <html lang="en" data-oid="b5x4lok" suppressHydrationWarning={true} className={`${sora.variable} ${manrope.variable}`}>
+            <body className={sora.className} data-oid="sgp8axh">
                 <SplashScreen onLoadingComplete={() => setIsLoading(false)} />
                 <div style={{ opacity: isLoading ? 0 : 1, transition: 'opacity 0.5s ease-in-out' }}>
                     {children}

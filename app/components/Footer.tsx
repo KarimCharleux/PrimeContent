@@ -85,7 +85,7 @@ export default function Footer({ hideCTA = false }: FooterProps) {
         <div className="cta-section">
           <h2 ref={titleRef} className="cta-title">Boostez Votre Présence Aujourd&apos;hui !</h2>
           <p ref={textRef} className="cta-text">
-            Votre image mérite d&apos;être vue, entendue, ressentie. Rejoignez <b>PrimeContent</b> pour propulser votre présence visuelle et numérique au niveau supérieur.
+            Votre image mérite d&apos;être vue, entendue, ressentie. Rejoignez <b className="primecontent-title">Prime<span className="text-gray-400">content.</span></b> pour propulser votre présence visuelle et numérique au niveau supérieur.
           </p>
           <PrimaryButton 
             text="CONTACTEZ-NOUS" 
@@ -99,7 +99,7 @@ export default function Footer({ hideCTA = false }: FooterProps) {
       <div className="info-section">
         <div className="company-info">
           <p className="company-description">
-            Primecontent est une agence de production basée à Paris
+            <span className="primecontent-title">Prime<span className="text-gray-400">content.</span></span> est une agence de production basée à Paris
           </p>
           
           <div className="social-links">
@@ -172,7 +172,7 @@ export default function Footer({ hideCTA = false }: FooterProps) {
           <p className="brand-name">
             <span className="text-white">Prime</span><span className="text-gray-400">content.</span>
           </p>
-          <p className="copyright-text">© 2024 Primecontent. All rights reserved</p>
+          <p className="copyright-text">© 2024 <span className="primecontent-title">Primecontent</span>. All rights reserved</p>
         </div>
       </div>
     </footer>
