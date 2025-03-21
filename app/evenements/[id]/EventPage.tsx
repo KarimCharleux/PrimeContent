@@ -312,8 +312,10 @@ export default function EventPage({ evenement }: EventPageProps) {
             onClose={closeCarousel}
             onNext={goToNextImage}
             onPrev={goToPrevImage}
+            selectionEnabled={true}
             selectedImages={selectedImages}
             toggleImageSelection={toggleImageSelection}
+            showCounter={true}
           />
         )}
       </AnimatePresence>

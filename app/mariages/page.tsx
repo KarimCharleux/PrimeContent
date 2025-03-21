@@ -1,10 +1,11 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import ImageCarousel from '../components/ImageCarousel';
 import { mariagesGalleryData, mariagesTestimonialsData } from '../data/mariagesData';
 import '../styles/mariages/mariages.scss';
 
@@ -36,6 +37,35 @@ const staggerContainer = {
 export default function MariagesPage() {
     // État pour contrôler le démarrage des animations
     const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
+    
+    // États pour gérer le carrousel
+    const [isCarouselOpen, setIsCarouselOpen] = useState(false);
+    const [carouselIndex, setCarouselIndex] = useState(0);
+    const galleryImages = mariagesGalleryData.map(item => item.src);
+    
+    // Ouvrir le carrousel avec l'index de l'image cliquée
+    const openCarousel = (index: number) => {
+      setCarouselIndex(index);
+      setIsCarouselOpen(true);
+      // Empêcher le défilement de la page quand le carrousel est ouvert
+      document.body.style.overflow = 'hidden';
+    };
+    
+    // Fermer le carrousel
+    const closeCarousel = () => {
+      setIsCarouselOpen(false);
+      // Rétablir le défilement de la page
+      document.body.style.overflow = '';
+    };
+    
+    // Navigation dans le carrousel
+    const goToNextImage = () => {
+      setCarouselIndex((prev) => (prev + 1) % galleryImages.length);
+    };
+    
+    const goToPrevImage = () => {
+      setCarouselIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
+    };
     
     // Vérifier si le SplashScreen est terminé ou si on vient d'une autre page
     useEffect(() => {
@@ -110,6 +140,7 @@ export default function MariagesPage() {
                         className={`gallery-item ${item.type === 'video' ? 'video-item' : ''}`}
                         variants={fadeInUp}
                         custom={index}
+                        onClick={() => item.type !== 'video' && openCarousel(index)}
                     >
                         <Image
                             src={item.src}
@@ -169,6 +200,22 @@ export default function MariagesPage() {
                 </motion.div>
             </section>
             <Footer />
+            
+            {/* Carrousel d'images */}
+            <AnimatePresence>
+              {isCarouselOpen && (
+                <ImageCarousel 
+                  images={galleryImages}
+                  currentIndex={carouselIndex}
+                  onClose={closeCarousel}
+                  onNext={goToNextImage}
+                  onPrev={goToPrevImage}
+                  selectionEnabled={false}
+                  showCounter={true}
+                  imageQuality={90}
+                />
+              )}
+            </AnimatePresence>
         </main>
     );
 } 
