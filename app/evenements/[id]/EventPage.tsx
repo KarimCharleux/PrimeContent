@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Evenement } from '../../data/evenementsData';
+import ImageCarousel from '../../components/ImageCarousel';
+import PrimaryButton from '../../components/PrimaryButton';
 
 // Variants pour les animations
 const fadeInUp = {
@@ -44,6 +46,10 @@ export default function EventPage({ evenement }: EventPageProps) {
   const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
   // Utiliser une ref pour suivre si le chargement initial a été fait
   const initialLoadDone = useRef(false);
+  
+  // État pour le carrousel
+  const [isCarouselOpen, setIsCarouselOpen] = useState(false);
+  const [carouselIndex, setCarouselIndex] = useState(0);
 
   useEffect(() => {
     // Réinitialiser l'état lors du changement d'événement
@@ -136,6 +142,30 @@ export default function EventPage({ evenement }: EventPageProps) {
     }
     setSelectedImages(newSelection);
   };
+  
+  // Ouvrir le carrousel avec l'index de l'image cliquée
+  const openCarousel = (index: number) => {
+    setCarouselIndex(index);
+    setIsCarouselOpen(true);
+    // Empêcher le défilement de la page quand le carrousel est ouvert
+    document.body.style.overflow = 'hidden';
+  };
+  
+  // Fermer le carrousel
+  const closeCarousel = () => {
+    setIsCarouselOpen(false);
+    // Rétablir le défilement de la page
+    document.body.style.overflow = '';
+  };
+  
+  // Navigation dans le carrousel
+  const goToNextImage = () => {
+    setCarouselIndex((prev) => (prev + 1) % loadedImages.length);
+  };
+  
+  const goToPrevImage = () => {
+    setCarouselIndex((prev) => (prev - 1 + loadedImages.length) % loadedImages.length);
+  };
 
   return (
     <div className="container">
@@ -183,16 +213,17 @@ export default function EventPage({ evenement }: EventPageProps) {
         animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
         transition={{ duration: 0.6, delay: 0.4 }}
       >
-        <div className="counter-text">
-          {selectedImages.size} / {loadedImages.length} Sélectionné(s)
-        </div>
-        <button 
-          className="payment-button" 
-          disabled={selectedImages.size === 0}
+        {selectedImages.size > 0 && (
+          <div className="counter-text">
+            {selectedImages.size} photos sélectionnées
+          </div>
+        )}
+        <PrimaryButton 
+          text="PAYER MES PHOTOS"
           onClick={() => alert('Redirection vers la page de paiement...')}
-        >
-          procéder au paiement
-        </button>
+          animateOnMount={true}
+          delay={0.5}
+        />
       </motion.div>
 
       {isLoading ? (
@@ -240,7 +271,7 @@ export default function EventPage({ evenement }: EventPageProps) {
             <motion.div 
               key={index} 
               className={`photo-item ${selectedImages.has(imageSrc) ? 'selected' : ''}`}
-              onClick={() => toggleImageSelection(imageSrc)}
+              onClick={() => openCarousel(index)}
               variants={fadeInUp}
               initial={{ opacity: 1, y: 0 }}
               animate={shouldStartAnimations ? undefined : { opacity: 1, y: 0 }}
@@ -253,13 +284,39 @@ export default function EventPage({ evenement }: EventPageProps) {
                 width={400}
                 height={400}
               />
-              <div className="photo-overlay">
-                <div className={`selection-checkbox ${selectedImages.has(imageSrc) ? 'checked' : ''}`}></div>
+              <div className="photo-overlay"></div>
+              <div 
+                className="selection-checkbox"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleImageSelection(imageSrc);
+                }}
+              >
+                {selectedImages.has(imageSrc) && (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
               </div>
             </motion.div>
           ))}
         </motion.div>
       )}
+      
+      {/* Carrousel Modal */}
+      <AnimatePresence>
+        {isCarouselOpen && (
+          <ImageCarousel 
+            images={loadedImages}
+            currentIndex={carouselIndex}
+            onClose={closeCarousel}
+            onNext={goToNextImage}
+            onPrev={goToPrevImage}
+            selectedImages={selectedImages}
+            toggleImageSelection={toggleImageSelection}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 } 
