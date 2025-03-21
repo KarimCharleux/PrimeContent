@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Evenement } from '../../data/evenementsData';
-import ImageCarousel from '../../components/ImageCarousel';
+import ImageCarousel from '../../components/ImageCarousel/ImageCarousel';
 import PrimaryButton from '../../components/PrimaryButton';
 
 // Variants pour les animations
