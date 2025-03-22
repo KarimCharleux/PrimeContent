@@ -1,5 +1,5 @@
-import { fileURLToPath } from 'url';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';

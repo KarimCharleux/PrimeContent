@@ -5,6 +5,7 @@ import { useRef, useEffect, useState } from 'react';
 
 import { useAnimationControl } from '../hooks/useAnimationControl';
 import gsap from '../lib/gsap-config';
+
 import ScrambleText from './ScrambleText';
 
 import '../styles/primary-button.scss';
