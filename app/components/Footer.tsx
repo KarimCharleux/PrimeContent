@@ -88,7 +88,7 @@ export default function Footer({ hideCTA = false }: FooterProps) {
             Votre image mérite d&apos;être vue, entendue, ressentie. Rejoignez <b className="primecontent-title">Prime<span className="text-gray-400">content.</span></b> pour propulser votre présence visuelle et numérique au niveau supérieur.
           </p>
           <PrimaryButton 
-            text="CONTACTEZ-NOUS" 
+            text="Contactez-nous" 
             href="/contact" 
             className="cta-button"
           />

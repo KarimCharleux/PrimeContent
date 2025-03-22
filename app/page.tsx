@@ -292,7 +292,7 @@ export default function Page() {
                         graphiques racontent des histoires qui valorisent votre entreprise.
                     </p>
                     <PrimaryButton 
-                        text="CONTACTEZ-NOUS" 
+                        text="Contactez-nous" 
                         href="/contact" 
                         animateOnMount={true} 
                         delay={1.2} // Délai augmenté pour s'assurer que le bouton apparaît après les autres éléments
@@ -446,8 +446,12 @@ export default function Page() {
                         </div>
                     </div>
 
-                    <div className="text-center mt-16">
-                        <PrimaryButton text="EXPLOREZ PLUS" href="/portfolio" className="mx-auto" />
+                    <div className="mt-16 mx-auto w-fit">
+                        <PrimaryButton 
+                        text="Explorez plus" 
+                        href="/portfolio" 
+                        animateOnMount={true}
+                        delay={0.5}/>
                     </div>
                 </div>
             </section>

@@ -7,37 +7,72 @@ interface ScrambleTextProps {
   text: string;
   href?: string;
   className?: string;
+  isParentHovered?: boolean;
 }
 
-export default function ScrambleText({ text, href, className = '' }: ScrambleTextProps) {
+export default function ScrambleText({ text, href, className = '', isParentHovered = false }: ScrambleTextProps) {
   const textRef = useRef<HTMLSpanElement>(null);
-  const [isHovered, setIsHovered] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [animationCompleted, setAnimationCompleted] = useState(false);
+  const [textWidth, setTextWidth] = useState<number | null>(null);
   
   // Calculer la largeur du texte pour la maintenir constante
   useEffect(() => {
     if (textRef.current) {
-      // Appliquer une largeur fixe basée sur le contenu initial
-      const width = textRef.current.offsetWidth;
+      // Créer un élément temporaire pour mesurer exactement le texte
+      const tempSpan = document.createElement('span');
+      tempSpan.style.visibility = 'hidden';
+      tempSpan.style.position = 'absolute';
+      tempSpan.style.whiteSpace = 'nowrap';
+      
+      // Copier les styles pertinents du texte de référence
+      const styles = window.getComputedStyle(textRef.current);
+      tempSpan.style.fontFamily = styles.fontFamily;
+      tempSpan.style.fontSize = styles.fontSize;
+      tempSpan.style.letterSpacing = styles.letterSpacing;
+      
+      // Mesurer d'abord avec le poids normal
+      tempSpan.style.fontWeight = '400';
+      tempSpan.textContent = text;
+      document.body.appendChild(tempSpan);
+      const normalWidth = tempSpan.offsetWidth;
+      
+      // Puis avec le poids medium pour s'assurer que le texte ne bouge pas pendant l'animation
+      tempSpan.style.fontWeight = '500';
+      const mediumWidth = tempSpan.offsetWidth;
+      
+      // Prendre la largeur la plus grande + padding
+      const width = Math.max(normalWidth, mediumWidth) + 10;
+      
+      // Nettoyer l'élément temporaire
+      document.body.removeChild(tempSpan);
+      
       if (width > 0) {
-        textRef.current.style.display = 'inline-block';
-        textRef.current.style.minWidth = `${width}px`;
+        setTextWidth(width);
       }
     }
-  }, []);
+  }, [text]); // Recalculer si le texte change
   
   useEffect(() => {
     if (!textRef.current) return;
     
     // Réinitialiser l'état d'animation complétée lorsque le survol change
-    if (!isHovered) {
+    if (!isParentHovered) {
       setAnimationCompleted(false);
+      // Si le bouton n'est plus survolé et que le texte est animé, restaurer le texte d'origine
+      if (textRef.current.textContent !== text) {
+        gsap.to(textRef.current, {
+          duration: 0.3, // Ralenti pour une transition plus fluide
+          text: text,
+          color: "inherit", // Retour à la couleur d'origine
+          ease: "power2.out"
+        });
+      }
     }
     
     // Ne lancer l'animation que si on est en survol, qu'aucune animation n'est en cours,
     // et que l'animation n'a pas déjà été complétée pour ce survol
-    if (isHovered && !isAnimating && !animationCompleted) {
+    if (isParentHovered && !isAnimating && !animationCompleted) {
       setIsAnimating(true);
       
       // Créer une timeline pour l'animation
@@ -48,8 +83,15 @@ export default function ScrambleText({ text, href, className = '' }: ScrambleTex
         }
       });
       
-      // Caractères pour le brouillage - utiliser des caractères de largeur similaire
-      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      // Caractères pour le brouillage - uniquement des minuscules pour respecter le style
+      const chars = "abcdefghijklmnopqrstuvwxyz";
+      
+      // Ajouter une légère animation de couleur pour rendre l'effet plus visible
+      tl.to(textRef.current, {
+        duration: 0.1,
+        fontWeight: "500", // Medium weight pendant l'animation
+        ease: "power1.inOut"
+      });
       
       // Fonction pour générer un texte partiellement révélé
       const getPartialText = (progress: number) => {
@@ -71,8 +113,8 @@ export default function ScrambleText({ text, href, className = '' }: ScrambleTex
             // Garder les espaces pour maintenir la structure du mot
             randomChar = ' ';
           } else if (/[A-Z]/.test(originalChar)) {
-            // Remplacer les majuscules par des majuscules
-            randomChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".charAt(Math.floor(Math.random() * 26));
+            // Remplacer les majuscules par des minuscules aléatoires
+            randomChar = "abcdefghijklmnopqrstuvwxyz".charAt(Math.floor(Math.random() * 26));
           } else if (/[a-z]/.test(originalChar)) {
             // Remplacer les minuscules par des minuscules
             randomChar = "abcdefghijklmnopqrstuvwxyz".charAt(Math.floor(Math.random() * 26));
@@ -104,9 +146,9 @@ export default function ScrambleText({ text, href, className = '' }: ScrambleTex
         return result;
       };
       
-      // Phase 1: Brouillage complet (environ 0.3s)
-      const scrambleSteps = 6;
-      const scrambleDuration = 0.05;
+      // Phase 1: Brouillage complet (environ 0.24s)
+      const scrambleSteps = 4; // Augmenté de 3 à 4
+      const scrambleDuration = 0.06; // Augmenté de 0.03 à 0.06
       
       for (let i = 0; i < scrambleSteps; i++) {
         tl.to(textRef.current, {
@@ -116,40 +158,45 @@ export default function ScrambleText({ text, href, className = '' }: ScrambleTex
         });
       }
       
-      // Phase 2: Révélation progressive (environ 0.5s)
-      const revealSteps = 10;
-      const revealDuration = 0.05;
+      // Phase 2: Révélation progressive (environ 0.4s)
+      const revealSteps = 5;
+      const revealDuration = 0.08; // Augmenté de 0.04 à 0.08
       
       for (let i = 0; i < revealSteps; i++) {
         const progress = (i + 1) / revealSteps;
         tl.to(textRef.current, {
           duration: revealDuration,
           text: getPartialText(progress),
-          ease: "none"
+          ease: "power1.out" // Ajoute une accélération
         });
       }
       
-      // S'assurer que le texte final est correct
+      // S'assurer que le texte final est correct et restaurer la couleur
       tl.to(textRef.current, {
         duration: 0.1,
         text: text,
-        ease: "none"
+        color: "inherit",
+        fontWeight: "inherit", // Retour au poids de police d'origine
+        ease: "power1.out"
       });
     }
-  }, [isHovered, text, isAnimating, animationCompleted]);
-  
-  const handleMouseEnter = () => setIsHovered(true);
-  const handleMouseLeave = () => setIsHovered(false);
+  }, [isParentHovered, text, isAnimating, animationCompleted]);
+
+  const styles = {
+    display: 'inline-block',
+    width: textWidth ? `${textWidth}px` : 'auto',
+    whiteSpace: 'nowrap' as const,
+    overflow: 'visible' as const, // Changé de 'hidden' à 'visible' pour éviter le croppage
+    textOverflow: 'clip' as const // Changé de 'ellipsis' à 'clip'
+  };
   
   if (href) {
     return (
       <Link 
         href={href}
         className={className}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
       >
-        <span ref={textRef} style={{ display: 'inline-block' }}>{text}</span>
+        <span ref={textRef} style={styles}>{text}</span>
       </Link>
     );
   }
@@ -158,9 +205,7 @@ export default function ScrambleText({ text, href, className = '' }: ScrambleTex
     <span 
       ref={textRef}
       className={className}
-      style={{ display: 'inline-block' }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      style={styles}
     >
       {text}
     </span>

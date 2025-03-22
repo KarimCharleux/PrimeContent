@@ -219,7 +219,7 @@ export default function EventPage({ evenement }: EventPageProps) {
           </div>
         )}
         <PrimaryButton 
-          text="PAYER MES PHOTOS"
+          text="Payer mes photos"
           onClick={() => alert('Redirection vers la page de paiement...')}
           animateOnMount={true}
           delay={0.5}

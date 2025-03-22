@@ -57,14 +57,6 @@ section.relative:first-of-type {
   p {
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 3px 15px rgba(0, 0, 0, 0.5);
   }
-  
-  .primary-button-container {
-    filter: drop-shadow(0 2px 8px rgba(122, 122, 122, 0.7));
-    
-    .primary-button-content {
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
-    }
-  }
 }
 
 .hero-contact-btn > *{

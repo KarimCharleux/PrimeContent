@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import ScrambleText from './ScrambleText';
 import gsap from '../lib/gsap-config';
@@ -29,6 +29,7 @@ export default function PrimaryButton({
   const buttonRef = useRef<HTMLButtonElement | HTMLAnchorElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const shouldAnimate = useAnimationControl();
+  const [isHovered, setIsHovered] = useState(false);
 
   // Masquer le bouton immédiatement au montage du composant
   useEffect(() => {
@@ -93,6 +94,9 @@ export default function PrimaryButton({
     },
   };
 
+  const handleMouseEnter = () => setIsHovered(true);
+  const handleMouseLeave = () => setIsHovered(false);
+
   // Si un lien est fourni, rendre un composant Link
   if (href) {
     return (
@@ -107,8 +111,14 @@ export default function PrimaryButton({
           ref={buttonRef as React.RefObject<HTMLAnchorElement>}
           className={buttonClasses}
           onClick={onClick}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         >
-          <ScrambleText text={text} className="inline-block w-40 hover:font-bold transition-all duration-300" />
+          <ScrambleText 
+            text={text} 
+            className="inline-block font-normal transition-all duration-300" 
+            isParentHovered={isHovered}
+          />
           <span className="ml-2">{icon || defaultIcon}</span>
         </Link>
         <span className="animated-border"></span>
@@ -128,8 +138,14 @@ export default function PrimaryButton({
         ref={buttonRef as React.RefObject<HTMLButtonElement>}
         className={buttonClasses}
         onClick={onClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
-        <ScrambleText text={text} className="inline-block w-40 hover:font-bold transition-all duration-300" />
+        <ScrambleText 
+          text={text} 
+          className="inline-block font-normal transition-all duration-300" 
+          isParentHovered={isHovered}
+        />
         <span className="ml-2">{icon || defaultIcon}</span>
       </button>
       <span className="animated-border"></span>
