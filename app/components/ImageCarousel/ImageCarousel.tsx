@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import './ImageCarousel.module.scss';
+import styles from './ImageCarousel.module.scss';
 
 interface ImageCarouselProps { 
   images: string[];
@@ -74,7 +74,7 @@ const ImageCarousel = ({
 
   return (
     <motion.div 
-      className="carousel"
+      className={styles.carousel}
       initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
       animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
       exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
@@ -86,8 +86,8 @@ const ImageCarousel = ({
       <div className="absolute top-4 right-4 z-10 flex items-center space-x-4">
         {selectionEnabled && (
           <button 
-            className={`select-button ${
-              selectedImages.has(currentImageSrc) ? 'selected' : ''
+            className={`${styles['select-button']} ${
+              selectedImages.has(currentImageSrc) ? styles['selected'] : ''
             }`}
             onClick={(e) => {
               e.stopPropagation();
@@ -99,20 +99,20 @@ const ImageCarousel = ({
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="select-label">Sélectionnée</span>
+                <span className={styles['select-label']}>Sélectionnée</span>
               </>
             ) : (
               <>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                <span className="select-label">Sélectionner</span>
+                <span className={styles['select-label']}>Sélectionner</span>
               </>
             )}
           </button>
         )}
         <button 
-          className="carousel-button"
+          className={styles['carousel-button']}
           onClick={onClose}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -122,7 +122,7 @@ const ImageCarousel = ({
       </div>
       
       <button 
-        className="nav-button prev"
+        className={`${styles['nav-button']} ${styles['prev']}`}
         onClick={onPrev}
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -132,7 +132,7 @@ const ImageCarousel = ({
       
       <div 
         ref={swipeRef} 
-        className="carousel-container"
+        className={styles['carousel-container']}
         onClick={onClose}
       >
         <motion.div 
@@ -152,7 +152,7 @@ const ImageCarousel = ({
             <Image 
               src={currentImageSrc}
               alt={`Photo ${currentIndex + 1}`}
-              className="carousel-image"
+              className={styles['carousel-image']}
               width={1200}
               height={800}
               priority
@@ -163,7 +163,7 @@ const ImageCarousel = ({
       </div>
       
       <button 
-        className="nav-button next"
+        className={`${styles['nav-button']} ${styles['next']}`}
         onClick={onNext}
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -172,9 +172,9 @@ const ImageCarousel = ({
       </button>
       
       {showCounter && (
-        <div className="counter">
+        <div className={styles['counter']}>
           <motion.div 
-            className="counter-badge"
+            className={styles['counter-badge']}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
