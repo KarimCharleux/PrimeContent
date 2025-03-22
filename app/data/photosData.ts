@@ -1,4 +1,4 @@
-import { Project } from '../components/PortfolioGrid/PortfolioGrid';
+import { type Project } from '../components/PortfolioGrid';
 
 // Données des photos pour la galerie
 const photosData: Project[] = [

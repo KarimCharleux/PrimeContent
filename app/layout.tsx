@@ -4,6 +4,8 @@ import { Sora, Manrope } from 'next/font/google';
 import './globals.css';
 import { useState } from 'react';
 import SplashScreen from './components/SplashScreen';
+import Header from './components/Header';
+import Footer from './components/Footer';
 
 // Configuration de la police Sora pour tout le site
 const sora = Sora({ 
@@ -23,8 +25,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     const [isLoading, setIsLoading] = useState(true);
 
     return (
-        <html lang="en" data-oid="b5x4lok" suppressHydrationWarning={true} className={`${sora.variable} ${manrope.variable}`}>
-            <body className={sora.className} data-oid="sgp8axh">
+        <html lang="fr" suppressHydrationWarning={true} className={`${sora.variable} ${manrope.variable}`}>
+            <body className={sora.className}>
                 <SplashScreen onLoadingComplete={() => setIsLoading(false)} />
                 <div style={{ opacity: isLoading ? 0 : 1, transition: 'opacity 0.5s ease-in-out' }}>
                     {children}

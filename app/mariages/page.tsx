@@ -99,7 +99,6 @@ export default function MariagesPage() {
     return (
         <main className="mariages-page min-h-screen bg-black">
             <Header />
-
             <section className="hero-section text-center px-4 py-12">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import PortfolioGrid from '../components/PortfolioGrid/PortfolioGrid';
+import PortfolioGrid from '../components/PortfolioGrid';
 import photosData from '../data/photosData';
 
 // Importation des styles
@@ -37,8 +37,6 @@ const fadeIn = {
 export default function PhotosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const descriptionRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     // Simuler un chargement
@@ -85,15 +83,20 @@ export default function PhotosPage() {
             transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
             className="title-container"
           >
-            <h1 ref={titleRef} className="page-title underline-title">
+            <h1 className="page-title underline-title">
               PHOTOS
             </h1>
           </motion.div>
 
-          <p ref={descriptionRef} className="description">
+          <motion.p
+            initial={{ opacity: 0, y: -20 }}
+            animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
+            transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1], delay: 0.5 }}
+            className="description"
+          >
             Découvrez nos services : mariages, portraits, événements, commerce, mode et projets artistiques,
             adaptés à vos besoins.
-          </p>
+          </motion.p>
 
           {isLoading ? (
             <div className="loading-container">

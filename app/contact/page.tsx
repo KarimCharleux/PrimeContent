@@ -95,8 +95,6 @@ export default function ContactPage() {
 
     return (
         <main className="flex flex-col min-h-screen bg-black text-white w-screen">
-            <Header />
-
             <section className="px-4 py-12">
                 <div className="container">
                     <motion.div
@@ -453,8 +451,6 @@ export default function ContactPage() {
                     </div>
                 </div>
             </section>
-
-            <Footer hideCTA={true} />
         </main>
     );
 }

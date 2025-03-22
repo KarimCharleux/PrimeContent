@@ -266,9 +266,6 @@ export default function Page() {
 
     return (
         <div className="min-h-screen bg-black text-white">
-            {/* Header */}
-            <Header />
-
             {/* Hero Section avec Galerie */}
             <section className="relative">
                 <Gallery />
@@ -533,9 +530,6 @@ export default function Page() {
                 </div>
                 <CustomerReviews reviews={customerReviewsData} autoplaySpeed={13000} />
             </section>
-
-            {/* Footer */}
-            <Footer />
         </div>
     );
 }

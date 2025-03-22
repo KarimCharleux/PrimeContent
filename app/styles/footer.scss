@@ -108,27 +108,38 @@
     
     .social-links {
       display: flex;
-      gap: 1rem;
-      
-      .social-icon {
+      gap: 0.5rem 1.5rem;
+      flex-wrap: wrap;
+
+      .social {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color: rgba(255, 255, 255, 0.1);
+        gap: 0.2rem;
         transition: all 0.3s ease;
-        
-        svg {
-          width: 20px;
-          height: 20px;
-          fill: #fff;
+
+        .social-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background-color: rgba(255, 255, 255, 0.1);
+          transition: all 0.3s ease;
+          
+          svg {
+            width: 20px;
+            height: 20px;
+            fill: #fff;
+          }
         }
-        
         &:hover {
-          background-color: rgba(255, 255, 255, 0.2);
           transform: translateY(-3px);
+        }
+
+        &:hover .social-icon {
+          transform: scale(1.1);
         }
       }
     }
@@ -145,9 +156,34 @@
       text-decoration: none;
       font-size: 1rem;
       transition: color 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
       
       &:hover {
         color: #0084ff;
+      }
+
+      .contact-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        
+        svg {
+          width: 16px;
+          height: 16px;
+          fill: currentColor;
+        }
+      }
+
+      &:hover .contact-icon {
+        background-color: rgba(0, 132, 255, 0.2);
+        transform: scale(1.1);
       }
     }
   }

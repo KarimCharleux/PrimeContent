@@ -32,7 +32,6 @@ export default function EvenementDetailPage({ params }: Props) {
   if (!evenement) {
     return (
       <main className="evenements-page">
-        <Header />
         <section className="px-4 py-12">
           <div className="container">
             <div className="loading-container">
@@ -40,7 +39,6 @@ export default function EvenementDetailPage({ params }: Props) {
             </div>
           </div>
         </section>
-        <Footer hideCTA={true} />
       </main>
     );
   }
