@@ -136,7 +136,7 @@ const ImageCarousel = ({
         onClick={onClose}
       >
         <motion.div 
-          className="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center"
+          className="relative max-w-full max-h-[90vh] w-full h-full flex items-center justify-center"
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 10 }}
@@ -156,7 +156,8 @@ const ImageCarousel = ({
               width={1200}
               height={800}
               priority
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+              quality={100}
+              sizes="100vw"
             />
           </div>
         </motion.div>
