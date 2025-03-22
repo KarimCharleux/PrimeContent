@@ -1,4 +1,65 @@
-// Données pour la galerie de mariage
+import { type Project } from '../components/PortfolioGrid';
+
+// Données pour la galerie de mariage (format compatible avec PortfolioGrid)
+export const mariagesPortfolioData: Project[] = [
+  {
+    category: "Sébastien & Laure",
+    source: "/mariages/mariage-photo-1.jpg",
+    format: "paysage",
+    title: "Château de Versailles, 2023",
+  },
+  {
+    category: "Sébastien & Laure",
+    source: "/mariages/mariage-photo-2.jpg",
+    format: "portrait",
+    title: "Jardin du Luxembourg, 2022",
+  },
+  {
+    category: "Maxime & Emilie",
+    source: "/mariages/mariage-photo-3.jpg",
+    format: "portrait",
+    title: "Plage de Nice, 2023",
+  },
+  {
+    category: "Hugo & Marie",
+    source: "/mariages/mariage-photo-4.jpg", 
+    format: "paysage",
+    title: "Domaine de Chantilly, 2021",
+  },
+  {
+    category: "Nicolas & Margaux",
+    source: "/mariages/mariage-photo-5.jpg",
+    format: "paysage",
+    title: "Abbaye de Fontfroide, 2022",
+  },
+  {
+    category: "Arthur & Camille",
+    source: "/mariages/mariage-photo-6.jpg",
+    format: "portrait",
+    title: "Alpes Françaises, 2023",
+  },
+  {
+    category: "Thomas & Julie",
+    source: "/mariages/mariage-photo-7.jpg",
+    format: "portrait",
+    title: "Villa Ephrussi, 2022",
+  },
+  {
+    category: "Arthur & Camille",
+    source: "/mariages/mariage-photo-8.jpg",
+    format: "paysage",
+    title: "Château de Chenonceau, 2023",
+  },
+  {
+    category: "Nicolas & Margaux",
+    source: "/mariages/mariage-video-1.jpg",
+    format: "paysage",
+    title: "Domaine de Chantilly, 2021",
+    isVideo: true
+  }
+];
+
+// Anciennes données (conservées pour compatibilité avec d'autres composants)
 export const mariagesGalleryData = [
   {
     id: 1,

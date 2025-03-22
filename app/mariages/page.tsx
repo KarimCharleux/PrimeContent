@@ -1,12 +1,11 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
-import Link from 'next/link';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import ImageCarousel from '../components/ImageCarousel/ImageCarousel';
-import { mariagesGalleryData, mariagesTestimonialsData } from '../data/mariagesData';
+import PortfolioGrid from '../components/PortfolioGrid';
+import { mariagesPortfolioData, mariagesTestimonialsData } from '../data/mariagesData';
 import './mariages.scss';
 
 // Variants pour les animations
@@ -37,38 +36,16 @@ const staggerContainer = {
 export default function MariagesPage() {
     // État pour contrôler le démarrage des animations
     const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
-    
-    // États pour gérer le carrousel
-    const [isCarouselOpen, setIsCarouselOpen] = useState(false);
-    const [carouselIndex, setCarouselIndex] = useState(0);
-    const galleryImages = mariagesGalleryData.map(item => item.src);
-    
-    // Ouvrir le carrousel avec l'index de l'image cliquée
-    const openCarousel = (index: number) => {
-      setCarouselIndex(index);
-      setIsCarouselOpen(true);
-      // Empêcher le défilement de la page quand le carrousel est ouvert
-      document.body.style.overflow = 'hidden';
-    };
-    
-    // Fermer le carrousel
-    const closeCarousel = () => {
-      setIsCarouselOpen(false);
-      // Rétablir le défilement de la page
-      document.body.style.overflow = '';
-    };
-    
-    // Navigation dans le carrousel
-    const goToNextImage = () => {
-      setCarouselIndex((prev) => (prev + 1) % galleryImages.length);
-    };
-    
-    const goToPrevImage = () => {
-      setCarouselIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
-    };
+    // État pour le chargement
+    const [isLoading, setIsLoading] = useState(true);
     
     // Vérifier si le SplashScreen est terminé ou si on vient d'une autre page
     useEffect(() => {
+        // Simuler un chargement
+        setTimeout(() => {
+            setIsLoading(false);
+        }, 600);
+        
         // Vérifie si le splash screen est terminé via le localStorage
         const checkSplashScreen = () => {
             const splashScreenComplete = localStorage.getItem('splashScreenComplete');
@@ -127,38 +104,25 @@ export default function MariagesPage() {
                 </motion.p>
             </section>
 
-            <motion.div 
-                className="gallery-grid"
-                initial="hidden"
-                animate={shouldStartAnimations ? "visible" : "hidden"}
-                variants={staggerContainer}
-            >
-                {mariagesGalleryData.map((item, index) => (
-                    <motion.div
-                        key={item.id}
-                        className={`gallery-item ${item.type === 'video' ? 'video-item' : ''}`}
-                        variants={fadeInUp}
-                        custom={index}
-                        onClick={() => item.type !== 'video' && openCarousel(index)}
-                    >
-                        <Image
-                            src={item.src}
-                            alt={item.alt}
-                            width={600}
-                            height={600}
-                            className="w-full h-full object-cover transition-transform duration-500"
-                            priority={index < 4}
-                        />
-                        {item.type === 'video' && (
-                            <div className="play-button">
-                                <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 fill-white" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M8 5V19L19 12L8 5Z" />
-                                </svg>
-                            </div>
-                        )}
-                    </motion.div>
-                ))}
-            </motion.div>
+            {/* Section Portfolio avec PortfolioGrid */}
+            <section className="px-4 py-8">
+                <div className="container mx-auto">
+                    {isLoading ? (
+                        <div className="loading-container">
+                            <div className="loading-spinner"></div>
+                        </div>
+                    ) : (
+                        <motion.div
+                            initial="hidden"
+                            animate={shouldStartAnimations ? "visible" : "hidden"}
+                            variants={fadeInUp}
+                            className="portfolio-container"
+                        >
+                            <PortfolioGrid projects={mariagesPortfolioData} showFilter={true} />
+                        </motion.div>
+                    )}
+                </div>
+            </section>
 
             <section className="testimonials-section">
                 <motion.div 
@@ -199,21 +163,6 @@ export default function MariagesPage() {
                 </motion.div>
             </section>
             <Footer />
-            
-            {/* Carrousel d'images */}
-            <AnimatePresence>
-              {isCarouselOpen && (
-                <ImageCarousel 
-                  images={galleryImages}
-                  currentIndex={carouselIndex}
-                  onClose={closeCarousel}
-                  onNext={goToNextImage}
-                  onPrev={goToPrevImage}
-                  selectionEnabled={false}
-                  showCounter={true}
-                />
-              )}
-            </AnimatePresence>
         </main>
     );
 } 

@@ -12,7 +12,7 @@ const expertiseData: ExpertiseData[] = [
   {
     title: "Production Vidéo",
     description: "Captez l'attention avec des vidéos percutantes qui racontent votre histoire.",
-    backgroundImage: "/images/expertises/video-bg.jpg",
+    backgroundImage: "/home/expertises/video-bg.jpg",
     href: "/production-video",
     icon: (
       <svg
@@ -34,7 +34,7 @@ const expertiseData: ExpertiseData[] = [
   {
     title: "Photographie",
     description: "Sublimez votre image avec des photos qui captent l'essence de votre marque.",
-    backgroundImage: "/images/expertises/photo-bg.jpg",
+    backgroundImage: "/home/expertises/photo-bg.jpg",
     href: "/photographie",
     icon: (
       <svg
@@ -56,7 +56,7 @@ const expertiseData: ExpertiseData[] = [
   {
     title: "Réseaux Sociaux",
     description: "Gestion complète et stratégique de votre présence sur les réseaux.",
-    backgroundImage: "/images/expertises/social-bg.jpg",
+    backgroundImage: "/home/expertises/social-bg.jpg",
     href: "/reseaux-sociaux",
     icon: (
       <svg
@@ -78,7 +78,7 @@ const expertiseData: ExpertiseData[] = [
   {
     title: "Branding",
     description: "Création d'une identité visuelle cohérente qui reflète les valeurs de votre marque.",
-    backgroundImage: "/images/expertises/branding-bg.jpg",
+    backgroundImage: "/home/expertises/branding-bg.jpg",
     href: "/branding",
     icon: (
       <svg
@@ -100,7 +100,7 @@ const expertiseData: ExpertiseData[] = [
   {
     title: "Création Web",
     description: "Démarquez-vous avec des interfaces web et mobile innovantes.",
-    backgroundImage: "/images/expertises/web-bg.jpg",
+    backgroundImage: "/home/expertises/web-bg.jpg",
     href: "/creation-web",
     icon: (
       <svg
