@@ -43,15 +43,25 @@ export default function Page() {
         // Vérifie si le splash screen est terminé via le localStorage
         const checkSplashScreen = () => {
             const splashScreenComplete = localStorage.getItem('splashScreenComplete');
+            
+            // Si on vient du SplashScreen
             if (splashScreenComplete === 'true') {
                 setShouldStartAnimations(true);
                 localStorage.removeItem('splashScreenComplete');
                 // Réinitialiser la position de défilement à 0
                 window.scrollTo(0, 0);
             }
+            // Si on vient d'une autre page (pas de SplashScreen)
+            else if (splashScreenComplete !== 'waiting') {
+                // On active les animations après un petit délai pour laisser la page se charger
+                setTimeout(() => {
+                    setShouldStartAnimations(true);
+                }, 100);
+            }
         };
 
-        // Vérifie toutes les 100ms si le splash screen est terminé
+        // Vérifie immédiatement et toutes les 100ms si le splash screen est terminé
+        checkSplashScreen();
         const interval = setInterval(checkSplashScreen, 100);
 
         return () => clearInterval(interval);
@@ -225,7 +235,7 @@ export default function Page() {
                             <div 
                                 key={expertise.title}
                                 ref={(el) => addServiceRef(el, index)} 
-                                className="opacity-0 w-[47%] sm:w-[22%] md:w-[22%] lg:w-[18%] min-w-[150px]"
+                                className={`w-[47%] sm:w-[22%] md:w-[22%] lg:w-[18%] min-w-[150px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
                             >
                                 <ExpertiseCard
                                     title={expertise.title}
@@ -281,7 +291,7 @@ export default function Page() {
                                     <div
                                         key={`${client.name}-${index}`}
                                         ref={(el) => addClientRef(el, index)}
-                                        className="h-[200px] md:h-[250px]"
+                                        className={`h-[200px] md:h-[250px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
                                     >
                                         <ClientProfile
                                             name={client.name}
@@ -298,7 +308,7 @@ export default function Page() {
                                     <div
                                         key={`${client.name}-${index + 4}`}
                                         ref={(el) => addClientRef(el, index + 4)}
-                                        className="h-[200px] md:h-[250px]"
+                                        className={`h-[200px] md:h-[250px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
                                     >
                                         <ClientProfile
                                             name={client.name}
@@ -315,7 +325,7 @@ export default function Page() {
                         {/* Profils des clients au centre sur mobile */}
                         <div className="flex flex-wrap justify-center gap-4 mb-8 2xl:hidden">
                             {homeClientsData.map((client, index) => (
-                                <div key={`${client.name}-${index}`} className="h-[150px] md:h-[250px]">
+                                <div key={`${client.name}-${index}`} className={`h-[150px] md:h-[250px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}>
                                     <ClientProfile name={client.name} domain={client.domain} imageSrc={client.imageSrc} imageBackground={client.imageBackground} className="h-full" />
                                 </div>
                             ))}
