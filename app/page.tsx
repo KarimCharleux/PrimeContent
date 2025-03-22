@@ -36,6 +36,10 @@ export default function Page() {
     const clientsRef = useRef<HTMLDivElement>(null);
     const clientRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+    // Références pour les logos des marques
+    const brandRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const mobileBrandRefs = useRef<(HTMLDivElement | null)[]>([]);
+
     // État pour contrôler le démarrage des animations
     const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
 
@@ -74,96 +78,168 @@ export default function Page() {
         const words = gsap.utils.toArray<HTMLElement>('.hero-word');
         const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-        // Réinitialise les états initiaux
-        words.forEach(word => {
-            gsap.set(word, {
+        // Réinitialise les états initiaux - assurons-nous qu'ils sont visibles si shouldStartAnimations est vrai
+        if (words.length > 0) {
+            words.forEach(word => {
+                gsap.set(word, {
+                    yPercent: 100,
+                    opacity: 0,
+                    filter: 'blur(10px)',
+                    visibility: 'visible'
+                });
+            });
+
+            // Animation des mots - toujours animer pour garantir la visibilité
+            words.forEach((word, index) => {
+                tl.to(
+                    word,
+                    {
+                        yPercent: 0,
+                        opacity: 1,
+                        filter: 'blur(0px)',
+                        duration: 1,
+                        visibility: 'visible'
+                    },
+                    index * 0.2
+                );
+            });
+        }
+
+        if (heroTextRef.current) {
+            gsap.set(heroTextRef.current, {
                 yPercent: 100,
                 opacity: 0,
                 filter: 'blur(10px)',
                 visibility: 'visible'
             });
-        });
 
-        gsap.set(heroTextRef.current, {
-            yPercent: 100,
-            opacity: 0,
-            filter: 'blur(10px)',
-            visibility: 'visible'
-        });
-
-        // Animation des mots
-        words.forEach((word, index) => {
+            // Animation du texte du hero
             tl.to(
-                word,
-                {
+                heroTextRef.current,
+                { 
                     yPercent: 0,
                     opacity: 1,
                     filter: 'blur(0px)',
                     duration: 1,
                     visibility: 'visible'
                 },
-                index * 0.2
+                '-=0.4'
             );
-        });
-
-        // Animation du texte du hero
-        tl.to(
-            heroTextRef.current,
-            { 
-                yPercent: 0,
-                opacity: 1,
-                filter: 'blur(0px)',
-                duration: 1,
-                visibility: 'visible'
-            },
-            '-=0.4'
-        );
+        }
 
         // Animation des services au scroll
-        if (servicesRef.current && serviceRefs.current.length > 0) {
+        if (serviceRefs.current.length > 0) {
             serviceRefs.current.forEach((service, index) => {
-                gsap.fromTo(
-                    service,
-                    {
+                if (service) {
+                    gsap.set(service, {
                         y: 50,
                         opacity: 0,
-                    },
-                    {
-                        y: 0,
-                        opacity: 1,
-                        duration: 0.8,
-                        delay: index * 0.2,
-                        scrollTrigger: {
-                            trigger: service,
-                            start: 'top 80%',
-                            toggleActions: 'play none none none',
+                        scale: 0.9
+                    });
+                    
+                    gsap.to(
+                        service,
+                        {
+                            y: 0,
+                            opacity: 1,
+                            scale: 1,
+                            duration: 0.8,
+                            delay: index * 0.15,
+                            ease: "power2.out",
+                            scrollTrigger: {
+                                trigger: service,
+                                start: 'top 85%',
+                                toggleActions: 'play none none none',
+                            },
                         },
-                    },
-                );
+                    );
+                }
             });
         }
 
         // Animation des clients au scroll
-        if (clientsRef.current && clientRefs.current.length > 0) {
+        if (clientRefs.current.length > 0) {
             clientRefs.current.forEach((client, index) => {
-                gsap.fromTo(
-                    client,
-                    {
+                if (client) {
+                    gsap.set(client, {
                         y: 30,
                         opacity: 0,
-                    },
-                    {
-                        y: 0,
-                        opacity: 1,
-                        duration: 0.6,
-                        delay: index * 0.1,
-                        scrollTrigger: {
-                            trigger: client,
-                            start: 'top 80%',
-                            toggleActions: 'play none none none',
+                        scale: 0.95
+                    });
+                    
+                    gsap.to(
+                        client,
+                        {
+                            y: 0,
+                            opacity: 1,
+                            scale: 1,
+                            duration: 0.7,
+                            delay: 0.05 + (index % 6) * 0.1, // Grouper les animations par lignes de 6 max
+                            ease: "power2.out",
+                            scrollTrigger: {
+                                trigger: client,
+                                start: 'top 85%',
+                                toggleActions: 'play none none none',
+                            },
                         },
-                    },
-                );
+                    );
+                }
+            });
+        }
+
+        // Animation des logos des marques au scroll
+        if (brandRefs.current.length > 0) {
+            brandRefs.current.forEach((brand, index) => {
+                if (brand) {
+                    gsap.set(brand, {
+                        scale: 0.8,
+                        opacity: 0,
+                    });
+                    
+                    gsap.to(
+                        brand,
+                        {
+                            scale: 1,
+                            opacity: 1,
+                            duration: 0.5,
+                            delay: 0.1 + index * 0.1,
+                            ease: "back.out(1.5)",
+                            scrollTrigger: {
+                                trigger: brand,
+                                start: 'top 85%',
+                                toggleActions: 'play none none none',
+                            },
+                        },
+                    );
+                }
+            });
+        }
+        
+        // Animation des logos des marques sur mobile
+        if (mobileBrandRefs.current.length > 0) {
+            mobileBrandRefs.current.forEach((brand, index) => {
+                if (brand) {
+                    gsap.set(brand, {
+                        scale: 0.8,
+                        opacity: 0,
+                    });
+                    
+                    gsap.to(
+                        brand,
+                        {
+                            scale: 1,
+                            opacity: 1,
+                            duration: 0.5,
+                            delay: 0.1 + index * 0.08,
+                            ease: "back.out(1.5)",
+                            scrollTrigger: {
+                                trigger: brand,
+                                start: 'top 85%',
+                                toggleActions: 'play none none none',
+                            },
+                        },
+                    );
+                }
             });
         }
     }, [shouldStartAnimations]);
@@ -176,6 +252,16 @@ export default function Page() {
     // Fonction pour ajouter les références aux clients
     const addClientRef = (el: HTMLDivElement | null, index: number) => {
         clientRefs.current[index] = el;
+    };
+
+    // Fonction pour ajouter les références aux logos desktop
+    const addBrandRef = (el: HTMLDivElement | null, index: number) => {
+        brandRefs.current[index] = el;
+    };
+
+    // Fonction pour ajouter les références aux logos mobile
+    const addMobileBrandRef = (el: HTMLDivElement | null, index: number) => {
+        mobileBrandRefs.current[index] = el;
     };
 
     return (
@@ -262,14 +348,14 @@ export default function Page() {
                     <div className="flex flex-col 2xl:flex-row 2xl:items-center 2xl:justify-center gap-4 2xl:gap-6">
                         {/* Marques à gauche - visible uniquement sur desktop */}
                         <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
-                            {homeBrandsData.slice(0, 4).map((brand) => (
-                                <div key={brand.name} className="aspect-square">
+                            {homeBrandsData.slice(0, 4).map((brand, index) => (
+                                <div key={brand.name} className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addBrandRef(el, index)}>
                                     <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
                                 </div>
                             ))}
                             <div className="aspect-square"></div>
-                            {homeBrandsData.slice(4, 5).map((brand) => (
-                                <div key={brand.name} className="aspect-square">
+                            {homeBrandsData.slice(4, 5).map((brand, index) => (
+                                <div key={brand.name} className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addBrandRef(el, index + 4)}>
                                     <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
                                 </div>
                             ))}
@@ -277,8 +363,8 @@ export default function Page() {
 
                         {/* Marques en haut - visible uniquement sur mobile */}
                         <div className="flex flex-wrap justify-center gap-4 mb-8 2xl:hidden">
-                            {homeBrandsData.slice(0, 5).map((brand) => (
-                                <div key={brand.name} className="aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4">
+                            {homeBrandsData.slice(0, 5).map((brand, index) => (
+                                <div key={brand.name} className={`aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4 ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addMobileBrandRef(el, index)}>
                                     <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
                                 </div>
                             ))}
@@ -325,16 +411,26 @@ export default function Page() {
                         {/* Profils des clients au centre sur mobile */}
                         <div className="flex flex-wrap justify-center gap-4 mb-8 2xl:hidden">
                             {homeClientsData.map((client, index) => (
-                                <div key={`${client.name}-${index}`} className={`h-[150px] md:h-[250px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}>
-                                    <ClientProfile name={client.name} domain={client.domain} imageSrc={client.imageSrc} imageBackground={client.imageBackground} className="h-full" />
+                                <div 
+                                    key={`${client.name}-${index}`} 
+                                    className={`h-[150px] md:h-[250px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                    ref={(el) => addClientRef(el, index + homeClientsData.length)}
+                                >
+                                    <ClientProfile 
+                                        name={client.name} 
+                                        domain={client.domain} 
+                                        imageSrc={client.imageSrc} 
+                                        imageBackground={client.imageBackground} 
+                                        className="h-full" 
+                                    />
                                 </div>
                             ))}
                         </div>
 
                         {/* Marques à droite - visible uniquement sur desktop */}
                         <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
-                            {homeBrandsData.slice(5, 10).map((brand) => (
-                                <div key={brand.name} className="aspect-square">
+                            {homeBrandsData.slice(5, 10).map((brand, index) => (
+                                <div key={brand.name} className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addBrandRef(el, index + 5)}>
                                     <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
                                 </div>
                             ))}
@@ -342,8 +438,8 @@ export default function Page() {
 
                         {/* Marques en bas - visible uniquement sur mobile */}
                         <div className="flex flex-wrap justify-center gap-4 mt-8 2xl:hidden">
-                            {homeBrandsData.slice(5).map((brand) => (
-                                <div key={brand.name} className="aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4">
+                            {homeBrandsData.slice(5).map((brand, index) => (
+                                <div key={brand.name} className={`aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4 ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addMobileBrandRef(el, index + 5)}>
                                     <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
                                 </div>
                             ))}
