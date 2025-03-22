@@ -1,7 +1,7 @@
 'use client';
-import { ReactNode, useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { ReactNode, useState } from 'react';
 
 interface ExpertiseCardProps {
   readonly title: string;

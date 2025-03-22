@@ -1,27 +1,28 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import gsap from './lib/gsap-config';
-import Gallery from './components/Gallery';
-import ExpertiseCard from './components/ExpertiseCard';
+
+import AnimatedStat from './components/AnimatedStat';
+import BrandLogo from './components/BrandLogo';
 import ClientProfile from './components/ClientProfile';
+import CustomerReviews from './components/CustomerReviews';
+import ExpertiseCard from './components/ExpertiseCard';
+import Footer from './components/Footer';
+import Gallery from './components/Gallery';
+import Header from './components/Header';
+import LatestProjects from './components/LatestProjects';
 import PortfolioGrid from './components/PortfolioGrid/PortfolioGrid';
 import PrimaryButton from './components/PrimaryButton';
-import AnimatedStat from './components/AnimatedStat';
-import Footer from './components/Footer';
-import Header from './components/Header';
-import expertiseData from './data/homeExpertiseData';
-import BrandLogo from './components/BrandLogo';
+import customerReviewsData from './data/customerReviewsData';
 import homeBrandsData from './data/homeBrandsData';
 import homeClientsData from './data/homeClientsData';
-import LatestProjects from './components/LatestProjects';
+import expertiseData from './data/homeExpertiseData';
+import homePortfolioProjects from './data/homePortfolioData';
 import latestProjectsData from './data/latestProjectsData';
-import CustomerReviews from './components/CustomerReviews';
-import customerReviewsData from './data/customerReviewsData';
+import gsap from './lib/gsap-config';
 
 // Importation des styles
 import './styles/gallery.scss';
 import './styles/home.scss';
-import homePortfolioProjects from './data/homePortfolioData';
 
 export default function Page() {
     // Références pour les éléments à animer

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import Header from '../components/Header';
+import { useState, useEffect, useRef } from 'react';
+
 import Footer from '../components/Footer';
+import Header from '../components/Header';
 import PortfolioGrid from '../components/PortfolioGrid';
 import photosData from '../data/photosData';
 

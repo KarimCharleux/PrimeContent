@@ -1,8 +1,10 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
-import gsap from '../lib/gsap-config';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
+import { useEffect, useRef, useState } from 'react';
+
+import gsap from '../lib/gsap-config';
+
 
 interface Review {
   id: string;

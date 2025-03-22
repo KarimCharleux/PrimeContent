@@ -1,7 +1,8 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState, useRef, useEffect } from 'react';
+
 import gsap from '../lib/gsap-config';
 
 interface Project {

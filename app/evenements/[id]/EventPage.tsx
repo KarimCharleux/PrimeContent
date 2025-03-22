@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Evenement } from '../../data/evenementsData';
+import { useState, useEffect, useRef } from 'react';
+
 import ImageCarousel from '../../components/ImageCarousel/ImageCarousel';
 import PrimaryButton from '../../components/PrimaryButton';
+import { Evenement } from '../../data/evenementsData';
 
 // Variants pour les animations
 const fadeInUp = {

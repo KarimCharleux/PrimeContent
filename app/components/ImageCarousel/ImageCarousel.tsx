@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useEffect, useRef } from 'react';
+
 import styles from './ImageCarousel.module.scss';
 
 interface ImageCarouselProps { 

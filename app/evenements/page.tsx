@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import Image from 'next/image';
-import Header from '../components/Header';
+import Link from 'next/link';
+import { useState, useEffect, useRef } from 'react';
+
 import Footer from '../components/Footer';
+import Header from '../components/Header';
 import evenementsData, { Evenement } from '../data/evenementsData';
 
 // Importation des styles

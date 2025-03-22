@@ -1,7 +1,9 @@
 import { Suspense } from 'react';
-import Header from '../../components/Header';
+
 import Footer from '../../components/Footer';
+import Header from '../../components/Header';
 import evenementsData, { Evenement } from '../../data/evenementsData';
+
 import EventPage from './EventPage';
 
 // Importation des styles

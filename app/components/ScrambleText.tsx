@@ -1,7 +1,8 @@
 'use client';
-import { useRef, useState, useEffect } from 'react';
-import gsap from '../lib/gsap-config';
 import Link from 'next/link';
+import { useRef, useState, useEffect } from 'react';
+
+import gsap from '../lib/gsap-config';
 
 interface ScrambleTextProps {
   text: string;

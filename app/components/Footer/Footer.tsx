@@ -1,8 +1,10 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
+
 import gsap from '../../lib/gsap-config';
 import PrimaryButton from '../PrimaryButton';
+
 import styles from './footer.module.scss';
 
 interface FooterProps {

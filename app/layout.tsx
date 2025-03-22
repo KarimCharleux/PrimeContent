@@ -3,6 +3,7 @@
 import { Sora, Manrope } from 'next/font/google';
 import './globals.css';
 import { useState } from 'react';
+
 import SplashScreen from './components/SplashScreen';
 
 // Configuration de la police Sora pour tout le site

@@ -1,7 +1,9 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import gsap from '../../lib/gsap-config';
 import Image from 'next/image';
+import { useState, useEffect, useRef } from 'react';
+
+import gsap from '../../lib/gsap-config';
+
 import styles from './PortfolioGrid.module.scss';
 
 // Types pour les projets

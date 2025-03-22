@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
+
 import { useImageStore } from '../store/imageStore';
 
 export default function Gallery() {

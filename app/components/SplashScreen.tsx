@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
+import { useEffect, useState } from 'react';
+
 import { useImageStore } from '../store/imageStore';
 
 interface SplashScreenProps {

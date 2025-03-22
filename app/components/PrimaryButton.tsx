@@ -1,11 +1,13 @@
 'use client';
-import { useRef, useEffect, useState } from 'react';
-import Link from 'next/link';
-import ScrambleText from './ScrambleText';
-import gsap from '../lib/gsap-config';
-import '../styles/primary-button.scss';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { useRef, useEffect, useState } from 'react';
+
 import { useAnimationControl } from '../hooks/useAnimationControl';
+import gsap from '../lib/gsap-config';
+import ScrambleText from './ScrambleText';
+
+import '../styles/primary-button.scss';
 
 interface PrimaryButtonProps {
   readonly text: string;

@@ -1,8 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import Header from '../components/Header';
+import { useState, useEffect } from 'react';
+
 import Footer from '../components/Footer';
+import Header from '../components/Header';
 import './contact.scss';
 
 // Variants pour les animations
@@ -79,10 +80,10 @@ export default function ContactPage() {
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Logique d'envoi du formulaire à implémenter
-        console.log('Formulaire soumis:', formData);
+        // console.log('Formulaire soumis:', formData);
+        setIsSubmitting(true);
         // Réinitialiser le formulaire après soumission
         setFormData({
             nom: '',
