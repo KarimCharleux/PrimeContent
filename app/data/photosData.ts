@@ -54,6 +54,12 @@ const photosData: Project[] = [
     format: "portrait",
     title: "Gastronomie"
   },
+  {
+    category: "Mariages",
+    source: "/images/photos/mariage-1.jpg",
+    format: "paysage",
+    title: "Sébastien et Laure",
+  },
 ];
 
 export default photosData; 

@@ -10,7 +10,7 @@ export interface Project {
     category: string;
     source: string;
     isVideo?: boolean;
-    format?: 'carre' | 'paysage' | 'portrait';
+    format?: 'paysage' | 'portrait';
 }
 
 interface PortfolioGridProps {
@@ -151,28 +151,24 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         const format = project.format || detectFormat(project.source);
 
         switch (format) {
-            case 'carre':
-                return styles.portfolioItemCarre;
             case 'paysage':
                 return styles.portfolioItemPaysage;
             case 'portrait':
                 return styles.portfolioItemPortrait;
             default:
-                return styles.portfolioItemCarre; // Par défaut, on utilise le format carré
+                return styles.portfolioItemPaysage; // Par défaut, on utilise le format paysage
         }
     };
 
     // Fonction pour détecter le format d'une image à partir de son nom de fichier
-    const detectFormat = (source: string): 'carre' | 'paysage' | 'portrait' => {
+    const detectFormat = (source: string): 'paysage' | 'portrait' => {
         const filename = source.toLowerCase();
 
-        if (filename.includes('paysage') || filename.includes('landscape')) {
-            return 'paysage';
-        } else if (filename.includes('portrait') || filename.includes('vertical')) {
+        if (filename.includes('portrait') || filename.includes('vertical')) {
             return 'portrait';
         } else {
-            // Par défaut, on considère que c'est un format carré
-            return 'carre';
+            // Par défaut, on considère que c'est un format paysage
+            return 'paysage';
         }
     };
 

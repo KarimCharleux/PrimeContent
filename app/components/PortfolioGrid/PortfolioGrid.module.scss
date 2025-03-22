@@ -73,9 +73,9 @@
   position: relative;
   border-radius: 8px;
   cursor: pointer;
+  display: flex;
   
   // Styles communs pour tous les formats
-  &.portfolioItemCarre,
   &.portfolioItemPaysage,
   &.portfolioItemPortrait {
     // Assurer que les images et vidéos remplissent correctement l'espace
@@ -97,45 +97,35 @@
     }
   }
   
-  // Format carré (4x4)
-  &.portfolioItemCarre {
-    grid-column: span 4;
-    aspect-ratio: 1/1;
-    
-    @media (max-width: 768px) {
-      grid-column: span 3;
-    }
-    
-    @media (max-width: 480px) {
-      grid-column: span 2;
-    }
-  }
-  
-  // Format paysage (6x4) - modification pour avoir la même hauteur que le portrait
+  // Format paysage (6x4) - même hauteur que le portrait (300px)
   &.portfolioItemPaysage {
     grid-column: span 6;
-    aspect-ratio: 1.5/1; // Ajustement pour être plus proche de la hauteur du portrait
+    height: 300px;
     
     @media (max-width: 768px) {
       grid-column: span 6;
+      height: 250px;
     }
     
     @media (max-width: 480px) {
       grid-column: span 2;
+      height: 150px;
     }
   }
   
-  // Format portrait (3x4)
+  // Format portrait (3x4) - même hauteur que le paysage (300px)
   &.portfolioItemPortrait {
     grid-column: span 3;
-    aspect-ratio: 0.75/1;
+    height: 300px;
     
     @media (max-width: 768px) {
       grid-column: span 3;
+      height: 250px;
     }
     
     @media (max-width: 480px) {
       grid-column: span 2;
+      height: 150px;
     }
   }
   
