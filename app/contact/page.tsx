@@ -94,7 +94,7 @@ export default function ContactPage() {
     };
 
     return (
-        <main className="flex flex-col bg-black text-white w-screen">
+        <main className="global-main-page">
             <Header />
 
             <section className="px-4 py-12 min-h-screen">

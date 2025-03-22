@@ -72,7 +72,7 @@ export default function PhotosPage() {
   }, []);
 
   return (
-    <main className="photos-page bg-black">
+    <main className="global-main-page">
       <Header />
 
       <section className="px-4 py-16 min-h-screen">

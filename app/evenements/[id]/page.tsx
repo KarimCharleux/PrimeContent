@@ -44,7 +44,7 @@ export default function EvenementDetailPage({ params }: Props) {
   }
 
   return (
-    <main className="event-photos-page min-h-screen bg-black">
+    <main className="global-main-page">
       <Header />
       <Suspense fallback={
         <div className="container">
