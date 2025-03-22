@@ -4,8 +4,6 @@ import { Sora, Manrope } from 'next/font/google';
 import './globals.css';
 import { useState } from 'react';
 import SplashScreen from './components/SplashScreen';
-import Header from './components/Header';
-import Footer from './components/Footer';
 
 // Configuration de la police Sora pour tout le site
 const sora = Sora({ 

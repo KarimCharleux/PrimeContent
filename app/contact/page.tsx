@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import '../styles/contact/contact.scss';
+import './contact.scss';
 
 // Variants pour les animations
 const fadeInUp = {
@@ -94,8 +94,10 @@ export default function ContactPage() {
     };
 
     return (
-        <main className="flex flex-col min-h-screen bg-black text-white w-screen">
-            <section className="px-4 py-12">
+        <main className="flex flex-col bg-black text-white w-screen">
+            <Header />
+
+            <section className="px-4 py-12 min-h-screen">
                 <div className="container">
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
@@ -159,8 +161,8 @@ export default function ContactPage() {
                                             />
                                         </svg>
                                     </div>
-                                    <a href="tel:+9779876543210" className="contact-link">
-                                        +977-9876543210
+                                    <a href="tel:+33649095795" className="contact-link">
+                                        +33 6 49 09 57 95
                                     </a>
                                 </motion.div>
 
@@ -182,8 +184,8 @@ export default function ContactPage() {
                                             <path d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z" />
                                         </svg>
                                     </div>
-                                    <a href="mailto:contact@mk.com" className="contact-link">
-                                        contact@mk.com
+                                    <a href="mailto:contact@primecontent.fr" className="contact-link">
+                                        contact@primecontent.fr
                                     </a>
                                 </motion.div>
 
@@ -451,6 +453,8 @@ export default function ContactPage() {
                     </div>
                 </div>
             </section>
+
+            <Footer hideCTA={true} />
         </main>
     );
 }

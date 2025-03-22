@@ -1,13 +1,13 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ImageCarousel from '../components/ImageCarousel/ImageCarousel';
 import { mariagesGalleryData, mariagesTestimonialsData } from '../data/mariagesData';
-import '../styles/mariages/mariages.scss';
+import './mariages.scss';
 
 // Variants pour les animations
 const fadeInUp = {

@@ -9,7 +9,7 @@ import Footer from '../components/Footer';
 import evenementsData, { Evenement } from '../data/evenementsData';
 
 // Importation des styles
-import '../styles/evenements/evenements.scss';
+import './evenements.scss';
 
 // Variants pour les animations
 const fadeInUp = {
@@ -172,10 +172,10 @@ export default function EvenementsPage() {
   };
 
   return (
-    <main className="evenements-page min-h-screen bg-black">
+    <main className="evenements-page bg-black">
       <Header />
 
-      <section className="px-4 py-12">
+      <section className="px-4 py-12 min-h-screen">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: -20 }}

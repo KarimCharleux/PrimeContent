@@ -5,7 +5,7 @@ import evenementsData, { Evenement } from '../../data/evenementsData';
 import EventPage from './EventPage';
 
 // Importation des styles
-import '../../styles/evenements/evenements.scss';
+import '../evenements.scss';
 
 // Fonction pour générer les paramètres statiques
 export async function generateStaticParams() {

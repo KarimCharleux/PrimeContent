@@ -1,9 +1,9 @@
 'use client';
+
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import '../styles/header.scss';
 import { motion } from 'framer-motion';
-import { useAnimationControl } from '../hooks/useAnimationControl';
+import { useAnimationControl } from '../../hooks/useAnimationControl';
 
 export default function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -184,4 +184,4 @@ export default function Header() {
             </div>
         </motion.header>
     );
-}
+} 

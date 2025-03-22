@@ -8,7 +8,7 @@ import PortfolioGrid from '../components/PortfolioGrid';
 import photosData from '../data/photosData';
 
 // Importation des styles
-import '../styles/photos/photos.scss';
+import './photos.scss';
 
 // Variants pour les animations
 const fadeInUp = {
