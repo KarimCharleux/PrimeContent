@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import './ImageCarousel.scss';
+import './ImageCarousel.module.scss';
 
 interface ImageCarouselProps { 
   images: string[];

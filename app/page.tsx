@@ -4,7 +4,7 @@ import gsap from './lib/gsap-config';
 import Gallery from './components/Gallery';
 import ExpertiseCard from './components/ExpertiseCard';
 import ClientProfile from './components/ClientProfile';
-import PortfolioSection from './components/PortfolioSection';
+import PortfolioGrid from './components/PortfolioGrid/PortfolioGrid';
 import PrimaryButton from './components/PrimaryButton';
 import AnimatedStat from './components/AnimatedStat';
 import Footer from './components/Footer';
@@ -501,14 +501,14 @@ export default function Page() {
             </section>
 
             {/* Section NOS RÉALISATIONS */}
-            <section className="py-24 bg-gradient-to-b from-black via-gray-900 to-black portfolio-section">
+            <section className="py-24 bg-gradient-to-b from-black via-gray-900 to-black">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
                             NOS RÉALISATIONS
                         </h2>
                     </div>
-                    <PortfolioSection projects={homePortfolioProjects} showFilter={true} />
+                    <PortfolioGrid projects={homePortfolioProjects} showFilter={true} />
                 </div>
             </section>
 

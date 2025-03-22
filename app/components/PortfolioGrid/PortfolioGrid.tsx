@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import gsap from '../lib/gsap-config';
-import ScrambleText from './ScrambleText';
+import gsap from '../../lib/gsap-config';
 import Image from 'next/image';
+import styles from './PortfolioGrid.module.scss';
 
 // Types pour les projets
 export interface Project {
@@ -10,15 +10,15 @@ export interface Project {
     category: string;
     source: string;
     isVideo?: boolean;
-    format?: 'carre' | 'paysage' | 'portrait'; // Ajout du format
+    format?: 'carre' | 'paysage' | 'portrait';
 }
 
-interface PortfolioSectionProps {
+interface PortfolioGridProps {
     projects: Project[];
     showFilter?: boolean;
 }
 
-const PortfolioSection: React.FC<PortfolioSectionProps> = ({
+const PortfolioGrid: React.FC<PortfolioGridProps> = ({
     projects,
     showFilter = true,
 }) => {
@@ -104,7 +104,7 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
                 // Animation d'entrée après mise à jour
                 setTimeout(() => {
                     const portfolioItems =
-                        projectsContainerRef.current?.querySelectorAll('.portfolio-item');
+                        projectsContainerRef.current?.querySelectorAll(`.${styles.portfolioItem}`);
                     if (portfolioItems && portfolioItems.length > 0) {
                         gsap.fromTo(
                             portfolioItems,
@@ -152,18 +152,17 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
 
         switch (format) {
             case 'carre':
-                return 'portfolio-item-carre';
+                return styles.portfolioItemCarre;
             case 'paysage':
-                return 'portfolio-item-paysage';
+                return styles.portfolioItemPaysage;
             case 'portrait':
-                return 'portfolio-item-portrait';
+                return styles.portfolioItemPortrait;
             default:
-                return 'portfolio-item-carre'; // Par défaut, on utilise le format carré
+                return styles.portfolioItemCarre; // Par défaut, on utilise le format carré
         }
     };
 
     // Fonction pour détecter le format d'une image à partir de son nom de fichier
-    // Cette fonction est une heuristique simple, à adapter selon vos conventions de nommage
     const detectFormat = (source: string): 'carre' | 'paysage' | 'portrait' => {
         const filename = source.toLowerCase();
 
@@ -178,17 +177,17 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
     };
 
     return (
-        <div>
+        <div className={styles.portfolioContainer}>
             {/* Filtres de catégories */}
             {showFilter && categories.length > 2 && (
-                <div className="flex flex-wrap justify-center gap-4 mb-12">
+                <div className={styles.filterContainer}>
                     {categories.map((category) => (
                         <button
                             key={category}
-                            className={`px-8 py-3 rounded-full filter-btn transition-all ${
+                            className={`${styles.filterBtn} ${
                                 activeFilter === category
-                                    ? 'bg-white text-black'
-                                    : 'bg-transparent text-white border border-white/20 hover:bg-white/10'
+                                    ? styles.active
+                                    : styles.inactive
                             }`}
                             onClick={() => setActiveFilter(category)}
                         >
@@ -199,13 +198,13 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
             )}
 
             {/* Grille de projets */}
-            <div ref={projectsContainerRef} className="portfolio-grid">
+            <div ref={projectsContainerRef} className={styles.portfolioGrid}>
                 {filteredProjects.length > 0 ? (
                     filteredProjects.map((project, index) => (
                         <div
                             key={`${project.title || project.category}-${index}`}
                             ref={(el) => addProjectRef(el, index)}
-                            className={`portfolio-item group ${getItemSizeClass(project)}`}
+                            className={`${styles.portfolioItem} ${getItemSizeClass(project)} group`}
                         >
                             {project.isVideo ? (
                                 <>
@@ -222,10 +221,10 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
                                         }}
                                     />
                                     <div
-                                        className={`absolute inset-0 bg-black/30 z-10 flex items-center justify-center cursor-pointer transition-opacity duration-300 ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
+                                        className={`${styles.videoPlayBtn} ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
                                         onClick={() => handleVideoPlay(index)}
                                     >
-                                        <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                                        <div className={styles.videoPlayIcon}>
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"
                                                 className="h-8 w-8 text-white"
@@ -242,7 +241,7 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
                                     </div>
                                     {activeVideoIndex === index && (
                                         <div
-                                            className="absolute bottom-4 right-4 z-20 bg-black/70 backdrop-blur-sm p-2 rounded-full cursor-pointer"
+                                            className={styles.videoPauseBtn}
                                             onClick={() => handleVideoPlay(index)}
                                         >
                                             <svg
@@ -263,7 +262,7 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
                                     )}
                                 </>
                             ) : (
-                                <div className="portfolio-image-container">
+                                <div className={styles.portfolioImageContainer}>
                                     <Image
                                         src={project.source}
                                         alt={project.title ?? ''}
@@ -275,13 +274,13 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
                                 </div>
                             )}
 
-                            <div className="absolute top-4 left-4 z-20 bg-black/50 backdrop-blur-sm px-4 py-1 rounded-full text-sm">
+                            <div className={styles.categoryBadge}>
                                 {project.category}
                             </div>
 
                             {project.title && (
-                                <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/80 to-transparent pt-10 pb-4 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                    <h3 className="text-white text-lg font-medium">
+                                <div className={`${styles.titleGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
+                                    <h3 className={styles.itemTitle}>
                                         {project.title}
                                     </h3>
                                 </div>
@@ -289,7 +288,7 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
                         </div>
                     ))
                 ) : (
-                    <div className="col-span-full text-center py-12 text-gray-400">
+                    <div className={styles.noProjects}>
                         Aucun projet ne correspond à ces critères.
                     </div>
                 )}
@@ -298,4 +297,4 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
     );
 };
 
-export default PortfolioSection;
+export default PortfolioGrid; 

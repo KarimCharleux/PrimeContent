@@ -1,4 +1,4 @@
-import { Project } from '../components/PortfolioSection';
+import { Project } from '../components/PortfolioGrid/PortfolioGrid';
 
 // Données des projets du portfolio pour la page d'accueil
 const homePortfolioProjects: Project[] = [
