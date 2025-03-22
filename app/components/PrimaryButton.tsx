@@ -31,33 +31,27 @@ export default function PrimaryButton({
   const shouldAnimate = useAnimationControl();
   const [isHovered, setIsHovered] = useState(false);
 
-  // Masquer le bouton immédiatement au montage du composant
+  // Animation initiale
   useEffect(() => {
-    if (animateOnMount && containerRef.current) {
-      // Masquer le bouton immédiatement
-      gsap.set(containerRef.current, { 
-        y: 30, 
-        opacity: 0,
-        scale: 0.95
-      });
-    }
-  }, []); // Ce useEffect s'exécute une seule fois au montage
-
-  // Animation d'entrée avec délai
-  useEffect(() => {
-    if (animateOnMount && containerRef.current) {
-      // Animation d'entrée avec timeline
-      const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
-      
-      tl.to(containerRef.current, {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.8,
-        delay: delay
-      });
-    }
-  }, [animateOnMount, delay]); // Ajout des dépendances animateOnMount et delay
+    if (!animateOnMount || !containerRef.current) return;
+    
+    // Masquer initialement
+    gsap.set(containerRef.current, { 
+      y: 30, 
+      opacity: 0,
+      scale: 0.95
+    });
+    
+    // Animer l'entrée
+    gsap.to(containerRef.current, {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      duration: 0.8,
+      delay,
+      ease: 'power3.out'
+    });
+  }, [animateOnMount, delay]);
 
   // Icône de flèche par défaut
   const defaultIcon = (
@@ -75,29 +69,24 @@ export default function PrimaryButton({
     </svg>
   );
 
-  // Classes de base pour le bouton
   const buttonClasses = `primary-button-content ${className}`;
-
   const buttonVariants = {
-    hidden: {
-      y: 20,
-      opacity: 0,
-    },
+    hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,
       opacity: 1,
       transition: {
         duration: 0.6,
         ease: "easeOut",
-        delay: delay,
-      },
-    },
+        delay
+      }
+    }
   };
 
   const handleMouseEnter = () => setIsHovered(true);
   const handleMouseLeave = () => setIsHovered(false);
 
-  // Si un lien est fourni, rendre un composant Link
+  // Version avec lien
   if (href) {
     return (
       <motion.div
@@ -105,6 +94,7 @@ export default function PrimaryButton({
         animate={shouldAnimate ? "visible" : "hidden"}
         variants={buttonVariants}
         className={`primary-button-container ${className}`}
+        ref={containerRef}
       >
         <Link
           href={href}
@@ -126,13 +116,14 @@ export default function PrimaryButton({
     );
   }
 
-  // Sinon, rendre un bouton standard
+  // Version avec bouton
   return (
     <motion.div
       initial={animateOnMount ? "hidden" : "visible"}
       animate={shouldAnimate ? "visible" : "hidden"}
       variants={buttonVariants}
       className={`primary-button-container ${className}`}
+      ref={containerRef}
     >
       <button
         ref={buttonRef as React.RefObject<HTMLButtonElement>}
