@@ -87,17 +87,15 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
 
     // Fonction pour passer à l'image suivante
     const nextImage = () => {
-        const imageProjects = filteredProjects.filter((project) => !project.isVideo);
         setCurrentImageIndex((prevIndex) =>
-            prevIndex === imageProjects.length - 1 ? 0 : prevIndex + 1,
+            prevIndex === filteredProjects.length - 1 ? 0 : prevIndex + 1,
         );
     };
 
     // Fonction pour passer à l'image précédente
     const prevImage = () => {
-        const imageProjects = filteredProjects.filter((project) => !project.isVideo);
         setCurrentImageIndex((prevIndex) =>
-            prevIndex === 0 ? imageProjects.length - 1 : prevIndex - 1,
+            prevIndex === 0 ? filteredProjects.length - 1 : prevIndex - 1,
         );
     };
 
@@ -207,10 +205,11 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
         }
     };
 
-    // Préparation des images pour le carrousel (uniquement les images, pas les vidéos)
-    const carouselImages = filteredProjects
-        .filter((project) => !project.isVideo)
-        .map((project) => project.source);
+    // Préparation des médias pour le carrousel (images et vidéos)
+    const carouselMedia = filteredProjects.map(project => ({
+        src: project.source,
+        isVideo: project.isVideo
+    }));
 
     return (
         <>
@@ -240,6 +239,13 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
                                 key={`${project.title || project.category}-${index}`}
                                 ref={(el) => addProjectRef(el, index)}
                                 className={`${styles.portfolioItem} ${getItemSizeClass(project)} group`}
+                                onClick={() => {
+                                    if (!project.isVideo || activeVideoIndex !== index) {
+                                        // Trouver l'index correct dans le tableau filtré
+                                        const mediaIndex = filteredProjects.findIndex(p => p.source === project.source);
+                                        openCarousel(mediaIndex);
+                                    }
+                                }}
                             >
                                 {project.isVideo ? (
                                     <>
@@ -250,14 +256,9 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
                                             loop
                                             muted
                                             playsInline
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleVideoPlay(index);
-                                            }}
                                         />
                                         <div
                                             className={`${styles.videoPlayBtn} ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
-                                            onClick={() => handleVideoPlay(index)}
                                         >
                                             <div className={styles.videoPlayIcon}>
                                                 <svg
@@ -274,39 +275,9 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
                                                 </svg>
                                             </div>
                                         </div>
-                                        {activeVideoIndex === index && (
-                                            <div
-                                                className={styles.videoPauseBtn}
-                                                onClick={() => handleVideoPlay(index)}
-                                            >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    className="h-6 w-6 text-white"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                    />
-                                                </svg>
-                                            </div>
-                                        )}
                                     </>
                                 ) : (
-                                    <div
-                                        className={styles.portfolioImageContainer}
-                                        onClick={() => {
-                                            // Trouver l'index correct dans le tableau filtré de projets qui sont des images
-                                            const imageIndex = filteredProjects
-                                                .filter((p) => !p.isVideo)
-                                                .findIndex((p) => p.source === project.source);
-                                            openCarousel(imageIndex);
-                                        }}
-                                    >
+                                    <div className={styles.portfolioImageContainer}>
                                         <Image
                                             src={project.source}
                                             alt={project.title ?? ''}
@@ -337,10 +308,10 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
                 </div>
             </div>
 
-            {/* Carrousel d'images */}
-            {showCarousel && carouselImages.length > 0 && (
+            {/* Carrousel d'images et vidéos */}
+            {showCarousel && carouselMedia.length > 0 && (
                 <ImageCarousel
-                    images={carouselImages}
+                    media={carouselMedia}
                     currentIndex={currentImageIndex}
                     onClose={closeCarousel}
                     onNext={nextImage}

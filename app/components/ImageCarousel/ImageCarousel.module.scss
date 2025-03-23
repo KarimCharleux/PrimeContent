@@ -84,6 +84,118 @@
   border-radius: 4px;
 }
 
+// Style pour la vidéo
+.video-wrapper {
+  position: relative;
+  max-width: 100%;
+  max-height: 90vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: #000;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.carousel-video {
+  max-width: 100%;
+  max-height: 85vh;
+  width: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+// Contrôles vidéo
+.video-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0));
+  padding: 30px 16px 10px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 0;
+  transform: translateY(10px);
+  
+  .video-wrapper:hover & {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  margin-bottom: 10px;
+  position: relative;
+  cursor: pointer;
+  
+  &:hover {
+    height: 6px;
+  }
+}
+
+.progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: #ffffff;
+  border-radius: 2px;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    right: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  
+  .progress-bar:hover &::after {
+    opacity: 1;
+  }
+}
+
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.control-button {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.time-display {
+  font-size: 14px;
+  font-family: monospace;
+  color: rgba(255, 255, 255, 0.8);
+  min-width: 100px;
+}
+
 // Style pour le bouton de base
 .carousel-button {
   background-color: rgba(30, 30, 30, 0.6);
