@@ -1,13 +1,12 @@
 'use client';
 
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import Image from 'next/image';
 import React, { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 
 import { Spinner } from '@/app/admin/components/Spinner';
-import { db, storage } from '@/app/admin/lib/firebase-client';
+import { db } from '@/app/admin/lib/firebase-client';
 import ExpertiseCard from '@/app/components/ExpertiseCard';
 
 interface Expertise {
@@ -16,7 +15,7 @@ interface Expertise {
   description: string;
   backgroundImage: string;
   href: string;
-  iconName: string;
+  icon: string;
 }
 
 export default function HomeTabExpertises() {
@@ -60,22 +59,10 @@ export default function HomeTabExpertises() {
     fetchExpertises();
   }, []);
 
-  // Fonction pour extraire le nom de l'icône à partir du SVG
-  const getIconNameFromSvg = (iconNode: React.ReactNode): string => {
-    // Cette fonction est une simplification, en pratique vous devriez stocker le nom de l'icône
-    // Ici, on fait une déduction basée sur le path ou viewBox du SVG
-    const svgString = JSON.stringify(iconNode);
-    if (svgString.includes('M15 10l4.553-2.276')) return 'video';
-    if (svgString.includes('M3 9a2 2 0 012-2h.93')) return 'photo';
-    if (svgString.includes('M13 10V3L4 14h7v7l9-11h-7z')) return 'social';
-    if (svgString.includes('M7 21a4 4 0 01-4-4V5')) return 'branding';
-    if (svgString.includes('M9.75 17L9 20l-1 1h8l-1-1')) return 'web';
-    return 'default';
-  };
-
   // Fonction pour obtenir l'icône à partir du nom
-  const getIconFromName = (iconName: string): React.ReactNode => {
-    switch (iconName) {
+  const getIconFromName = (icon: string): React.ReactNode => {
+    // Vérifier si c'est un nom d'icône prédéfini
+    switch (icon) {
       case 'video':
         return (
           <svg
@@ -162,22 +149,37 @@ export default function HomeTabExpertises() {
           </svg>
         );
       default:
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 md:h-7 md:w-7"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="black"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        );
+        // Si ce n'est pas un nom prédéfini, essayer de traiter comme du SVG brut
+        try {
+          if (icon.includes("<svg")) {
+            // Vérifier si on est côté client (typeof window !== 'undefined')
+            if (typeof window !== 'undefined') {
+              // Créer un div temporaire pour parser le SVG
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = icon;
+              
+              // Obtenir l'élément SVG
+              const svgElement = tempDiv.querySelector('svg');
+              
+              if (svgElement) {
+                // Ajouter les classes nécessaires
+                svgElement.classList.add('h-5', 'w-5', 'md:h-7', 'md:w-7');
+                
+                // Retourner le HTML parsé du SVG
+                return <div dangerouslySetInnerHTML={{ __html: svgElement.outerHTML }} />;
+              }
+            }
+            
+            // Solution de secours pour le rendu côté serveur
+            return <div dangerouslySetInnerHTML={{ __html: icon }} className="h-5 w-5 md:h-7 md:w-7" />;
+          }
+          
+          // Fallback - retourner le texte comme composant si tout échoue
+          return <div className="h-5 w-5 md:h-7 md:w-7 text-black text-xs flex items-center justify-center">{icon.substring(0, 3)}</div>;
+        } catch (error) {
+          console.error("Erreur de parsing SVG:", error);
+          return <div className="h-5 w-5 md:h-7 md:w-7 text-black text-xs flex items-center justify-center">SVG</div>;
+        }
     }
   };
 
@@ -191,13 +193,16 @@ export default function HomeTabExpertises() {
           description: data.description,
           backgroundImage: data.backgroundImage,
           href: data.href,
-          iconName: data.iconName
+          icon: data.icon // Stocke la chaîne brute, pas le ReactNode
         });
 
         setExpertises(prevExpertises => prevExpertises.map(exp => 
           exp.id === editingExpertise.id ? { ...data, id: exp.id } : exp
         ));
         setStatusMessage({ type: 'success', message: 'Expertise mise à jour avec succès' });
+        setEditingExpertise(null);
+        reset();
+        setPreviewImage(null);
       } else {
         // Ajout d'une nouvelle expertise
         const docRef = await addDoc(collection(db, 'expertises'), {
@@ -205,7 +210,7 @@ export default function HomeTabExpertises() {
           description: data.description,
           backgroundImage: data.backgroundImage,
           href: data.href,
-          iconName: data.iconName
+          icon: data.icon // Stocke la chaîne brute, pas le ReactNode
         });
 
         setExpertises(prevExpertises => [...prevExpertises, { ...data, id: docRef.id }]);
@@ -213,7 +218,13 @@ export default function HomeTabExpertises() {
       }
 
       setEditingExpertise(null);
-      reset();
+      reset({
+        title: '',
+        description: '',
+        backgroundImage: '',
+        href: '',
+        icon: ''
+      });
       setPreviewImage(null);
     } catch (error) {
       console.error("Erreur lors de la sauvegarde:", error);
@@ -234,15 +245,27 @@ export default function HomeTabExpertises() {
       const objectUrl = URL.createObjectURL(file);
       setPreviewImage(objectUrl);
 
-      // Télécharger le fichier vers Firebase Storage
-      const storageRef = ref(storage, `expertises/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
+      // Créer un FormData pour l'upload
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('path', 'home/expertises');
       
-      // Obtenir l'URL de téléchargement
-      const downloadURL = await getDownloadURL(storageRef);
+      // Faire une requête fetch à notre API locale pour sauvegarder le fichier
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors du téléchargement de l\'image');
+      }
+      
+      const data = await response.json();
       
       // Mettre à jour le formulaire avec l'URL
-      setValue('backgroundImage', downloadURL);
+      setValue('backgroundImage', data.fileUrl, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+      
+      // Mettre à jour le message de statut pour confirmer que l'image est chargée
       setStatusMessage({ type: 'success', message: 'Image téléchargée avec succès' });
     } catch (error) {
       console.error("Erreur lors du téléchargement de l'image:", error);
@@ -280,8 +303,15 @@ export default function HomeTabExpertises() {
 
   const cancelEdit = () => {
     setEditingExpertise(null);
-    reset();
+    reset({
+      title: '',
+      description: '',
+      backgroundImage: '',
+      href: '',
+      icon: ''
+    });
     setPreviewImage(null);
+    setStatusMessage(null);
   };
 
   return (
@@ -289,13 +319,24 @@ export default function HomeTabExpertises() {
       <div className="p-6 border-b border-gray-200">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Gestion des Expertises</h2>
-          <button
-            type="button"
-            onClick={() => setPreviewMode(!previewMode)}
-            className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors"
-          >
-            {previewMode ? "Mode Édition" : "Mode Prévisualisation"}
-          </button>
+          <div className="flex space-x-2">
+            {editingExpertise && (
+              <button
+                type="button"
+                onClick={cancelEdit}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+              >
+                Nouvelle expertise
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setPreviewMode(!previewMode)}
+              className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors"
+            >
+              {previewMode ? "Mode Édition" : "Mode Prévisualisation"}
+            </button>
+          </div>
         </div>
         
         {statusMessage && (
@@ -311,7 +352,7 @@ export default function HomeTabExpertises() {
                 key={expertise.id}
                 title={expertise.title}
                 description={expertise.description}
-                icon={getIconFromName(expertise.iconName)}
+                icon={getIconFromName(expertise.icon)}
                 backgroundImage={expertise.backgroundImage}
                 href={expertise.href}
               />
@@ -359,17 +400,49 @@ export default function HomeTabExpertises() {
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Type d'icône</label>
                     <select
-                      {...register('iconName', { required: 'Le type d\'icône est requis' })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 mb-2"
+                      value={watchedValues.icon && ['video', 'photo', 'social', 'branding', 'web'].includes(watchedValues.icon) ? watchedValues.icon : ''}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setValue('icon', e.target.value, { shouldValidate: true });
+                        }
+                      }}
                     >
-                      <option value="">Sélectionner une icône</option>
+                      <option value="">Sélectionnez un type d'icône prédéfini</option>
                       <option value="video">Vidéo</option>
                       <option value="photo">Photo</option>
                       <option value="social">Réseaux Sociaux</option>
                       <option value="branding">Branding</option>
-                      <option value="web">Web</option>
+                      <option value="web">Création Web</option>
                     </select>
-                    {errors.iconName && <p className="mt-1 text-sm text-red-600">{errors.iconName.message}</p>}
+                    
+                    <textarea
+                      {...register('icon', { 
+                        required: 'L\'icône est requise',
+                        validate: value => {
+                          // Si la valeur est l'un des types prédéfinis, c'est valide
+                          if (['video', 'photo', 'social', 'branding', 'web'].includes(value)) {
+                            return true;
+                          }
+                          // Sinon, vérifier si c'est un SVG valide
+                          return value.includes('<svg') || 'Le code SVG doit contenir une balise <svg>';
+                        }
+                      })}
+                      rows={6}
+                      placeholder="Ou collez ici le code SVG personnalisé de l'icône"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
+                    />
+                    {errors.icon && <p className="mt-1 text-sm text-red-600">{errors.icon.message}</p>}
+                    <p className="mt-1 text-xs text-gray-500">
+                      Vous pouvez choisir un type prédéfini dans la liste ou coller un code SVG personnalisé ci-dessous
+                    </p>
+                    
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Prévisualisation de l'icône</label>
+                      <div className="w-16 h-16 bg-gradient-to-br from-white to-blue-100 rounded-lg flex items-center justify-center">
+                        {watchedValues.icon && getIconFromName(watchedValues.icon)}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
@@ -392,32 +465,14 @@ export default function HomeTabExpertises() {
                   </div>
                   
                   <div className="mt-4">
-                    <p className="block text-sm font-medium text-gray-700 mb-1">Prévisualisation</p>
-                    {previewImage ? (
-                      <div className="relative w-full h-64 rounded-lg overflow-hidden">
-                        <Image 
-                          src={previewImage} 
-                          alt="Prévisualisation" 
-                          fill 
-                          className="object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-full h-64 bg-gray-100 flex items-center justify-center rounded-lg">
-                        <p className="text-gray-500">Aucune image sélectionnée</p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="mt-4">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Prévisualisation de la carte</h4>
                     <div className="h-[280px] w-full">
-                      {watchedValues.title && watchedValues.description && watchedValues.iconName && (
+                      {watchedValues.title && watchedValues.description && watchedValues.icon && previewImage && (
                         <ExpertiseCard
                           title={watchedValues.title}
                           description={watchedValues.description}
-                          icon={getIconFromName(watchedValues.iconName)}
-                          backgroundImage={previewImage || '/placeholder.jpg'}
+                          icon={getIconFromName(watchedValues.icon)}
+                          backgroundImage={previewImage}
                           href={watchedValues.href || '#'}
                         />
                       )}
