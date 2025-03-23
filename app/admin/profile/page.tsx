@@ -224,7 +224,7 @@ export default function ProfilePage() {
                 accept="image/jpeg,image/png,image/gif,image/webp"
                 onChange={handleAvatarChange}
               />
-              <p className="text-sm text-gray-500">Cliquez sur l'image pour changer votre photo de profil</p>
+              <p className="text-sm text-gray-500">Cliquez sur l&apos;image pour changer votre photo de profil</p>
               <p className="text-xs text-gray-400 mt-1">Formats acceptés: JPEG, PNG, GIF, WEBP</p>
             </div>
             
@@ -254,7 +254,7 @@ export default function ProfilePage() {
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50"
                   />
-                  <p className="mt-1 text-xs text-gray-500">L'adresse email ne peut pas être modifiée.</p>
+                  <p className="mt-1 text-xs text-gray-500">L&apos;adresse email ne peut pas être modifiée.</p>
                 </div>
                 
                 <div className="mt-6">
