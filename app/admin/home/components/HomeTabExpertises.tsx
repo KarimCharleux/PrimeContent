@@ -239,7 +239,7 @@ export default function HomeTabExpertises() {
     if (!file) return;
 
     try {
-      setStatusMessage({ type: 'success', message: 'Chargement de l\'image...' });
+      setStatusMessage({ type: 'success', message: 'Chargement de l&apos;image...' });
 
       // Créer un objet URL pour la prévisualisation locale
       const objectUrl = URL.createObjectURL(file);
@@ -257,7 +257,7 @@ export default function HomeTabExpertises() {
       });
       
       if (!response.ok) {
-        throw new Error('Erreur lors du téléchargement de l\'image');
+        throw new Error('Erreur lors du téléchargement de l&apos;image');
       }
       
       const data = await response.json();
@@ -268,8 +268,8 @@ export default function HomeTabExpertises() {
       // Mettre à jour le message de statut pour confirmer que l'image est chargée
       setStatusMessage({ type: 'success', message: 'Image téléchargée avec succès' });
     } catch (error) {
-      console.error("Erreur lors du téléchargement de l'image:", error);
-      setStatusMessage({ type: 'error', message: "Erreur lors du téléchargement de l'image" });
+      console.error("Erreur lors du téléchargement de l&apos;image:", error);
+      setStatusMessage({ type: 'error', message: "Erreur lors du téléchargement de l&apos;image" });
     }
   };
 
@@ -282,14 +282,14 @@ export default function HomeTabExpertises() {
   const handleDeleteExpertise = async (expertise: Expertise) => {
     if (!expertise.id) return;
     
-    if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'expertise "${expertise.title}" ?`)) {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer l&apos;expertise "${expertise.title}" ?`)) {
       try {
-        // Supprimer l'expertise de Firestore
+        // Supprimer l&apos;expertise de Firestore
         await deleteDoc(doc(db, 'expertises', expertise.id));
         
-        // Supprimer l'image d'arrière-plan si elle existe
+        // Supprimer l&apos;image d&apos;arrière-plan si elle existe
         if (expertise.backgroundImage) {
-          // Extraire le nom du fichier à partir de l'URL
+          // Extraire le nom du fichier à partir de l&apos;URL
           const fileName = expertise.backgroundImage.split('/').pop();
           const filePath = expertise.backgroundImage.substring(1, expertise.backgroundImage.lastIndexOf('/'));
           
@@ -300,10 +300,10 @@ export default function HomeTabExpertises() {
               });
               
               if (!response.ok) {
-                console.error('Erreur lors de la suppression de l\'image:', await response.text());
+                console.error('Erreur lors de la suppression de l&apos;image:', await response.text());
               }
             } catch (imageError) {
-              console.error('Erreur lors de la suppression de l\'image:', imageError);
+              console.error('Erreur lors de la suppression de l&apos;image:', imageError);
             }
           }
         }
@@ -311,7 +311,7 @@ export default function HomeTabExpertises() {
         setExpertises(prevExpertises => prevExpertises.filter(exp => exp.id !== expertise.id));
         setStatusMessage({ type: 'success', message: 'Expertise supprimée avec succès' });
         
-        // Si l'expertise en cours d'édition est supprimée, réinitialiser le formulaire
+        // Si l&apos;expertise en cours d&apos;édition est supprimée, réinitialiser le formulaire
         if (editingExpertise?.id === expertise.id) {
           setEditingExpertise(null);
           reset();
@@ -421,7 +421,7 @@ export default function HomeTabExpertises() {
                   </div>
                   
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Type d'icône</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Type d&apos;icône</label>
                     <select
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 mb-2"
                       value={watchedValues.icon && ['video', 'photo', 'social', 'branding', 'web'].includes(watchedValues.icon) ? watchedValues.icon : ''}
@@ -431,7 +431,7 @@ export default function HomeTabExpertises() {
                         }
                       }}
                     >
-                      <option value="">Sélectionnez un type d'icône prédéfini</option>
+                      <option value="">Sélectionnez un type d&apos;icône prédéfini</option>
                       <option value="video">Vidéo</option>
                       <option value="photo">Photo</option>
                       <option value="social">Réseaux Sociaux</option>
@@ -441,7 +441,7 @@ export default function HomeTabExpertises() {
                     
                     <textarea
                       {...register('icon', { 
-                        required: 'L\'icône est requise',
+                        required: 'L&apos;icône est requise',
                         validate: value => {
                           // Si la valeur est l'un des types prédéfinis, c'est valide
                           if (['video', 'photo', 'social', 'branding', 'web'].includes(value)) {
@@ -452,7 +452,7 @@ export default function HomeTabExpertises() {
                         }
                       })}
                       rows={6}
-                      placeholder="Ou collez ici le code SVG personnalisé de l'icône"
+                      placeholder="Ou collez ici le code SVG personnalisé de l&apos;icône"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
                     />
                     {errors.icon && <p className="mt-1 text-sm text-red-600">{errors.icon.message}</p>}
@@ -461,7 +461,7 @@ export default function HomeTabExpertises() {
                     </p>
                     
                     <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Prévisualisation de l'icône</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Prévisualisation de l&apos;icône</label>
                       <div className="w-16 h-16 bg-gradient-to-br from-white to-blue-100 rounded-lg flex items-center justify-center">
                         {watchedValues.icon && getIconFromName(watchedValues.icon)}
                       </div>
@@ -471,13 +471,13 @@ export default function HomeTabExpertises() {
                 
                 <div>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Image d'arrière-plan</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Image d&apos;arrière-plan</label>
                     <div className="flex items-center space-x-2">
                       <input
                         type="text"
-                        {...register('backgroundImage', { required: 'L\'URL de l\'image est requise' })}
+                        {...register('backgroundImage', { required: 'L&apos;URL de l&apos;image est requise' })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                        placeholder="URL de l'image"
+                        placeholder="URL de l&apos;image"
                       />
                       <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
                         Parcourir

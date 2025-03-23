@@ -166,7 +166,7 @@ export default function HomeTabGallery({ onStatusChange }: HomeTabGalleryProps) 
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la suppression de l\'image');
+        throw new Error('Erreur lors de la suppression de l&apos;image');
       }
 
       setStatusMessage({
@@ -180,7 +180,7 @@ export default function HomeTabGallery({ onStatusChange }: HomeTabGalleryProps) 
       console.error('Erreur de suppression:', error);
       setStatusMessage({
         type: 'error',
-        message: 'Erreur lors de la suppression de l\'image'
+        message: 'Erreur lors de la suppression de l&apos;image'
       });
     }
   };
@@ -221,7 +221,7 @@ export default function HomeTabGallery({ onStatusChange }: HomeTabGalleryProps) 
         <h2 className="text-xl font-semibold mb-4">Statistiques de la Galerie</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-blue-50 p-4 rounded-lg">
-            <p className="text-sm text-blue-600 font-medium">Nombre d'images</p>
+            <p className="text-sm text-blue-600 font-medium">Nombre d&apos;images</p>
             <p className="text-3xl font-bold">{stats.totalImages}</p>
           </div>
           <div className="bg-green-50 p-4 rounded-lg">

@@ -31,7 +31,7 @@ export default function HomeEditPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Édition de la Page d'Accueil</h1>
+      <h1 className="text-2xl font-bold mb-6">Édition de la Page d&apos;Accueil</h1>
       
       {statusMessage && (
         <div className={`mb-4 p-4 rounded-md ${statusMessage.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
