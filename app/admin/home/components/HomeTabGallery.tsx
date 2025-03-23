@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import React, { useState, useEffect, useRef } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 
 interface GalleryImage {
   url: string;
