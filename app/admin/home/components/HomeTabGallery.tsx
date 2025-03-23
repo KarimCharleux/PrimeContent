@@ -1,5 +1,7 @@
 'use client';
 
+import { saveAs } from 'file-saver';
+import JSZip from 'jszip';
 import Image from 'next/image';
 import React, { useState, useEffect, useRef } from 'react';
 
@@ -34,6 +36,8 @@ export default function HomeTabGallery({ onStatusChange }: HomeTabGalleryProps) 
   const [uploading, setUploading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isDownloadingZip, setIsDownloadingZip] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   // Charger les données de la galerie
   useEffect(() => {
@@ -57,7 +61,12 @@ export default function HomeTabGallery({ onStatusChange }: HomeTabGalleryProps) 
       
       const data = await response.json();
       
-      setImages(data.images);
+      // Trier les images par nom de fichier
+      const sortedImages = [...data.images].sort((a, b) => 
+        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+      );
+      
+      setImages(sortedImages);
       setStats(data.stats);
       
       setIsLoading(false);
@@ -185,6 +194,81 @@ export default function HomeTabGallery({ onStatusChange }: HomeTabGalleryProps) 
     }
   };
 
+  // Télécharger une image individuelle
+  const handleDownloadImage = (imageUrl: string, imageName: string) => {
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = imageName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Télécharger toutes les images
+  const handleDownloadAllImages = async () => {
+    if (images.length === 0) return;
+    
+    setIsDownloadingZip(true);
+    setDownloadProgress(0);
+    setStatusMessage({
+      type: 'success',
+      message: 'Préparation du téléchargement, veuillez patienter...'
+    });
+    
+    try {
+      const zip = new JSZip();
+      const imgFolder = zip.folder("images");
+      
+      let completedCount = 0;
+      
+      // Pour chaque image, la télécharger et l'ajouter au zip
+      const fetchPromises = images.map(async (image) => {
+        try {
+          const response = await fetch(image.url);
+          const blob = await response.blob();
+          imgFolder?.file(image.name, blob);
+          
+          completedCount++;
+          setDownloadProgress(Math.round((completedCount / images.length) * 100));
+          
+          return true;
+        } catch (error) {
+          console.error(`Erreur lors du téléchargement de ${image.name}:`, error);
+          return false;
+        }
+      });
+      
+      await Promise.all(fetchPromises);
+      
+      setStatusMessage({
+        type: 'success',
+        message: 'Création du fichier ZIP...'
+      });
+      
+      // Générer le zip et le télécharger
+      const content = await zip.generateAsync({ 
+        type: "blob",
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 }
+      });
+      saveAs(content, "gallery-images.zip");
+      
+      setStatusMessage({
+        type: 'success',
+        message: 'Téléchargement terminé avec succès'
+      });
+    } catch (error) {
+      console.error('Erreur lors de la création du fichier ZIP:', error);
+      setStatusMessage({
+        type: 'error',
+        message: 'Erreur lors de la création du fichier ZIP'
+      });
+    } finally {
+      setIsDownloadingZip(false);
+      setDownloadProgress(0);
+    }
+  };
+
   // Formater la taille en ko, Mo ou Go
   const formatSize = (bytes: number): string => {
     if (bytes < 1024) {
@@ -239,13 +323,34 @@ export default function HomeTabGallery({ onStatusChange }: HomeTabGalleryProps) 
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold">Photos de la Galerie</h2>
-          <button
-            onClick={triggerFileInput}
-            disabled={uploading}
-            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark disabled:opacity-50"
-          >
-            {uploading ? 'Téléchargement...' : 'Ajouter des photos'}
-          </button>
+          <div className="flex space-x-2">
+            {images.length > 0 && (
+              <button
+                onClick={handleDownloadAllImages}
+                disabled={isDownloadingZip}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+              >
+                {isDownloadingZip ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    {downloadProgress}%
+                  </>
+                ) : (
+                  'Tout télécharger'
+                )}
+              </button>
+            )}
+            <button
+              onClick={triggerFileInput}
+              disabled={uploading}
+              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark disabled:opacity-50"
+            >
+              {uploading ? 'Téléchargement...' : 'Ajouter des photos'}
+            </button>
+          </div>
           <input
             type="file"
             ref={fileInputRef}
@@ -288,39 +393,55 @@ export default function HomeTabGallery({ onStatusChange }: HomeTabGalleryProps) 
             Aucune image dans la galerie. Ajoutez des images pour commencer.
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {images.map((image, index) => (
-              <div key={index} className="relative group">
-                <div className="aspect-w-1 aspect-h-1 overflow-hidden rounded-lg bg-gray-100">
-                  <Image
-                    src={image.url}
-                    alt={image.name}
-                    width={300}
-                    height={300}
-                    className="object-cover"
-                  />
+          <>
+            <div className="mb-4 text-sm text-gray-600">
+              Les photos sont triées alphabétiquement par nom de fichier.
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {images.map((image, index) => (
+                <div key={index} className="relative group">
+                  <div className="aspect-w-1 aspect-h-1 overflow-hidden rounded-lg bg-gray-100">
+                    <Image
+                      src={image.url}
+                      alt={image.name}
+                      width={300}
+                      height={300}
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded-lg">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleDownloadImage(image.url, image.name)}
+                        className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700"
+                        title="Télécharger"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteImage(image.name)}
+                        className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700"
+                        title="Supprimer"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-sm font-medium truncate">{image.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {formatSize(image.size)} 
+                      {image.dimensions && ` - ${image.dimensions.width}×${image.dimensions.height}`}
+                    </p>
+                  </div>
                 </div>
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded-lg">
-                  <button
-                    onClick={() => handleDeleteImage(image.name)}
-                    className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700"
-                    title="Supprimer"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="mt-2">
-                  <p className="text-sm font-medium truncate">{image.name}</p>
-                  <p className="text-xs text-gray-500">
-                    {formatSize(image.size)} 
-                    {image.dimensions && ` - ${image.dimensions.width}×${image.dimensions.height}`}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>
