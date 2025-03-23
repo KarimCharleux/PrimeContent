@@ -706,7 +706,7 @@ export default function HomeTabClients() {
                   </div>
                   
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Image d'arrière-plan</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Image d&apos;arrière-plan</label>
                     <div className="flex items-center space-x-2">
                       <input
                         type="text"
@@ -743,7 +743,7 @@ export default function HomeTabClients() {
                   </div>
                   
                   <div className="mb-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Prévisualisation de l'arrière-plan</h4>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Prévisualisation de l&apos;arrière-plan</h4>
                     <div className="h-40 w-full flex items-center justify-center bg-gray-100 rounded-md overflow-hidden">
                       {previewClientBgImage ? (
                         <div className="relative h-full w-full">
@@ -755,7 +755,7 @@ export default function HomeTabClients() {
                           />
                         </div>
                       ) : (
-                        <p className="text-gray-400">Aucune image d'arrière-plan sélectionnée</p>
+                        <p className="text-gray-400">Aucune image d&apos;arrière-plan sélectionnée</p>
                       )}
                     </div>
                   </div>

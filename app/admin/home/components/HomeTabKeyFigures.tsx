@@ -370,7 +370,7 @@ export default function HomeTabKeyFigures() {
               </div>
             ) : (
               <div className="py-8 text-center text-gray-500">
-                <p>Aucun chiffre clé n'a été ajouté. Cliquez sur "Ajouter un chiffre clé" pour commencer.</p>
+                <p>Aucun chiffre clé n&apos;a été ajouté. Cliquez sur &quot;Ajouter un chiffre clé&quot; pour commencer.</p>
               </div>
             )}
 
