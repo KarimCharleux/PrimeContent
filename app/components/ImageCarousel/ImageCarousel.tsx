@@ -34,10 +34,13 @@ const ImageCarousel = ({
   const startXRef = useRef(0);
   const currentImageSrc = images[currentIndex];
   
+  // Vérifier s'il y a plus d'une image
+  const hasMultipleImages = images.length > 1;
+  
   // Gérer les événements touch pour le swipe
   useEffect(() => {
     const element = swipeRef.current;
-    if (!element) return;
+    if (!element || !hasMultipleImages) return;
     
     const handleTouchStart = (e: TouchEvent) => {
       startXRef.current = e.touches[0].clientX;
@@ -59,19 +62,21 @@ const ImageCarousel = ({
       element.removeEventListener('touchstart', handleTouchStart);
       element.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [onNext, onPrev]);
+  }, [onNext, onPrev, hasMultipleImages]);
   
   // Gérer les touches clavier pour la navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowRight') onNext();
-      if (e.key === 'ArrowLeft') onPrev();
+      if (hasMultipleImages) {
+        if (e.key === 'ArrowRight') onNext();
+        if (e.key === 'ArrowLeft') onPrev();
+      }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, onNext, onPrev]);
+  }, [onClose, onNext, onPrev, hasMultipleImages]);
 
   return (
     <motion.div 
@@ -122,14 +127,16 @@ const ImageCarousel = ({
         </button>
       </div>
       
-      <button 
-        className={`${styles['nav-button']} ${styles['prev']}`}
-        onClick={onPrev}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
+      {hasMultipleImages && (
+        <button 
+          className={`${styles['nav-button']} ${styles['prev']}`}
+          onClick={onPrev}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      )}
       
       <div 
         ref={swipeRef} 
@@ -164,16 +171,18 @@ const ImageCarousel = ({
         </motion.div>
       </div>
       
-      <button 
-        className={`${styles['nav-button']} ${styles['next']}`}
-        onClick={onNext}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
+      {hasMultipleImages && (
+        <button 
+          className={`${styles['nav-button']} ${styles['next']}`}
+          onClick={onNext}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
       
-      {showCounter && (
+      {showCounter && hasMultipleImages && (
         <div className={styles['counter']}>
           <motion.div 
             className={styles['counter-badge']}

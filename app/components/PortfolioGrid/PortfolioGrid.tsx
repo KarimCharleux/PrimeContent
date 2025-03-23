@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 
 import gsap from '../../lib/gsap-config';
+import ImageCarousel from '../ImageCarousel/ImageCarousel';
 
 import styles from './PortfolioGrid.module.scss';
 
@@ -20,16 +21,16 @@ interface PortfolioGridProps {
     showFilter?: boolean;
 }
 
-const PortfolioGrid: React.FC<PortfolioGridProps> = ({
-    projects,
-    showFilter = true,
-}) => {
+const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = true }) => {
     // État pour le filtre actif
     const [activeFilter, setActiveFilter] = useState('Tout');
     // État pour les projets filtrés
     const [filteredProjects, setFilteredProjects] = useState<Project[]>(projects);
     // État pour la vidéo en cours de lecture
     const [activeVideoIndex, setActiveVideoIndex] = useState<number | null>(null);
+    // État pour le carrousel d'images
+    const [showCarousel, setShowCarousel] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     // Références pour les animations
     const projectsContainerRef = useRef<HTMLDivElement>(null);
@@ -69,6 +70,37 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         }
     };
 
+    // Fonction pour ouvrir le carrousel
+    const openCarousel = (index: number) => {
+        setCurrentImageIndex(index);
+        setShowCarousel(true);
+        // Désactiver le défilement de la page
+        document.body.style.overflow = 'hidden';
+    };
+
+    // Fonction pour fermer le carrousel
+    const closeCarousel = () => {
+        setShowCarousel(false);
+        // Réactiver le défilement de la page
+        document.body.style.overflow = 'auto';
+    };
+
+    // Fonction pour passer à l'image suivante
+    const nextImage = () => {
+        const imageProjects = filteredProjects.filter((project) => !project.isVideo);
+        setCurrentImageIndex((prevIndex) =>
+            prevIndex === imageProjects.length - 1 ? 0 : prevIndex + 1,
+        );
+    };
+
+    // Fonction pour passer à l'image précédente
+    const prevImage = () => {
+        const imageProjects = filteredProjects.filter((project) => !project.isVideo);
+        setCurrentImageIndex((prevIndex) =>
+            prevIndex === 0 ? imageProjects.length - 1 : prevIndex - 1,
+        );
+    };
+
     // Effet pour filtrer les projets quand le filtre change
     useEffect(() => {
         // Filtrer les projets en fonction du filtre actif
@@ -105,8 +137,9 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
 
                 // Animation d'entrée après mise à jour
                 setTimeout(() => {
-                    const portfolioItems =
-                        projectsContainerRef.current?.querySelectorAll(`.${styles.portfolioItem}`);
+                    const portfolioItems = projectsContainerRef.current?.querySelectorAll(
+                        `.${styles.portfolioItem}`,
+                    );
                     if (portfolioItems && portfolioItems.length > 0) {
                         gsap.fromTo(
                             portfolioItems,
@@ -133,7 +166,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         videoRefs.current.forEach((video, idx) => {
             if (video) {
                 if (idx === activeVideoIndex) {
-                    video.play().catch(err => console.error('Erreur de lecture vidéo:', err));
+                    video.play().catch((err) => console.error('Erreur de lecture vidéo:', err));
                 } else {
                     video.pause();
                 }
@@ -174,125 +207,148 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         }
     };
 
+    // Préparation des images pour le carrousel (uniquement les images, pas les vidéos)
+    const carouselImages = filteredProjects
+        .filter((project) => !project.isVideo)
+        .map((project) => project.source);
+
     return (
-        <div className={styles.portfolioContainer}>
-            {/* Filtres de catégories */}
-            {showFilter && categories.length > 2 && (
-                <div className={styles.filterContainer}>
-                    {categories.map((category) => (
-                        <button
-                            key={category}
-                            className={`${styles.filterBtn} ${
-                                activeFilter === category
-                                    ? styles.active
-                                    : styles.inactive
-                            }`}
-                            onClick={() => setActiveFilter(category)}
-                        >
-                            {category}
-                        </button>
-                    ))}
-                </div>
-            )}
-
-            {/* Grille de projets */}
-            <div ref={projectsContainerRef} className={styles.portfolioGrid}>
-                {filteredProjects.length > 0 ? (
-                    filteredProjects.map((project, index) => (
-                        <div
-                            key={`${project.title || project.category}-${index}`}
-                            ref={(el) => addProjectRef(el, index)}
-                            className={`${styles.portfolioItem} ${getItemSizeClass(project)} group`}
-                        >
-                            {project.isVideo ? (
-                                <>
-                                    <video
-                                        ref={(el) => addVideoRef(el, index)}
-                                        src={project.source}
-                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                        loop
-                                        muted
-                                        playsInline
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleVideoPlay(index);
-                                        }}
-                                    />
-                                    <div
-                                        className={`${styles.videoPlayBtn} ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
-                                        onClick={() => handleVideoPlay(index)}
-                                    >
-                                        <div className={styles.videoPlayIcon}>
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                className="h-8 w-8 text-white"
-                                                viewBox="0 0 20 20"
-                                                fill="currentColor"
-                                            >
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                                                    clipRule="evenodd"
-                                                />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    {activeVideoIndex === index && (
-                                        <div
-                                            className={styles.videoPauseBtn}
-                                            onClick={() => handleVideoPlay(index)}
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                className="h-6 w-6 text-white"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                />
-                                            </svg>
-                                        </div>
-                                    )}
-                                </>
-                            ) : (
-                                <div className={styles.portfolioImageContainer}>
-                                    <Image
-                                        src={project.source}
-                                        alt={project.title ?? ''}
-                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                        fill
-                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                        style={{ objectFit: 'cover' }}
-                                    />
-                                </div>
-                            )}
-
-                            <div className={styles.categoryBadge}>
-                                {project.category}
-                            </div>
-
-                            {project.title && (
-                                <div className={`${styles.titleGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
-                                    <h3 className={styles.itemTitle}>
-                                        {project.title}
-                                    </h3>
-                                </div>
-                            )}
-                        </div>
-                    ))
-                ) : (
-                    <div className={styles.noProjects}>
-                        Aucun projet ne correspond à ces critères.
+        <>
+            <div className={styles.portfolioContainer}>
+                {/* Filtres de catégories */}
+                {showFilter && categories.length > 2 && (
+                    <div className={styles.filterContainer}>
+                        {categories.map((category) => (
+                            <button
+                                key={category}
+                                className={`${styles.filterBtn} ${
+                                    activeFilter === category ? styles.active : styles.inactive
+                                }`}
+                                onClick={() => setActiveFilter(category)}
+                            >
+                                {category}
+                            </button>
+                        ))}
                     </div>
                 )}
+
+                {/* Grille de projets */}
+                <div ref={projectsContainerRef} className={styles.portfolioGrid}>
+                    {filteredProjects.length > 0 ? (
+                        filteredProjects.map((project, index) => (
+                            <div
+                                key={`${project.title || project.category}-${index}`}
+                                ref={(el) => addProjectRef(el, index)}
+                                className={`${styles.portfolioItem} ${getItemSizeClass(project)} group`}
+                            >
+                                {project.isVideo ? (
+                                    <>
+                                        <video
+                                            ref={(el) => addVideoRef(el, index)}
+                                            src={project.source}
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            loop
+                                            muted
+                                            playsInline
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleVideoPlay(index);
+                                            }}
+                                        />
+                                        <div
+                                            className={`${styles.videoPlayBtn} ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
+                                            onClick={() => handleVideoPlay(index)}
+                                        >
+                                            <div className={styles.videoPlayIcon}>
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    className="h-8 w-8 text-white"
+                                                    viewBox="0 0 20 20"
+                                                    fill="currentColor"
+                                                >
+                                                    <path
+                                                        fillRule="evenodd"
+                                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                                                        clipRule="evenodd"
+                                                    />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        {activeVideoIndex === index && (
+                                            <div
+                                                className={styles.videoPauseBtn}
+                                                onClick={() => handleVideoPlay(index)}
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    className="h-6 w-6 text-white"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                    />
+                                                </svg>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div
+                                        className={styles.portfolioImageContainer}
+                                        onClick={() => {
+                                            // Trouver l'index correct dans le tableau filtré de projets qui sont des images
+                                            const imageIndex = filteredProjects
+                                                .filter((p) => !p.isVideo)
+                                                .findIndex((p) => p.source === project.source);
+                                            openCarousel(imageIndex);
+                                        }}
+                                    >
+                                        <Image
+                                            src={project.source}
+                                            alt={project.title ?? ''}
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            fill
+                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                            style={{ objectFit: 'cover' }}
+                                        />
+                                    </div>
+                                )}
+
+                                <div className={styles.categoryBadge}>{project.category}</div>
+
+                                {project.title && (
+                                    <div
+                                        className={`${styles.titleGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                                    >
+                                        <h3 className={styles.itemTitle}>{project.title}</h3>
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    ) : (
+                        <div className={styles.noProjects}>
+                            Aucun projet ne correspond à ces critères.
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+
+            {/* Carrousel d'images */}
+            {showCarousel && carouselImages.length > 0 && (
+                <ImageCarousel
+                    images={carouselImages}
+                    currentIndex={currentImageIndex}
+                    onClose={closeCarousel}
+                    onNext={nextImage}
+                    onPrev={prevImage}
+                />
+            )}
+        </>
     );
 };
 
-export default PortfolioGrid; 
+export default PortfolioGrid;
