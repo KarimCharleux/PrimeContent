@@ -2,9 +2,9 @@
 
 import { useAuth } from './useAuth';
 
-export type UserRole = 'admin' | 'editor' | 'viewer';
+export type UserRole = 'admin';
 
-// Définir les permissions pour chaque rôle
+// Définir les permissions pour l'administrateur
 const rolePermissions = {
   admin: [
     'view_dashboard',
@@ -16,56 +16,30 @@ const rolePermissions = {
     'manage_settings',
     'view_analytics',
   ],
-  editor: [
-    'view_dashboard',
-    'create_content',
-    'edit_content',
-    'publish_content',
-    'view_analytics',
-  ],
-  viewer: [
-    'view_dashboard',
-    'view_content',
-  ],
 };
 
 export const useRoleAccess = () => {
-  const { userProfile } = useAuth();
+  const { user } = useAuth();
   
-  // Obtenir les permissions basées sur le rôle de l'utilisateur
+  // Obtenir les permissions de l'administrateur
   const getUserPermissions = (): string[] => {
-    if (!userProfile) return [];
-    
-    const role = userProfile.role as UserRole;
-    return rolePermissions[role] || [];
+    if (!user) return [];
+    return rolePermissions.admin;
   };
   
   // Vérifier si l'utilisateur a une permission spécifique
   const hasPermission = (permission: string): boolean => {
-    if (!userProfile) return false;
-    
-    const permissions = getUserPermissions();
-    return permissions.includes(permission);
+    if (!user) return false;
+    return rolePermissions.admin.includes(permission);
   };
   
-  // Vérifier si l'utilisateur a un rôle spécifique ou supérieur
-  const hasRole = (minimumRole: UserRole): boolean => {
-    if (!userProfile) return false;
-    
-    const roleHierarchy = {
-      admin: 3,
-      editor: 2,
-      viewer: 1,
-    };
-    
-    const userRoleLevel = roleHierarchy[userProfile.role as UserRole] || 0;
-    const requiredRoleLevel = roleHierarchy[minimumRole] || 0;
-    
-    return userRoleLevel >= requiredRoleLevel;
+  // Vérifier si l'utilisateur est admin (toujours vrai si connecté)
+  const hasRole = (role: UserRole): boolean => {
+    return !!user;
   };
   
   return {
-    userRole: userProfile?.role as UserRole | undefined,
+    userRole: user ? 'admin' : undefined,
     getUserPermissions,
     hasPermission,
     hasRole,

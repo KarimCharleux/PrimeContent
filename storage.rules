@@ -13,14 +13,6 @@ service firebase.storage {
         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == "admin";
     }
     
-    // Vérifier si l'utilisateur est admin ou éditeur
-    function isAdminOrEditor() {
-      return isSignedIn() && 
-        firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
-        (firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == "admin" ||
-         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == "editor");
-    }
-    
     // Vérifier la taille et le type de fichier
     function isValidFile() {
       // Limite à 50MB
@@ -34,25 +26,25 @@ service firebase.storage {
     match /media/{mediaFile} {
       // Lecture publique, écriture restreinte
       allow read: if true;
-      allow write: if isAdminOrEditor() && isValidFile();
+      allow write: if isAdmin() && isValidFile();
     }
     
     // Règles pour les photos
     match /photos/{photoFile} {
       allow read: if true;
-      allow write: if isAdminOrEditor() && isValidFile();
+      allow write: if isAdmin() && isValidFile();
     }
     
     // Règles pour les vidéos
     match /videos/{videoFile} {
       allow read: if true;
-      allow write: if isAdminOrEditor() && isValidFile();
+      allow write: if isAdmin() && isValidFile();
     }
     
     // Règles pour les logos
     match /logos/{logoFile} {
       allow read: if true;
-      allow write: if isAdminOrEditor() && isValidFile();
+      allow write: if isAdmin() && isValidFile();
     }
     
     // Règles par défaut pour tous les autres fichiers

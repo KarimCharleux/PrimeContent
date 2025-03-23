@@ -127,7 +127,7 @@ export type User = {
   email: string;
   displayName?: string;
   photoURL?: string;
-  role: 'admin' | 'editor' | 'viewer';
+  role: 'admin';
   lastLogin?: Date | string;
   createdAt: Date | string;
   updatedAt: Date | string;

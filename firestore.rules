@@ -13,14 +13,6 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
     }
     
-    // Fonction pour vérifier si l'utilisateur est admin ou éditeur
-    function isAdminOrEditor() {
-      return isSignedIn() && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin" ||
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "editor");
-    }
-    
     // Fonction pour vérifier si l'utilisateur est l'auteur du document
     function isAuthor(resourceId) {
       return isSignedIn() && 
@@ -31,42 +23,42 @@ service cloud.firestore {
     // Tous les utilisateurs connectés peuvent lire les données publiques
     match /gallery/{mediaId} {
       allow read: if true; // Lecture publique pour affichage sur le frontend
-      allow write: if isAdminOrEditor(); // Écriture réservée aux administrateurs et éditeurs
+      allow write: if isAdmin(); // Écriture réservée aux administrateurs
     }
     
     match /expertises/{expertiseId} {
       allow read: if true;
-      allow write: if isAdminOrEditor();
+      allow write: if isAdmin();
     }
     
     match /clients/{clientId} {
       allow read: if true;
-      allow write: if isAdminOrEditor();
+      allow write: if isAdmin();
     }
     
     match /keyFigures/{keyFigureId} {
       allow read: if true;
-      allow write: if isAdminOrEditor();
+      allow write: if isAdmin();
     }
     
     match /projects/{projectId} {
       allow read: if true;
-      allow write: if isAdminOrEditor();
+      allow write: if isAdmin();
     }
     
     match /testimonials/{testimonialId} {
       allow read: if true;
-      allow write: if isAdminOrEditor();
+      allow write: if isAdmin();
     }
     
     match /events/{eventId} {
       allow read: if true;
-      allow write: if isAdminOrEditor();
+      allow write: if isAdmin();
     }
     
     match /weddings/{weddingId} {
       allow read: if true;
-      allow write: if isAdminOrEditor();
+      allow write: if isAdmin();
     }
     
     // Gestion des utilisateurs (accès restreint)

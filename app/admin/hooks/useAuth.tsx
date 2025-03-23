@@ -95,7 +95,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 email: firebaseUser?.email || '',
                 displayName: firebaseUser?.displayName || '',
                 photoURL: firebaseUser?.photoURL || '',
-                role: 'editor', // Rôle par défaut
+                role: 'admin', // Toujours admin par défaut
                 createdAt: new Date(),
                 updatedAt: new Date()
               };
@@ -125,7 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             email: firebaseUser?.email || '',
             displayName: firebaseUser?.displayName || '',
             photoURL: firebaseUser?.photoURL || '',
-            role: 'editor', // Rôle par défaut
+            role: 'admin', // Toujours admin par défaut
             createdAt: new Date(),
             updatedAt: new Date()
           };

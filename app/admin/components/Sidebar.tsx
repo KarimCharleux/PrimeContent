@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import React, { useState } from 'react';
 
 import { useAuth } from '../hooks/useAuth';
-import { useRoleAccess } from '../hooks/useRoleAccess';
 
 // Icônes
 const DashboardIcon = () => (
@@ -67,25 +66,19 @@ export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
   const pathname = usePathname();
   const { signOut } = useAuth();
-  const { hasRole } = useRoleAccess();
   
-  // Navigation items avec contrôle d'accès basé sur les rôles
+  // Navigation items - tous les utilisateurs sont admin
   const navigation = [
-    { name: 'Tableau de bord', href: '/admin/dashboard', icon: DashboardIcon, roleRequired: 'viewer' },
-    { name: 'Page d\'accueil', href: '/admin/home', icon: HomeIcon, roleRequired: 'editor' },
-    { name: 'Galerie photos', href: '/admin/photos', icon: GalleryIcon, roleRequired: 'editor' },
-    { name: 'Galerie vidéos', href: '/admin/videos', icon: VideoIcon, roleRequired: 'editor' },
-    { name: 'Événements', href: '/admin/events', icon: EventsIcon, roleRequired: 'editor' },
-    { name: 'Mariages', href: '/admin/weddings', icon: WeddingsIcon, roleRequired: 'editor' },
-    { name: 'Clients', href: '/admin/clients', icon: ClientsIcon, roleRequired: 'editor' },
-    { name: 'Utilisateurs', href: '/admin/users', icon: UsersIcon, roleRequired: 'admin' },
-    { name: 'Paramètres', href: '/admin/settings', icon: SettingsIcon, roleRequired: 'admin' },
+    { name: 'Tableau de bord', href: '/admin/dashboard', icon: DashboardIcon },
+    { name: 'Page d\'accueil', href: '/admin/home', icon: HomeIcon },
+    { name: 'Galerie photos', href: '/admin/photos', icon: GalleryIcon },
+    { name: 'Galerie vidéos', href: '/admin/videos', icon: VideoIcon },
+    { name: 'Événements', href: '/admin/events', icon: EventsIcon },
+    { name: 'Mariages', href: '/admin/weddings', icon: WeddingsIcon },
+    { name: 'Clients', href: '/admin/clients', icon: ClientsIcon },
+    { name: 'Utilisateurs', href: '/admin/users', icon: UsersIcon },
+    { name: 'Paramètres', href: '/admin/settings', icon: SettingsIcon },
   ];
-
-  // Filtre des éléments de navigation selon les permissions
-  const filteredNavigation = navigation.filter(item => 
-    hasRole(item.roleRequired as 'admin' | 'editor' | 'viewer')
-  );
 
   return (
     <div
@@ -129,7 +122,7 @@ export default function Sidebar() {
         </button>
       </div>
       <nav className="mt-5 px-2 space-y-1">
-        {filteredNavigation.map((item) => {
+        {navigation.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link
