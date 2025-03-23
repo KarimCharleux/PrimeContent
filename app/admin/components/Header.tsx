@@ -37,7 +37,7 @@ export default function Header() {
               className="flex items-center space-x-2 rounded-full focus:outline-none"
             >
               <span className="text-sm font-medium text-gray-700">
-                {user?.displayName ?? user?.email ?? 'Utilisateur'}
+                {user?.displayName || user?.email || 'Utilisateur'}
               </span>
               <div className="h-8 w-8 rounded-full bg-gray-200 overflow-hidden">
                 {user?.photoURL ? (

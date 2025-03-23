@@ -12,9 +12,9 @@ import HomeTabProjects from './components/HomeTabProjects';
 import HomeTabTestimonials from './components/HomeTabTestimonials';
 
 export default function HomeEditPage() {
-  const { user, loading } = useAuth();
+  const { loading } = useAuth();
   const [activeTab, setActiveTab] = useState('gallery');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const handleStatusChange = (status: { type: 'success' | 'error'; message: string } | null) => {

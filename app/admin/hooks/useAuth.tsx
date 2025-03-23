@@ -69,8 +69,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter();
 
   // Fonction pour récupérer le profil utilisateur avec timeout et retry
-  const getUserProfile = async (uid: string, maxRetries = 2): Promise<User | null> => {
+  const getUserProfile = async (uid: string, fbUser?: FirebaseUser | null, maxRetries = 2): Promise<User | null> => {
     let retries = 0;
+    
+    // Utiliser fbUser si fourni, sinon utiliser firebaseUser de l'état
+    const currentFirebaseUser = fbUser || firebaseUser;
     
     const fetchWithRetry = async (): Promise<User | null> => {
       try {
@@ -85,13 +88,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
             if (docSnap.exists()) {
               return { ...docSnap.data(), uid } as User;
             } else {
-              console.log('Aucun profil trouvé, création d\'un profil par défaut');
               // Créer un profil par défaut si aucun n'existe
               const defaultProfile: User = {
                 uid,
-                email: firebaseUser?.email || '',
-                displayName: firebaseUser?.displayName || '',
-                photoURL: firebaseUser?.photoURL || '',
+                email: currentFirebaseUser?.email || '',
+                displayName: currentFirebaseUser?.displayName || '',
+                photoURL: currentFirebaseUser?.photoURL || '',
                 role: 'admin', // Toujours admin par défaut
                 createdAt: new Date(),
                 updatedAt: new Date()
@@ -119,9 +121,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // Retourner un profil par défaut en cas d'échec
           return {
             uid,
-            email: firebaseUser?.email || '',
-            displayName: firebaseUser?.displayName || '',
-            photoURL: firebaseUser?.photoURL || '',
+            email: currentFirebaseUser?.email || '',
+            displayName: currentFirebaseUser?.displayName || '',
+            photoURL: currentFirebaseUser?.photoURL || '',
             role: 'admin', // Toujours admin par défaut
             createdAt: new Date(),
             updatedAt: new Date()
@@ -141,9 +143,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         if (fbUser) {
           setFirebaseUser(fbUser);
-          
           // Récupérer le profil utilisateur avec timeout et retry
-          const userProfile = await getUserProfile(fbUser.uid);
+          const userProfile = await getUserProfile(fbUser.uid, fbUser);
           if (userProfile) {
             setUser(userProfile);
           }
@@ -170,9 +171,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
       setFirebaseUser(result.user);
-      
       // Récupérer le profil utilisateur (non bloquant)
-      getUserProfile(result.user.uid)
+      getUserProfile(result.user.uid, result.user)
         .then(userProfile => {
           if (userProfile) {
             setUser(userProfile);
