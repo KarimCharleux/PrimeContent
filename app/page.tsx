@@ -1,6 +1,8 @@
 'use client';
+import { collection, getDocs } from 'firebase/firestore';
 import { useEffect, useRef, useState } from 'react';
 
+import { db } from './admin/lib/firebase-client';
 import AnimatedStat from './components/AnimatedStat';
 import BrandLogo from './components/BrandLogo';
 import ClientProfile from './components/ClientProfile';
@@ -15,14 +17,24 @@ import PrimaryButton from './components/PrimaryButton';
 import customerReviewsData from './data/customerReviewsData';
 import homeBrandsData from './data/homeBrandsData';
 import homeClientsData from './data/homeClientsData';
-import expertiseData from './data/homeExpertiseData';
 import homePortfolioProjects from './data/homePortfolioData';
 import latestProjectsData from './data/latestProjectsData';
 import gsap from './lib/gsap-config';
+// Firestore
 
 // Importation des styles
 import './styles/gallery.scss';
 import './styles/home.scss';
+
+// Interface pour les données d'expertise
+interface Expertise {
+    id?: string;
+    title: string;
+    description: string;
+    backgroundImage: string;
+    href: string;
+    icon: string;
+}
 
 export default function Page() {
     // Références pour les éléments à animer
@@ -43,6 +55,156 @@ export default function Page() {
 
     // État pour contrôler le démarrage des animations
     const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
+    // État pour stocker les expertises récupérées depuis Firestore
+    const [expertises, setExpertises] = useState<Expertise[]>([]);
+
+    // Fonction pour obtenir l'icône à partir du nom
+    const getIconFromName = (icon: string): React.ReactNode => {
+        // Vérifier si c'est un nom d'icône prédéfini
+        switch (icon) {
+            case 'video':
+                return (
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 md:h-7 md:w-7"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="black"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                        />
+                    </svg>
+                );
+            case 'photo':
+                return (
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 md:h-7 md:w-7"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="black"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                        />
+                    </svg>
+                );
+            case 'social':
+                return (
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 md:h-7 md:w-7"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="black"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 10V3L4 14h7v7l9-11h-7z"
+                        />
+                    </svg>
+                );
+            case 'branding':
+                return (
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 md:h-7 md:w-7"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="black"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+                        />
+                    </svg>
+                );
+            case 'web':
+                return (
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 md:h-7 md:w-7"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="black"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
+                    </svg>
+                );
+            default:
+                // Si ce n'est pas un nom prédéfini, essayer de traiter comme du SVG brut
+                try {
+                    if (icon.includes("<svg")) {
+                        // Vérifier si on est côté client (typeof window !== 'undefined')
+                        if (typeof window !== 'undefined') {
+                            // Créer un div temporaire pour parser le SVG
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = icon;
+                            
+                            // Obtenir l'élément SVG
+                            const svgElement = tempDiv.querySelector('svg');
+                            
+                            if (svgElement) {
+                                // Ajouter les classes nécessaires
+                                svgElement.classList.add('h-5', 'w-5', 'md:h-7', 'md:w-7');
+                                
+                                // Retourner le HTML parsé du SVG
+                                return <div dangerouslySetInnerHTML={{ __html: svgElement.outerHTML }} />;
+                            }
+                        }
+                        
+                        // Solution de secours pour le rendu côté serveur
+                        return <div dangerouslySetInnerHTML={{ __html: icon }} className="h-5 w-5 md:h-7 md:w-7" />;
+                    }
+                    
+                    // Fallback - retourner le texte comme composant si tout échoue
+                    return <div className="h-5 w-5 md:h-7 md:w-7 text-black text-xs flex items-center justify-center">{icon.substring(0, 3)}</div>;
+                } catch (error) {
+                    console.error("Erreur de parsing SVG:", error);
+                    return <div className="h-5 w-5 md:h-7 md:w-7 text-black text-xs flex items-center justify-center">SVG</div>;
+                }
+        }
+    };
+
+    // Effet pour récupérer les expertises depuis Firestore
+    useEffect(() => {
+        const fetchExpertises = async () => {
+            try {
+                const expertisesCollection = collection(db, 'expertises');
+                const expertisesSnapshot = await getDocs(expertisesCollection);
+
+                if (!expertisesSnapshot.empty) {
+                    const fetchedExpertises = expertisesSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })) as Expertise[];
+                    setExpertises(fetchedExpertises);
+                } else {
+                    console.log("Aucune expertise trouvée dans Firestore");
+                }
+            } catch (error) {
+                console.error("Erreur lors de la récupération des expertises:", error);
+            }
+        };
+
+        fetchExpertises();
+    }, []);
 
     useEffect(() => {
         // Vérifie si le splash screen est terminé via le localStorage
@@ -316,9 +478,9 @@ export default function Page() {
                         ref={servicesRef}
                         className="flex flex-wrap justify-center gap-3 md:gap-4 lg:gap-5"
                     >
-                        {expertiseData.map((expertise, index) => (
+                        {expertises.map((expertise, index) => (
                             <div 
-                                key={expertise.title}
+                                key={expertise.id || index}
                                 ref={(el) => addServiceRef(el, index)} 
                                 className={`w-[47%] sm:w-[22%] md:w-[22%] lg:w-[18%] min-w-[150px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
                             >
@@ -326,7 +488,8 @@ export default function Page() {
                                     title={expertise.title}
                                     description={expertise.description}
                                     backgroundImage={expertise.backgroundImage}
-                                    icon={expertise.icon}
+                                    icon={getIconFromName(expertise.icon)}
+                                    href={expertise.href}
                                     className="expertise-card"
                                 />
                             </div>
