@@ -58,7 +58,7 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                             resolve(img);
                         };
                         img.onerror = reject;
-                        img.src = `/gallery/${src}`;
+                        img.src = `/home/gallery/${src}`;
                     });
 
                 const loadedImages = await Promise.all(data.images.map(loadImage));

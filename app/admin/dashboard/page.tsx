@@ -49,7 +49,7 @@ const StatCard = ({ title, value, icon, change, trend, linkTo }: StatCardProps) 
 };
 
 export default function DashboardPage() {
-  const { user, userProfile, loading } = useAuth();
+  const { user, loading } = useAuth();
   const [stats, setStats] = useState({
     photos: 0,
     videos: 0,
@@ -119,7 +119,7 @@ export default function DashboardPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
         <p className="text-gray-600">
-          Bienvenue, {userProfile?.displayName || user?.email || 'Utilisateur'} !
+          Bienvenue, {user?.displayName ?? user?.email ?? 'Utilisateur'} !
         </p>
       </div>
 

@@ -57,7 +57,7 @@ const AuthContext = createContext<AuthContextType>(defaultContextValue);
 
 // Props pour le provider
 interface AuthProviderProps {
-  children: ReactNode;
+  readonly children: ReactNode;
 }
 
 // Provider d'authentification

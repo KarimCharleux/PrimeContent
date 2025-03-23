@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     // Chemin vers le dossier des images de la galerie
-    const galleryDir = path.join(process.cwd(), 'public', 'gallery');
+    const galleryDir = path.join(process.cwd(), 'public', 'home', 'gallery');
     
     // Lire le contenu du dossier
     const files = fs.readdirSync(galleryDir);

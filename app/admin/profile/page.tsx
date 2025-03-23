@@ -1,9 +1,15 @@
 'use client';
 
+import { doc, updateDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import React, { useState, useEffect, useRef } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 import { useAuth } from '../hooks/useAuth';
+import { db } from '../lib/firebase-client';
+
+// Formats d'image autorisés
+const ALLOWED_FORMATS = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 export default function ProfilePage() {
   const { user, firebaseUser, updateUserProfile, changePassword, error, loading } = useAuth();
@@ -16,6 +22,7 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Remplir les champs avec les données utilisateur une fois chargées
@@ -27,20 +34,67 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  // Gérer le changement d'avatar (simulé - prévisualisation uniquement)
+  // Gérer le changement d'avatar
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Dans un cas réel, vous téléchargeriez le fichier sur le serveur
-      // Ici, nous créons simplement une URL locale pour la prévisualisation
-      const fileUrl = URL.createObjectURL(file);
-      setPhotoURL(fileUrl);
+    if (!file) return;
+
+    // Vérifier le format du fichier
+    if (!ALLOWED_FORMATS.includes(file.type)) {
+      setStatusMessage({
+        type: 'error',
+        message: 'Format de fichier non supporté. Veuillez utiliser JPEG, PNG, GIF ou WEBP.'
+      });
+      return;
     }
+
+    // Sauvegarder le fichier pour l'upload plus tard
+    setSelectedFile(file);
+
+    // Créer une URL locale pour la prévisualisation
+    const fileUrl = URL.createObjectURL(file);
+    setPhotoURL(fileUrl);
   };
 
   // Déclencher le sélecteur de fichier quand l'utilisateur clique sur l'avatar
   const triggerFileInput = () => {
     fileInputRef.current?.click();
+  };
+
+  // Sauvegarder l'image sur le serveur
+  const saveImageToPublicFolder = async (file: File, oldPhotoURL?: string): Promise<string> => {
+    try {
+      // Générer un nom de fichier unique
+      const fileExtension = file.name.split('.').pop();
+      const fileName = `${uuidv4()}.${fileExtension}`;
+      const filePath = `/admin/users/${fileName}`;
+      
+      // Créer un FormData pour l'upload
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('path', 'admin/users');
+      formData.append('fileName', fileName);
+      
+      // Ajouter l'ancien chemin d'image pour la suppression
+      if (oldPhotoURL && oldPhotoURL.startsWith('/admin/users/')) {
+        formData.append('oldFilePath', oldPhotoURL);
+      }
+      
+      // Faire une requête fetch à notre API locale pour sauvegarder le fichier
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors du téléchargement de l\'image');
+      }
+      
+      return filePath;
+    } catch (error) {
+      console.error('Erreur de sauvegarde de l\'image:', error);
+      throw error;
+    }
   };
 
   // Enregistrer les modifications du profil
@@ -50,11 +104,33 @@ export default function ProfilePage() {
     setStatusMessage(null);
     
     try {
-      await updateUserProfile(displayName, photoURL);
+      let finalPhotoURL = photoURL;
+      
+      // Si une nouvelle image est sélectionnée, la sauvegarder dans le dossier public
+      if (selectedFile) {
+        // On passe l'ancienne URL de la photo pour suppression
+        finalPhotoURL = await saveImageToPublicFolder(selectedFile, user?.photoURL);
+      }
+      
+      // Mettre à jour le profil dans Firebase
+      await updateUserProfile(displayName, finalPhotoURL);
+      
+      // Mettre à jour aussi dans Firestore si nécessaire
+      if (user && user.id) {
+        const userRef = doc(db, 'users', user.id);
+        await updateDoc(userRef, {
+          displayName,
+          photoURL: finalPhotoURL
+        });
+      }
+      
       setStatusMessage({ 
         type: 'success', 
         message: 'Profil mis à jour avec succès!' 
       });
+      
+      // Réinitialiser le fichier sélectionné
+      setSelectedFile(null);
     } catch (error: any) {
       setStatusMessage({ 
         type: 'error', 
@@ -145,10 +221,11 @@ export default function ProfilePage() {
                 type="file"
                 ref={fileInputRef}
                 className="hidden"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/gif,image/webp"
                 onChange={handleAvatarChange}
               />
               <p className="text-sm text-gray-500">Cliquez sur l'image pour changer votre photo de profil</p>
+              <p className="text-xs text-gray-400 mt-1">Formats acceptés: JPEG, PNG, GIF, WEBP</p>
             </div>
             
             <div className="md:w-2/3">

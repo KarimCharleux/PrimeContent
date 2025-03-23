@@ -1,12 +1,13 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import React, { useState } from 'react';
 
 import { useAuth } from '../hooks/useAuth';
 
 export default function Header() {
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   return (
@@ -36,13 +37,15 @@ export default function Header() {
               className="flex items-center space-x-2 rounded-full focus:outline-none"
             >
               <span className="text-sm font-medium text-gray-700">
-                {userProfile?.displayName || user?.email || 'Utilisateur'}
+                {user?.displayName ?? user?.email ?? 'Utilisateur'}
               </span>
               <div className="h-8 w-8 rounded-full bg-gray-200 overflow-hidden">
-                {userProfile?.photoURL ? (
-                  <img 
-                    src={userProfile.photoURL} 
-                    alt={userProfile.displayName || 'User avatar'} 
+                {user?.photoURL ? (
+                  <Image 
+                    src={user.photoURL} 
+                    alt={user.displayName ?? 'User avatar'} 
+                    width={32}
+                    height={32}
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -64,7 +67,7 @@ export default function Header() {
                     {user?.email}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {userProfile?.role && `Rôle: ${userProfile.role.charAt(0).toUpperCase() + userProfile.role.slice(1)}`}
+                    {user?.role && `Rôle: ${user.role.charAt(0).toUpperCase() + user.role.slice(1)}`}
                   </p>
                 </div>
                 <Link 

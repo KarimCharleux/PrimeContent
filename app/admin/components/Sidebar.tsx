@@ -82,7 +82,7 @@ export default function Sidebar() {
 
   return (
     <div
-      className={`bg-gray-800 text-white transition-all duration-300 ${
+      className={`bg-gray-800 relative text-white transition-all duration-300 ${
         isOpen ? 'w-64' : 'w-20'
       }`}
     >
