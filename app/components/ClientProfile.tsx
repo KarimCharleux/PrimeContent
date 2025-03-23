@@ -1,5 +1,6 @@
 'use client';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 
 interface ClientProfileProps {
@@ -7,6 +8,7 @@ interface ClientProfileProps {
   readonly domain?: string;
   readonly imageSrc?: string;
   readonly imageBackground?: string;
+  readonly href?: string;
   readonly className?: string;
 }
 
@@ -14,7 +16,8 @@ export default function ClientProfile({
   name, 
   domain = '', 
   imageSrc, 
-  imageBackground, 
+  imageBackground,
+  href = '#',
   className = '' 
 }: ClientProfileProps) {
   const [imageError, setImageError] = useState(false);
@@ -78,7 +81,7 @@ export default function ClientProfile({
     };
   }, []);
   
-  return (
+  const content = (
     <div 
       ref={cardRef}
       className={`client-profile-card relative w-full aspect-square overflow-hidden rounded-2xl cursor-pointer ${className}`}
@@ -132,5 +135,13 @@ export default function ClientProfile({
         )}
       </div>
     </div>
+  );
+  
+  return href && href !== '#' ? (
+    <Link href={href} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+      {content}
+    </Link>
+  ) : (
+    content
   );
 } 

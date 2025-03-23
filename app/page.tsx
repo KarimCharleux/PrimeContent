@@ -15,8 +15,6 @@ import LatestProjects from './components/LatestProjects';
 import PortfolioGrid from './components/PortfolioGrid/PortfolioGrid';
 import PrimaryButton from './components/PrimaryButton';
 import customerReviewsData from './data/customerReviewsData';
-import homeBrandsData from './data/homeBrandsData';
-import homeClientsData from './data/homeClientsData';
 import homePortfolioProjects from './data/homePortfolioData';
 import latestProjectsData from './data/latestProjectsData';
 import gsap from './lib/gsap-config';
@@ -34,6 +32,35 @@ interface Expertise {
     backgroundImage: string;
     href: string;
     icon: string;
+}
+
+// Interface pour les marques
+interface Brand {
+    id?: string;
+    name: string;
+    imageSrc: string;
+    href: string;
+}
+
+// Interface pour les clients
+interface Client {
+    id?: string;
+    name: string;
+    domain: string;
+    imageSrc: string;
+    imageBackground: string;
+    href: string;
+}
+
+// Interface pour les chiffres clés
+interface KeyFigure {
+    id?: string;
+    value: number;
+    prefix?: string;
+    suffix?: string;
+    description: string;
+    isPercentage?: boolean;
+    order: number;
 }
 
 export default function Page() {
@@ -55,8 +82,13 @@ export default function Page() {
 
     // État pour contrôler le démarrage des animations
     const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
-    // État pour stocker les expertises récupérées depuis Firestore
+    
+    // États pour stocker les données récupérées depuis Firestore
     const [expertises, setExpertises] = useState<Expertise[]>([]);
+    const [brands, setBrands] = useState<Brand[]>([]);
+    const [clients, setClients] = useState<Client[]>([]);
+    const [keyFigures, setKeyFigures] = useState<KeyFigure[]>([]);
+    const [loading, setLoading] = useState(true);
 
     // Fonction pour obtenir l'icône à partir du nom
     const getIconFromName = (icon: string): React.ReactNode => {
@@ -182,10 +214,13 @@ export default function Page() {
         }
     };
 
-    // Effet pour récupérer les expertises depuis Firestore
+    // Effet pour récupérer les données depuis Firestore
     useEffect(() => {
-        const fetchExpertises = async () => {
+        const fetchData = async () => {
             try {
+                setLoading(true);
+                
+                // Récupérer les expertises
                 const expertisesCollection = collection(db, 'expertises');
                 const expertisesSnapshot = await getDocs(expertisesCollection);
 
@@ -198,12 +233,62 @@ export default function Page() {
                 } else {
                     console.log("Aucune expertise trouvée dans Firestore");
                 }
+                
+                // Récupérer les marques
+                const brandsCollection = collection(db, 'brands');
+                const brandsSnapshot = await getDocs(brandsCollection);
+
+                if (!brandsSnapshot.empty) {
+                    const fetchedBrands = brandsSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })) as Brand[];
+                    setBrands(fetchedBrands);
+                } else {
+                    console.log("Aucune marque trouvée dans Firestore");
+                    setBrands([]);
+                }
+                
+                // Récupérer les clients
+                const clientsCollection = collection(db, 'clients');
+                const clientsSnapshot = await getDocs(clientsCollection);
+
+                if (!clientsSnapshot.empty) {
+                    const fetchedClients = clientsSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })) as Client[];
+                    setClients(fetchedClients);
+                } else {
+                    console.log("Aucun client trouvé dans Firestore");
+                    setClients([]);
+                }
+                
+                // Récupérer les chiffres clés
+                const keyFiguresCollection = collection(db, 'keyFigures');
+                const keyFiguresSnapshot = await getDocs(keyFiguresCollection);
+
+                if (!keyFiguresSnapshot.empty) {
+                    const fetchedKeyFigures = keyFiguresSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })) as KeyFigure[];
+                    // Trier par ordre
+                    fetchedKeyFigures.sort((a, b) => a.order - b.order);
+                    setKeyFigures(fetchedKeyFigures);
+                } else {
+                    console.log("Aucun chiffre clé trouvé dans Firestore");
+                    setKeyFigures([]);
+                }
+                
+                setLoading(false);
             } catch (error) {
-                console.error("Erreur lors de la récupération des expertises:", error);
+                console.error("Erreur lors de la récupération des données:", error);
+                setLoading(false);
             }
         };
 
-        fetchExpertises();
+        fetchData();
     }, []);
 
     useEffect(() => {
@@ -507,106 +592,115 @@ export default function Page() {
                         </h2>
                     </div>
 
-                    <div className="flex flex-col 2xl:flex-row 2xl:items-center 2xl:justify-center gap-4 2xl:gap-6">
-                        {/* Marques à gauche - visible uniquement sur desktop */}
-                        <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
-                            {homeBrandsData.slice(0, 4).map((brand, index) => (
-                                <div key={brand.name} className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addBrandRef(el, index)}>
-                                    <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
-                                </div>
-                            ))}
-                            <div className="aspect-square"></div>
-                            {homeBrandsData.slice(4, 5).map((brand, index) => (
-                                <div key={brand.name} className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addBrandRef(el, index + 4)}>
-                                    <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
-                                </div>
-                            ))}
+                    {loading ? (
+                        <div className="flex justify-center items-center py-20">
+                            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
                         </div>
+                    ) : (
+                        <div className="flex flex-col 2xl:flex-row 2xl:items-center 2xl:justify-center gap-4 2xl:gap-6">
+                            {/* Marques à gauche - visible uniquement sur desktop */}
+                            <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
+                                {brands.slice(0, 4).map((brand, index) => (
+                                    <div key={brand.id || brand.name} className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addBrandRef(el, index)}>
+                                        <BrandLogo name={brand.name} imageSrc={brand.imageSrc} href={brand.href} />
+                                    </div>
+                                ))}
+                                <div className="aspect-square"></div>
+                                {brands.slice(4, 5).map((brand, index) => (
+                                    <div key={brand.id || brand.name} className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addBrandRef(el, index + 4)}>
+                                        <BrandLogo name={brand.name} imageSrc={brand.imageSrc} href={brand.href} />
+                                    </div>
+                                ))}
+                            </div>
 
-                        {/* Marques en haut - visible uniquement sur mobile */}
-                        <div className="flex flex-wrap justify-center gap-4 mb-8 2xl:hidden">
-                            {homeBrandsData.slice(0, 5).map((brand, index) => (
-                                <div key={brand.name} className={`aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4 ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addMobileBrandRef(el, index)}>
-                                    <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
+                            {/* Marques en haut - visible uniquement sur mobile */}
+                            <div className="flex flex-wrap justify-center gap-4 mb-8 2xl:hidden">
+                                {brands.slice(0, 5).map((brand, index) => (
+                                    <div key={brand.id || brand.name} className={`aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4 ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addMobileBrandRef(el, index)}>
+                                        <BrandLogo name={brand.name} imageSrc={brand.imageSrc} href={brand.href} />
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Profils des clients au centre sur desktop */}
+                            <div className="hidden 2xl:flex flex-col items-center w-full 2xl:max-w-4xl">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 w-full mb-4 md:mb-6">
+                                    {clients.slice(0, 4).map((client, index) => (
+                                        <div
+                                            key={client.id || `${client.name}-${index}`}
+                                            ref={(el) => addClientRef(el, index)}
+                                            className={`h-[200px] md:h-[250px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                        >
+                                            <ClientProfile
+                                                name={client.name}
+                                                domain={client.domain}
+                                                imageSrc={client.imageSrc}
+                                                imageBackground={client.imageBackground}
+                                                href={client.href}
+                                                className="h-full"
+                                            />
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-
-                        {/* Profils des clients au centre sur desktop */}
-                        <div className="hidden 2xl:flex flex-col items-center w-full 2xl:max-w-4xl">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 w-full mb-4 md:mb-6">
-                                {homeClientsData.slice(0, 4).map((client, index) => (
-                                    <div
-                                        key={`${client.name}-${index}`}
-                                        ref={(el) => addClientRef(el, index)}
-                                        className={`h-[200px] md:h-[250px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                                    {clients.slice(4).map((client, index) => (
+                                        <div
+                                            key={client.id || `${client.name}-${index + 4}`}
+                                            ref={(el) => addClientRef(el, index + 4)}
+                                            className={`h-[200px] md:h-[250px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                        >
+                                            <ClientProfile
+                                                name={client.name}
+                                                domain={client.domain}
+                                                imageSrc={client.imageSrc}
+                                                imageBackground={client.imageBackground}
+                                                href={client.href}
+                                                className="h-full"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                    
+                            {/* Profils des clients au centre sur mobile */}
+                            <div className="flex flex-wrap justify-center gap-4 mb-8 2xl:hidden">
+                                {clients.map((client, index) => (
+                                    <div 
+                                        key={client.id || `${client.name}-${index}`} 
+                                        className={`h-[150px] md:h-[250px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                        ref={(el) => addClientRef(el, index + clients.length)}
                                     >
-                                        <ClientProfile
-                                            name={client.name}
-                                            domain={client.domain}
-                                            imageSrc={client.imageSrc}
-                                            imageBackground={client.imageBackground}
-                                            className="h-full"
+                                        <ClientProfile 
+                                            name={client.name} 
+                                            domain={client.domain} 
+                                            imageSrc={client.imageSrc} 
+                                            imageBackground={client.imageBackground} 
+                                            href={client.href}
+                                            className="h-full" 
                                         />
                                     </div>
                                 ))}
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                                {homeClientsData.slice(4).map((client, index) => (
-                                    <div
-                                        key={`${client.name}-${index + 4}`}
-                                        ref={(el) => addClientRef(el, index + 4)}
-                                        className={`h-[200px] md:h-[250px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
-                                    >
-                                        <ClientProfile
-                                            name={client.name}
-                                            domain={client.domain}
-                                            imageSrc={client.imageSrc}
-                                            imageBackground={client.imageBackground}
-                                            className="h-full"
-                                        />
+
+                            {/* Marques à droite - visible uniquement sur desktop */}
+                            <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
+                                {brands.slice(5, 10).map((brand, index) => (
+                                    <div key={brand.id || brand.name} className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addBrandRef(el, index + 5)}>
+                                        <BrandLogo name={brand.name} imageSrc={brand.imageSrc} href={brand.href} />
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Marques en bas - visible uniquement sur mobile */}
+                            <div className="flex flex-wrap justify-center gap-4 mt-8 2xl:hidden">
+                                {brands.slice(5).map((brand, index) => (
+                                    <div key={brand.id || brand.name} className={`aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4 ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addMobileBrandRef(el, index + 5)}>
+                                        <BrandLogo name={brand.name} imageSrc={brand.imageSrc} href={brand.href} />
                                     </div>
                                 ))}
                             </div>
                         </div>
-                
-                        {/* Profils des clients au centre sur mobile */}
-                        <div className="flex flex-wrap justify-center gap-4 mb-8 2xl:hidden">
-                            {homeClientsData.map((client, index) => (
-                                <div 
-                                    key={`${client.name}-${index}`} 
-                                    className={`h-[150px] md:h-[250px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
-                                    ref={(el) => addClientRef(el, index + homeClientsData.length)}
-                                >
-                                    <ClientProfile 
-                                        name={client.name} 
-                                        domain={client.domain} 
-                                        imageSrc={client.imageSrc} 
-                                        imageBackground={client.imageBackground} 
-                                        className="h-full" 
-                                    />
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Marques à droite - visible uniquement sur desktop */}
-                        <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
-                            {homeBrandsData.slice(5, 10).map((brand, index) => (
-                                <div key={brand.name} className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addBrandRef(el, index + 5)}>
-                                    <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Marques en bas - visible uniquement sur mobile */}
-                        <div className="flex flex-wrap justify-center gap-4 mt-8 2xl:hidden">
-                            {homeBrandsData.slice(5).map((brand, index) => (
-                                <div key={brand.name} className={`aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4 ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addMobileBrandRef(el, index + 5)}>
-                                    <BrandLogo name={brand.name} imageSrc={brand.imageSrc} />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    )}
 
                     <div className="mt-16 mx-auto w-fit">
                         <PrimaryButton 
@@ -618,49 +712,42 @@ export default function Page() {
                 </div>
             </section>
 
-            {/* Section PRIMECONTENT EN CHIFFRES */}
-            <section className="py-24 bg-black stats-section">
-                <div className="mx-auto px-4">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
-                            NOS CHIFFRES
-                        </h2>
-                    </div>
+            {keyFigures.length > 0 && (
+                <>
+                    {/* Section PRIMECONTENT EN CHIFFRES */}
+                    <section className="py-24 bg-black stats-section">
+                        <div className="mx-auto px-4">
+                            <div className="text-center mb-16">
+                                <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
+                                    NOS CHIFFRES
+                                </h2>
+                            </div>
 
-                    <div className="flex flex-row flex-wrap justify-center gap-8 stats-grid">
-                        <AnimatedStat 
-                            value={70} 
-                            description="Millions De Vues Sur Les Réseaux" 
-                            delay={0}
-                        />
-
-                        <AnimatedStat 
-                            value={150} 
-                            description="Clients Satisfaits" 
-                            delay={0.2}
-                        />
-
-                        <AnimatedStat 
-                            value={200} 
-                            description="Projets Réalisés" 
-                            delay={0.4}
-                        />
-
-                        <AnimatedStat 
-                            value={10} 
-                            description="Abonnés & communautés" 
-                            isPercentage={true} 
-                            delay={0.6}
-                        />
-
-                        <AnimatedStat 
-                            value={50} 
-                            description="Célébrités Dans Notre Réseau" 
-                            delay={0.8}
-                        />
-                    </div>
-                </div>
-            </section>
+                            {loading ? (
+                                <div className="flex justify-center items-center py-20">
+                                    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
+                                </div>
+                            ) : (
+                                <div className="flex flex-row flex-wrap justify-center gap-8 stats-grid">
+                                    
+                                    {keyFigures.map((figure, index) => (
+                                        <AnimatedStat 
+                                            key={figure.id || index}
+                                            value={figure.value} 
+                                            description={figure.description} 
+                                            prefix={figure.prefix}
+                                            suffix={figure.suffix}
+                                                isPercentage={figure.isPercentage}
+                                                delay={index * 0.2}
+                                            />
+                                        )
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                </>
+            )}
 
             {/* Section NOS RÉALISATIONS */}
             <section className="py-24 bg-gradient-to-b from-black via-gray-900 to-black">
