@@ -83,7 +83,6 @@ export default function ContactPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         // console.log('Formulaire soumis:', formData);
-        setIsSubmitting(true);
         // Réinitialiser le formulaire après soumission
         setFormData({
             nom: '',
