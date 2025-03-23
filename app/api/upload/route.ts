@@ -69,15 +69,38 @@ export async function POST(request: NextRequest) {
     
     // Supprimer l'ancien fichier si spécifié
     if (oldFilePath) {
-      // Extraire le nom du fichier depuis le chemin
-      const oldFileName = oldFilePath.split('/').pop();
-      if (oldFileName) {
-        const fullOldPath = join(process.cwd(), 'public', oldFilePath.startsWith('/') 
-          ? oldFilePath.substring(1) 
-          : oldFilePath);
+      try {
+        // Extraire le nom du fichier depuis le chemin
+        const oldFileName = oldFilePath.split('/').pop();
         
-        await deleteFile(fullOldPath);
-        console.log(`Ancien fichier supprimé: ${fullOldPath}`);
+        if (oldFileName) {
+          // Déterminer le chemin du dossier parent
+          let oldFileFolderPath;
+          
+          if (oldFilePath.startsWith('/')) {
+            // Si le chemin commence par un slash, supprimer le premier caractère
+            oldFileFolderPath = oldFilePath.substring(1, oldFilePath.lastIndexOf('/'));
+          } else {
+            // Sinon, prendre le chemin tel quel
+            oldFileFolderPath = oldFilePath.substring(0, oldFilePath.lastIndexOf('/'));
+          }
+          
+          // Construire le chemin complet vers l'ancien fichier
+          const fullOldPath = join(process.cwd(), 'public', oldFileFolderPath, oldFileName);
+          
+          // Vérifier si le fichier existe avant de le supprimer
+          const fileExistsResult = await fileExists(fullOldPath);
+          
+          if (fileExistsResult) {
+            await unlink(fullOldPath);
+            console.log(`Ancien fichier supprimé: ${fullOldPath}`);
+          } else {
+            console.log(`Fichier non trouvé: ${fullOldPath}`);
+          }
+        }
+      } catch (deleteError) {
+        // Simplement logguer l'erreur et continuer
+        console.error('Erreur lors de la suppression de l\'ancien fichier:', deleteError);
       }
     }
     

@@ -244,11 +244,11 @@ export default function HomeTabExpertises() {
       // Créer un objet URL pour la prévisualisation locale
       const objectUrl = URL.createObjectURL(file);
       setPreviewImage(objectUrl);
-
+      
       // Créer un FormData pour l'upload
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('path', 'home/expertises');
+      formData.append('path', 'home/expertises')
       
       // Faire une requête fetch à notre API locale pour sauvegarder le fichier
       const response = await fetch('/api/upload', {
@@ -284,7 +284,30 @@ export default function HomeTabExpertises() {
     
     if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'expertise "${expertise.title}" ?`)) {
       try {
+        // Supprimer l'expertise de Firestore
         await deleteDoc(doc(db, 'expertises', expertise.id));
+        
+        // Supprimer l'image d'arrière-plan si elle existe
+        if (expertise.backgroundImage) {
+          // Extraire le nom du fichier à partir de l'URL
+          const fileName = expertise.backgroundImage.split('/').pop();
+          const filePath = expertise.backgroundImage.substring(1, expertise.backgroundImage.lastIndexOf('/'));
+          
+          if (fileName) {
+            try {
+              const response = await fetch(`/api/delete?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`, {
+                method: 'DELETE',
+              });
+              
+              if (!response.ok) {
+                console.error('Erreur lors de la suppression de l\'image:', await response.text());
+              }
+            } catch (imageError) {
+              console.error('Erreur lors de la suppression de l\'image:', imageError);
+            }
+          }
+        }
+        
         setExpertises(prevExpertises => prevExpertises.filter(exp => exp.id !== expertise.id));
         setStatusMessage({ type: 'success', message: 'Expertise supprimée avec succès' });
         

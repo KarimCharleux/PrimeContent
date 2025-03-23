@@ -161,7 +161,7 @@ export default function HomeTabGallery({ onStatusChange }: HomeTabGalleryProps) 
     }
 
     try {
-      const response = await fetch(`/api/home/gallery/delete?name=${encodeURIComponent(imageName)}`, {
+      const response = await fetch(`/api/delete?path=${encodeURIComponent('home/gallery')}&name=${encodeURIComponent(imageName)}`, {
         method: 'DELETE',
       });
 
