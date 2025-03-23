@@ -27,8 +27,21 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
 
     // Préchargement des images
     useEffect(() => {
+        let isMounted = true;
+        
+        // Vérifier si nous sommes sur une page admin via l'URL
+        const isAdminPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+        
+        // Ne pas précharger les images si nous sommes sur une page admin
+        if (isAdminPage) {
+            setImagesLoaded(true);
+            return;
+        }
+
         const preloadImages = async () => {
             try {
+                if (!isMounted) return;
+                
                 const response = await fetch('/api/gallery-images');
                 const data = await response.json();
                 const totalImages = data.images.length;
@@ -38,6 +51,8 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                     new Promise((resolve, reject) => {
                         const img = new Image();
                         img.onload = () => {
+                            if (!isMounted) return;
+                            
                             loadedCount++;
                             setLoadingProgress(Math.round((loadedCount / totalImages) * 100));
                             resolve(img);
@@ -47,15 +62,23 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                     });
 
                 const loadedImages = await Promise.all(data.images.map(loadImage));
-                setPreloadedImages(loadedImages);
-                setImagesLoaded(true);
+                if (isMounted) {
+                    setPreloadedImages(loadedImages);
+                    setImagesLoaded(true);
+                }
             } catch (error) {
                 console.error('Erreur lors du chargement des images:', error);
-                setImagesLoaded(true); // On continue même en cas d'erreur
+                if (isMounted) {
+                    setImagesLoaded(true); // On continue même en cas d'erreur
+                }
             }
         };
 
         preloadImages();
+        
+        return () => {
+            isMounted = false;
+        };
     }, [setPreloadedImages]);
 
     // Gestion de la fin du chargement et transition
