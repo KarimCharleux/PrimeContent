@@ -136,6 +136,7 @@ export default function EventPage({ evenement }: EventPageProps) {
 
   const toggleImageSelection = (imageSrc: string) => {
     const newSelection = new Set(selectedImages);
+    // Vérifier si l'image est déjà sélectionnée en utilisant le chemin complet
     if (newSelection.has(imageSrc)) {
       newSelection.delete(imageSrc);
     } else {
@@ -167,6 +168,15 @@ export default function EventPage({ evenement }: EventPageProps) {
   const goToPrevImage = () => {
     setCarouselIndex((prev) => (prev - 1 + loadedImages.length) % loadedImages.length);
   };
+
+  // Conversion des images chargées au format attendu par le carrousel
+  const carouselMedia = loadedImages.map(src => ({
+    src: src,
+    isVideo: false
+  }));
+
+  // Conversion des images sélectionnées pour utiliser uniquement les src
+  const selectedItemsSrc = new Set<string>(Array.from(selectedImages));
 
   return (
     <div className="container">
@@ -308,14 +318,14 @@ export default function EventPage({ evenement }: EventPageProps) {
       <AnimatePresence>
         {isCarouselOpen && (
           <ImageCarousel 
-            images={loadedImages}
+            media={carouselMedia}
             currentIndex={carouselIndex}
             onClose={closeCarousel}
             onNext={goToNextImage}
             onPrev={goToPrevImage}
             selectionEnabled={true}
-            selectedImages={selectedImages}
-            toggleImageSelection={toggleImageSelection}
+            selectedItems={selectedItemsSrc}
+            toggleItemSelection={toggleImageSelection}
             showCounter={true}
           />
         )}
