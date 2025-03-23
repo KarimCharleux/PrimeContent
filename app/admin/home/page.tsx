@@ -381,7 +381,10 @@ export default function HomeEditPage() {
                       </div>
                       <div className="mt-2">
                         <p className="text-sm font-medium truncate">{image.name}</p>
-                        <p className="text-xs text-gray-500">{formatSize(image.size)}</p>
+                        <p className="text-xs text-gray-500">
+                          {formatSize(image.size)} 
+                          {image.dimensions && ` - ${image.dimensions.width}×${image.dimensions.height}`}
+                        </p>
                       </div>
                     </div>
                   ))}

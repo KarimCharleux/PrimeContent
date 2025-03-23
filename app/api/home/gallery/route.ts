@@ -1,10 +1,26 @@
+import { createReadStream, constants } from 'fs';
 import { readdir, stat } from 'fs/promises';
 import { join } from 'path';
 
 import { NextResponse } from 'next/server';
+import sharp from 'sharp';
 
 // Vitesse de connexion moyenne en France en bits par seconde (15 Mbps)
 const AVERAGE_CONNECTION_SPEED = 15 * 1024 * 1024 / 8; // Convertir en octets par seconde
+
+// Fonction pour obtenir les dimensions d'une image
+async function getImageDimensions(filePath: string): Promise<{ width: number; height: number } | null> {
+  try {
+    const metadata = await sharp(filePath).metadata();
+    if (metadata.width && metadata.height) {
+      return { width: metadata.width, height: metadata.height };
+    }
+    return null;
+  } catch (error) {
+    console.error(`Erreur lors de la récupération des dimensions de ${filePath}:`, error);
+    return null;
+  }
+}
 
 export async function GET() {
   try {
@@ -24,11 +40,13 @@ export async function GET() {
     const imagesPromises = imageFiles.map(async (fileName) => {
       const filePath = join(galleryPath, fileName);
       const fileStats = await stat(filePath);
+      const dimensions = await getImageDimensions(filePath);
       
       return {
         name: fileName,
         url: `/home/gallery/${fileName}`,
         size: fileStats.size,
+        dimensions,
         lastModified: fileStats.mtime
       };
     });

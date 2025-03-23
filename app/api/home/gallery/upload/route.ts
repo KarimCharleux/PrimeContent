@@ -2,7 +2,22 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 
 import { NextRequest, NextResponse } from 'next/server';
+import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
+
+// Fonction pour obtenir les dimensions d'une image
+async function getImageDimensions(buffer: Uint8Array): Promise<{ width: number; height: number } | null> {
+  try {
+    const metadata = await sharp(buffer).metadata();
+    if (metadata.width && metadata.height) {
+      return { width: metadata.width, height: metadata.height };
+    }
+    return null;
+  } catch (error) {
+    console.error('Erreur lors de la récupération des dimensions:', error);
+    return null;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,13 +65,19 @@ export async function POST(request: NextRequest) {
       // Convertir le fichier en buffer et l'écrire
       const arrayBuffer = await file.arrayBuffer();
       const buffer = new Uint8Array(arrayBuffer);
+      
+      // Obtenir les dimensions de l'image
+      const dimensions = await getImageDimensions(buffer);
+      
+      // Écrire le fichier
       await writeFile(filePath, buffer);
       
       return {
         originalName: file.name,
         savedName: fileName,
         size: file.size,
-        type: file.type
+        type: file.type,
+        dimensions
       };
     });
     
