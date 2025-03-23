@@ -13,69 +13,30 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
     }
     
-    // Fonction pour vérifier si l'utilisateur est l'auteur du document
-    function isAuthor(resourceId) {
-      return isSignedIn() && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        request.auth.uid == resourceId;
-    }
-    
-    // Tous les utilisateurs connectés peuvent lire les données publiques
-    match /gallery/{mediaId} {
-      allow read: if true; // Lecture publique pour affichage sur le frontend
-      allow write: if isAdmin(); // Écriture réservée aux administrateurs
-    }
-    
-    match /expertises/{expertiseId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /clients/{clientId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /keyFigures/{keyFigureId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /projects/{projectId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /testimonials/{testimonialId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /events/{eventId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /weddings/{weddingId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
     // Gestion des utilisateurs (accès restreint)
     match /users/{userId} {
       // Lecture de son propre profil ou par un admin
-      allow read: if isAuthor(userId) || isAdmin();
+      allow read: if request.auth.uid == userId || isAdmin();
       
       // Création et mise à jour de son propre profil
-      allow create, update: if isAuthor(userId) || isAdmin();
+      allow create, update: if request.auth.uid == userId || isAdmin();
       
       // Seul un admin peut supprimer un compte
       allow delete: if isAdmin();
     }
     
-    // Pour les nouvelles collections non explicitement définies
-    match /{document=**} {
-      allow read: if isSignedIn();
+    // Règle générale pour toutes les autres collections
+    match /{collection}/{document} {
+      // Lecture publique pour toutes les collections
+      allow read: if true;
+      
+      // Écriture pour les administrateurs
+      allow write: if isAdmin();
+    }
+    
+    // Règle pour les sous-collections
+    match /{collection}/{document}/{subCollection}/{subDocument} {
+      allow read: if true;
       allow write: if isAdmin();
     }
   }

@@ -89,7 +89,9 @@ export default function Sidebar() {
       <div className="flex items-center justify-between h-16 px-4">
         <div className="flex items-center">
           <span className={`font-semibold text-xl ${isOpen ? 'block' : 'hidden'}`}>
-            Backoffice
+            <b className="primecontent-title">
+              Prime<span className="text-gray-400">content.</span>
+            </b>
           </span>
         </div>
         <button
