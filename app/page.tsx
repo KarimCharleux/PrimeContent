@@ -1,5 +1,5 @@
 'use client';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { useEffect, useRef, useState } from 'react';
 
 import { db } from './admin/lib/firebase-client';
@@ -15,8 +15,6 @@ import LatestProjects from './components/LatestProjects';
 import PortfolioGrid from './components/PortfolioGrid/PortfolioGrid';
 import PrimaryButton from './components/PrimaryButton';
 import customerReviewsData from './data/customerReviewsData';
-import homePortfolioProjects from './data/homePortfolioData';
-import latestProjectsData from './data/latestProjectsData';
 import gsap from './lib/gsap-config';
 // Firestore
 
@@ -63,6 +61,19 @@ interface KeyFigure {
     order: number;
 }
 
+// Interface pour les projets du portfolio
+interface PortfolioProject {
+    id?: string;
+    title: string;
+    category: string;
+    source: string;
+    isVideo?: boolean;
+    format: 'portrait' | 'paysage';
+    order: number;
+    isLatest?: boolean;
+    link?: string;
+}
+
 export default function Page() {
     // Références pour les éléments à animer
     const heroTitleRef = useRef<HTMLHeadingElement>(null);
@@ -88,6 +99,7 @@ export default function Page() {
     const [brands, setBrands] = useState<Brand[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
     const [keyFigures, setKeyFigures] = useState<KeyFigure[]>([]);
+    const [projects, setProjects] = useState<PortfolioProject[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Fonction pour obtenir l'icône à partir du nom
@@ -279,6 +291,22 @@ export default function Page() {
                 } else {
                     console.log("Aucun chiffre clé trouvé dans Firestore");
                     setKeyFigures([]);
+                }
+
+                // Récupérer les projets
+                const projectsCollection = collection(db, 'projects');
+                const projectsQuery = query(projectsCollection, orderBy('order', 'asc'));
+                const projectsSnapshot = await getDocs(projectsQuery);
+
+                if (!projectsSnapshot.empty) {
+                    const fetchedProjects = projectsSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })) as PortfolioProject[];
+                    setProjects(fetchedProjects);
+                } else {
+                    console.log("Aucun projet trouvé dans Firestore");
+                    setProjects([]);
                 }
                 
                 setLoading(false);
@@ -757,7 +785,16 @@ export default function Page() {
                             NOS RÉALISATIONS
                         </h2>
                     </div>
-                    <PortfolioGrid projects={homePortfolioProjects} showFilter={true} />
+                    {loading ? (
+                        <div className="flex justify-center items-center py-20">
+                            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
+                        </div>
+                    ) : (
+                        <PortfolioGrid 
+                            projects={projects.filter(p => !p.isLatest)} 
+                            showFilter={true} 
+                        />
+                    )}
                 </div>
             </section>
 
@@ -769,7 +806,20 @@ export default function Page() {
                             NOS DERNIÈRES RÉALISATIONS
                         </h2>
                     </div>
-                    <LatestProjects projects={latestProjectsData} />
+                    {loading ? (
+                        <div className="flex justify-center items-center py-20">
+                            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
+                        </div>
+                    ) : (
+                        <LatestProjects 
+                            projects={projects.filter(p => p.isLatest).map(p => ({
+                                id: p.id || crypto.randomUUID(),
+                                title: p.title,
+                                imageSrc: p.source,
+                                link: p.link || `/portfolio/${p.id}`
+                            }))} 
+                        />
+                    )}
                 </div>
             </section>
 

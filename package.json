@@ -2,6 +2,7 @@
     "name": "@onlook/next-template",
     "version": "0.1.0",
     "private": true,
+    "homepage": ".",
     "scripts": {
         "dev": "next dev",
         "clean": "rm -rf build .next",

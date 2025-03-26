@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Header() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   return (
@@ -94,6 +94,16 @@ export default function Header() {
                   className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
                   Voir le site
+                </button>
+                <div className="border-t border-gray-100"></div>
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    signOut();
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                >
+                  Déconnexion
                 </button>
               </div>
             )}
