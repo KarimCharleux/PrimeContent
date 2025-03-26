@@ -10,23 +10,5 @@ const nextConfig = {
         workerThreads: false,
         cpus: 1
     },
-    swcMinify: false,
-    webpack: (config, { isServer }) => {
-        if (!isServer) {
-            config.resolve.fallback = {
-                ...config.resolve.fallback,
-                fs: false,
-                net: false,
-                tls: false,
-            };
-        }
-        return config;
-    },
-    typescript: {
-        ignoreBuildErrors: true,
-    },
-    eslint: {
-        ignoreDuringBuilds: true,
-    },
 };
 export default nextConfig;
