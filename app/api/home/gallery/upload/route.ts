@@ -3,7 +3,6 @@ import { join } from 'path';
 
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
-import { v4 as uuidv4 } from 'uuid';
 
 // Fonction pour obtenir les dimensions d'une image
 async function getImageDimensions(buffer: Uint8Array): Promise<{ width: number; height: number } | null> {
@@ -57,9 +56,8 @@ export async function POST(request: NextRequest) {
     
     // Traiter chaque fichier
     const uploadPromises = files.map(async (file) => {
-      // Générer un nom de fichier unique
-      const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `${uuidv4()}.${fileExtension}`;
+      // Utiliser le nom original du fichier
+      const fileName = file.name;
       const filePath = join(galleryPath, fileName);
       
       // Convertir le fichier en buffer et l'écrire
