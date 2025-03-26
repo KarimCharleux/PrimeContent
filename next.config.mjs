@@ -10,6 +10,7 @@ const nextConfig = {
         workerThreads: false,
         cpus: 1
     },
+    swcMinify: false,
     webpack: (config, { isServer }) => {
         if (!isServer) {
             config.resolve.fallback = {
