@@ -1,6 +1,5 @@
 'use client';
 
-import { Inter } from 'next/font/google';
 import { usePathname } from 'next/navigation';
 import React from 'react';
 
@@ -8,8 +7,6 @@ import AuthGuard from './components/AuthGuard';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import { AuthProvider } from './hooks/useAuth';
-
-const inter = Inter({ subsets: ['latin'] });
 
 interface AdminLayoutProps {
   readonly children: React.ReactNode;
@@ -20,7 +17,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const isLoginPage = pathname?.includes('/admin/login') || pathname?.includes('/admin/forgot-password');
 
   return (
-    <div className={`${inter.className}`}>
+    <div className="font-sora">
       <AuthProvider>
         <AuthGuard>
           {isLoginPage ? (
