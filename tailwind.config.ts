@@ -10,8 +10,8 @@ const config: Config = {
   theme: {
   	extend: {
   		fontFamily: {
-  			sora: ['var(--font-sora)'],
-  			manrope: ['var(--font-manrope)'],
+  			sora: ['Sora', 'sans-serif'],
+  			manrope: ['Manrope', 'sans-serif'],
   		},
   		backgroundImage: {
   			'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
