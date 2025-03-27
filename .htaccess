@@ -1,0 +1,14 @@
+RewriteEngine On
+RewriteBase /
+
+# Si le fichier ou répertoire existe, ne pas appliquer de règles
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Rediriger toutes les autres requêtes vers le fichier index.html correspondant
+RewriteRule ^(.*)/$ $1/index.html [L]
+
+# Pour les URL sans slash final (comme /contact), ajouter un slash et rediriger
+RewriteCond %{REQUEST_URI} !(.*)/$
+RewriteRule ^(.*)$ $1/ [L,R=301] 
