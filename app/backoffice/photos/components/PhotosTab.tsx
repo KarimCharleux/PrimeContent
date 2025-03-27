@@ -16,35 +16,31 @@ import { useEffect, useState, useCallback } from 'react';
 import { Spinner } from '@/app/backoffice/components/Spinner';
 import { db } from '@/app/backoffice/lib/firebase-client';
 
-interface Project {
+interface Photo {
     id?: string;
-    title: string;
+    title?: string;
     category: string;
     source: string;
-    isVideo?: boolean;
     format: 'portrait' | 'paysage';
     order: number;
-    isLatest?: boolean;
-    thumbnail?: string; // Miniature optionnelle pour les vidéos
 }
 
-interface ProjectStats {
-    totalProjects: number;
-    totalImages: number;
-    totalVideos: number;
+interface PhotoStats {
+    totalPhotos: number;
     totalSize: number;
-    imagesSize: number;
-    videosSize: number;
     averageLoadTime: number;
 }
 
-export default function HomeTabProjects() {
-    const [projects, setProjects] = useState<Project[]>([]);
+interface PhotosTabProps {
+    onStatusChange?: (status: { type: 'success' | 'error'; message: string } | null) => void;
+}
+
+export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
+    const [photos, setPhotos] = useState<Photo[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
-    const [editingProject, setEditingProject] = useState<Project | null>(null);
+    const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'all' | 'latest'>('all');
     const [isDragging, setIsDragging] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -52,27 +48,21 @@ export default function HomeTabProjects() {
         type: 'success' | 'error';
         message: string;
     } | null>(null);
-    const [stats, setStats] = useState<ProjectStats>({
-        totalProjects: 0,
-        totalImages: 0,
-        totalVideos: 0,
+    const [stats, setStats] = useState<PhotoStats>({
+        totalPhotos: 0,
         totalSize: 0,
-        imagesSize: 0,
-        videosSize: 0,
         averageLoadTime: 0,
     });
-    const [formData, setFormData] = useState<Partial<Project>>({
+    const [formData, setFormData] = useState<Partial<Photo>>({
         title: '',
         category: '',
         source: '',
         format: 'portrait',
         order: 0,
-        isLatest: false,
-        thumbnail: '',
     });
 
-    // Extraire les catégories uniques des projets
-    const categories = Array.from(new Set(projects.map((project) => project.category))).filter(
+    // Extraire les catégories uniques des photos
+    const categories = Array.from(new Set(photos.map((photo) => photo.category))).filter(
         Boolean,
     );
 
@@ -101,96 +91,84 @@ export default function HomeTabProjects() {
     // Fonction pour calculer les statistiques
     const calculateStats = useCallback(async () => {
         let totalSize = 0;
-        let imagesSize = 0;
-        let videosSize = 0;
-        let totalImages = 0;
-        let totalVideos = 0;
         let totalLoadTime = 0;
 
-        for (const project of projects) {
+        for (const photo of photos) {
             try {
-                const response = await fetch(project.source, { method: 'HEAD' });
+                const response = await fetch(photo.source, { method: 'HEAD' });
                 const contentLength = response.headers.get('content-length');
-                const contentType = response.headers.get('content-type');
 
                 if (contentLength) {
                     const size = parseInt(contentLength);
                     totalSize += size;
-
-                    if (project.source.match(/\.(mp4|webm|ogg)$/i)) {
-                        videosSize += size;
-                        totalVideos++;
-                    } else {
-                        imagesSize += size;
-                        totalImages++;
-                    }
                 }
 
                 // Estimation du temps de chargement (basé sur une connexion moyenne de 15 Mbps)
                 const loadTime = ((parseInt(contentLength || '0') * 8) / (15 * 1024 * 1024)) * 1000;
                 totalLoadTime += loadTime;
             } catch (error) {
-                console.error(`Erreur lors de l'analyse de ${project.source}:`, error);
+                console.error(`Erreur lors de l'analyse de ${photo.source}:`, error);
             }
         }
 
         setStats({
-            totalProjects: projects.length,
-            totalImages,
-            totalVideos,
+            totalPhotos: photos.length,
             totalSize,
-            imagesSize,
-            videosSize,
-            averageLoadTime: totalLoadTime / projects.length,
+            averageLoadTime: totalLoadTime / photos.length,
         });
-    }, [projects]);
+    }, [photos]);
 
     useEffect(() => {
-        fetchProjects();
+        fetchPhotos();
     }, []);
 
     useEffect(() => {
-        if (projects.length > 0) {
+        if (photos.length > 0) {
             calculateStats();
         }
-    }, [projects, calculateStats]);
+    }, [photos, calculateStats]);
 
-    // Fermer et réinitialiser le formulaire lors du changement d'onglet
+    // Mettre à jour le statut pour le composant parent
     useEffect(() => {
+        onStatusChange && onStatusChange(statusMessage);
+    }, [statusMessage, onStatusChange]);
+
+    // Fermer et réinitialiser le formulaire
+    const resetForm = () => {
         setShowForm(false);
-        setEditingProject(null);
+        setEditingPhoto(null);
         setFormData({
             title: '',
             category: '',
             source: '',
             format: 'portrait',
             order: 0,
-            isLatest: false,
-            thumbnail: '',
         });
         setPreviewImage(null);
         setStatusMessage(null);
-    }, [activeTab]);
+    };
 
-    const fetchProjects = async () => {
+    const fetchPhotos = async () => {
         try {
             setLoading(true);
-            const projectsCollection = collection(db, 'projects');
-            const projectsQuery = query(projectsCollection, orderBy('order', 'asc'));
-            const projectsSnapshot = await getDocs(projectsQuery);
+            const photosCollection = collection(db, 'photos');
+            const photosQuery = query(photosCollection, orderBy('order', 'asc'));
+            const photosSnapshot = await getDocs(photosQuery);
 
-            if (!projectsSnapshot.empty) {
-                const fetchedProjects = projectsSnapshot.docs.map((doc) => ({
+            if (!photosSnapshot.empty) {
+                const fetchedPhotos = photosSnapshot.docs.map((doc) => ({
                     id: doc.id,
                     ...doc.data(),
-                })) as Project[];
-                setProjects(fetchedProjects);
+                })) as Photo[];
+                setPhotos(fetchedPhotos);
+            } else {
+                setPhotos([]);
             }
         } catch (error) {
-            console.error('Erreur lors de la récupération des projets:', error);
+            console.error('Erreur lors de la récupération des photos:', error);
             setStatusMessage({
                 type: 'error',
-                message: 'Erreur lors de la récupération des projets',
+                message: 'Erreur lors de la récupération des photos',
             });
         } finally {
             setLoading(false);
@@ -200,46 +178,31 @@ export default function HomeTabProjects() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            if (editingProject?.id) {
-                const projectRef = doc(db, 'projects', editingProject.id);
-                await updateDoc(projectRef, {
+            if (editingPhoto?.id) {
+                const photoRef = doc(db, 'photos', editingPhoto.id);
+                await updateDoc(photoRef, {
                     title: formData.title,
                     source: formData.source || '',
                     format: formData.format,
                     order: formData.order,
-                    isLatest: formData.isLatest,
-                    isVideo: formData.source ? formData.source.match(/\.(mp4|webm|ogg)$/i) !== null : false,
                     category: formData.category || '',
-                    thumbnail: formData.thumbnail || '',
                 });
-                setStatusMessage({ type: 'success', message: 'Projet mis à jour avec succès' });
+                setStatusMessage({ type: 'success', message: 'Photo mise à jour avec succès' });
             } else {
-                const newProject = {
+                const newPhoto = {
                     ...formData,
-                    order: projects.length,
-                    isVideo: formData.source ? formData.source.match(/\.(mp4|webm|ogg)$/i) !== null : false,
+                    order: photos.length,
                 };
-                await addDoc(collection(db, 'projects'), newProject);
+                await addDoc(collection(db, 'photos'), newPhoto);
                 setStatusMessage({
                     type: 'success',
-                    message: 'Nouvelle réalisation ajoutée avec succès',
+                    message: 'Nouvelle photo ajoutée avec succès',
                 });
             }
-            setShowForm(false);
-            setEditingProject(null);
-            setFormData({
-                title: '',
-                category: '',
-                source: '',
-                format: 'portrait',
-                order: 0,
-                isLatest: false,
-                thumbnail: '',
-            });
-            setPreviewImage(null);
-            fetchProjects();
+            resetForm();
+            fetchPhotos();
         } catch (error) {
-            console.error('Erreur lors de la sauvegarde du projet:', error);
+            console.error('Erreur lors de la sauvegarde de la photo:', error);
             setStatusMessage({ type: 'error', message: 'Erreur lors de la sauvegarde' });
         }
     };
@@ -272,23 +235,18 @@ export default function HomeTabProjects() {
         }
     };
 
-    // Supprimer tous les projets
-    const handleDeleteAllProjects = async () => {
-        // Filtrer les projets selon l'onglet actif
-        const projectsToDelete = projects.filter(project => 
-            activeTab === 'latest' ? project.isLatest : !project.isLatest
-        );
-
-        if (!confirm(`Êtes-vous sûr de vouloir supprimer toutes les réalisations de l'onglet actuel (${projectsToDelete.length} projets) ? Cette action est irréversible.`)) {
+    // Supprimer toutes les photos
+    const handleDeleteAllPhotos = async () => {
+        if (!confirm(`Êtes-vous sûr de vouloir supprimer toutes les photos (${photos.length} photos) ? Cette action est irréversible.`)) {
             return;
         }
 
         try {
             // Supprimer d'abord tous les médias
-            await Promise.all(projectsToDelete.map(async (project) => {
-                if (project.source) {
-                    const fileName = project.source.split('/').pop();
-                    const filePath = project.source.substring(1, project.source.lastIndexOf('/'));
+            await Promise.all(photos.map(async (photo) => {
+                if (photo.source) {
+                    const fileName = photo.source.split('/').pop();
+                    const filePath = photo.source.substring(1, photo.source.lastIndexOf('/'));
                     
                     if (fileName) {
                         try {
@@ -307,36 +265,26 @@ export default function HomeTabProjects() {
             }));
 
             // Ensuite supprimer les documents Firestore
-            await Promise.all(projectsToDelete.map(project => 
-                deleteDoc(doc(db, 'projects', project.id!))
+            await Promise.all(photos.map(photo => 
+                deleteDoc(doc(db, 'photos', photo.id!))
             ));
 
-            // Mettre à jour l'état local des projets
-            setProjects(prevProjects => 
-                prevProjects.filter(project => 
-                    activeTab === 'latest' ? !project.isLatest : project.isLatest
-                )
-            );
-
+            setPhotos([]);
             setStatusMessage({
                 type: 'success',
-                message: `Toutes les réalisations de l'onglet actuel (${projectsToDelete.length} projets) ont été supprimées avec succès`
+                message: `Toutes les photos (${photos.length}) ont été supprimées avec succès`
             });
         } catch (error) {
-            console.error('Erreur lors de la suppression des projets:', error);
+            console.error('Erreur lors de la suppression des photos:', error);
             setStatusMessage({
                 type: 'error',
-                message: 'Erreur lors de la suppression des projets'
+                message: 'Erreur lors de la suppression des photos'
             });
         }
     };
 
     // Détecter automatiquement le format (portrait/paysage)
     const detectFormat = async (file: File): Promise<'portrait' | 'paysage'> => {
-        if (file.type.startsWith('video/')) {
-            return 'paysage'; // Les vidéos sont toujours en paysage
-        }
-
         return new Promise((resolve) => {
             const img = new window.Image();
             img.onload = () => {
@@ -348,17 +296,28 @@ export default function HomeTabProjects() {
 
     // Gérer l'upload des fichiers
     const handleFileUpload = async (files: FileList) => {
+        // Filtrer les fichiers pour n'accepter que les images
+        const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+        
+        if (imageFiles.length === 0) {
+            setStatusMessage({
+                type: 'error',
+                message: 'Veuillez sélectionner uniquement des fichiers image'
+            });
+            return;
+        }
+        
         setUploading(true);
         setStatusMessage(null);
         setUploadProgress(0);
 
         try {
             // Trouver le dernier ordre existant
-            const lastOrder = Math.max(...projects.map(p => p.order), -1);
+            const lastOrder = Math.max(...photos.map(p => p.order), -1);
             let currentOrder = lastOrder + 1;
 
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
+            for (let i = 0; i < imageFiles.length; i++) {
+                const file = imageFiles[i];
                 const format = await detectFormat(file);
 
                 // Créer un objet URL pour la prévisualisation locale
@@ -368,8 +327,8 @@ export default function HomeTabProjects() {
                 // Créer un FormData pour l'upload
                 const formData = new FormData();
                 formData.append('file', file);
-                formData.append('path', 'home/projects');
-                formData.append('useUuid', 'false'); // Ne pas utiliser d'UUID pour les projets
+                formData.append('path', 'photos');
+                formData.append('useUuid', 'false');
 
                 // Faire une requête fetch à notre API locale pour sauvegarder le fichier
                 const response = await fetch('/api/upload', {
@@ -378,39 +337,38 @@ export default function HomeTabProjects() {
                 });
 
                 if (!response.ok) {
-                    throw new Error('Erreur lors du téléchargement du média');
+                    throw new Error('Erreur lors du téléchargement de la photo');
                 }
 
                 const data = await response.json();
 
-                // Créer un nouveau projet avec l'ordre incrémenté
-                const newProject = {
+                // Créer une nouvelle photo avec l'ordre incrémenté
+                const newPhoto = {
                     title: '', // Laisser le titre vide
                     source: data.fileUrl,
                     format,
                     order: currentOrder++,
-                    isLatest: activeTab === 'latest',
-                    isVideo: file.type.startsWith('video/'),
+                    category: '',
                 };
 
-                await addDoc(collection(db, 'projects'), newProject);
+                await addDoc(collection(db, 'photos'), newPhoto);
 
                 // Mettre à jour la progression
-                setUploadProgress(((i + 1) / files.length) * 100);
+                setUploadProgress(((i + 1) / imageFiles.length) * 100);
             }
 
             setStatusMessage({
                 type: 'success',
-                message: `${files.length} réalisation(s) ajoutée(s) avec succès`,
+                message: `${imageFiles.length} photo(s) ajoutée(s) avec succès`,
             });
 
-            // Rafraîchir la liste des projets
-            fetchProjects();
+            // Rafraîchir la liste des photos
+            fetchPhotos();
         } catch (error) {
             console.error('Erreur lors du téléchargement:', error);
             setStatusMessage({
                 type: 'error',
-                message: 'Erreur lors du téléchargement des médias',
+                message: 'Erreur lors du téléchargement des photos',
             });
         } finally {
             setUploading(false);
@@ -418,75 +376,23 @@ export default function HomeTabProjects() {
         }
     };
 
-    // Gérer le téléchargement de la miniature
-    const handleThumbnailUpload = async (files: FileList) => {
-        if (!files || files.length === 0) return;
-        
-        setUploading(true);
-        setStatusMessage(null);
-        setUploadProgress(0);
-
-        try {
-            const file = files[0];
-            
-            // Créer un objet URL pour la prévisualisation locale
-            const objectUrl = URL.createObjectURL(file);
-            
-            // Créer un FormData pour l'upload
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('path', 'home/thumbnails');
-            formData.append('useUuid', 'false');
-            
-            // Faire une requête fetch à notre API locale
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
-            
-            if (!response.ok) {
-                throw new Error('Erreur lors du téléchargement de la miniature');
-            }
-            
-            const data = await response.json();
-            
-            // Mettre à jour le formData avec l'URL de la miniature
-            setFormData(prev => ({ ...prev, thumbnail: data.fileUrl }));
-            setUploadProgress(100);
-            
-            setStatusMessage({
-                type: 'success',
-                message: 'Miniature téléchargée avec succès',
-            });
-        } catch (error) {
-            console.error('Erreur lors du téléchargement:', error);
-            setStatusMessage({
-                type: 'error',
-                message: 'Erreur lors du téléchargement de la miniature',
-            });
-        } finally {
-            setUploading(false);
-            setUploadProgress(0);
-        }
-    };
-
-    const handleEdit = (project: Project) => {
-        setEditingProject(project);
-        setFormData(project);
-        setPreviewImage(project.source);
+    const handleEdit = (photo: Photo) => {
+        setEditingPhoto(photo);
+        setFormData(photo);
+        setPreviewImage(photo.source);
         setShowForm(true);
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm('Êtes-vous sûr de vouloir supprimer ce projet ?')) {
+        if (window.confirm('Êtes-vous sûr de vouloir supprimer cette photo ?')) {
             try {
-                const project = projects.find(p => p.id === id);
-                if (!project) return;
+                const photo = photos.find(p => p.id === id);
+                if (!photo) return;
 
                 // Supprimer le média si une source est définie
-                if (project.source) {
-                    const fileName = project.source.split('/').pop();
-                    const filePath = project.source.substring(1, project.source.lastIndexOf('/'));
+                if (photo.source) {
+                    const fileName = photo.source.split('/').pop();
+                    const filePath = photo.source.substring(1, photo.source.lastIndexOf('/'));
                     
                     if (fileName) {
                         try {
@@ -503,21 +409,21 @@ export default function HomeTabProjects() {
                     }
                 }
 
-                // Supprimer le projet de Firestore
-                await deleteDoc(doc(db, 'projects', id));
-                setStatusMessage({ type: 'success', message: 'Projet supprimé avec succès' });
-                fetchProjects();
+                // Supprimer la photo de Firestore
+                await deleteDoc(doc(db, 'photos', id));
+                setStatusMessage({ type: 'success', message: 'Photo supprimée avec succès' });
+                fetchPhotos();
             } catch (error) {
-                console.error('Erreur lors de la suppression du projet:', error);
+                console.error('Erreur lors de la suppression de la photo:', error);
                 setStatusMessage({ type: 'error', message: 'Erreur lors de la suppression' });
             }
         }
     };
 
-    const handleReorder = async (projectId: string, newOrder: number) => {
+    const handleReorder = async (photoId: string, newOrder: number) => {
         try {
-            await updateDoc(doc(db, 'projects', projectId), { order: newOrder });
-            fetchProjects();
+            await updateDoc(doc(db, 'photos', photoId), { order: newOrder });
+            fetchPhotos();
         } catch (error) {
             console.error('Erreur lors du réordonnancement:', error);
             setStatusMessage({ type: 'error', message: 'Erreur lors du réordonnancement' });
@@ -525,19 +431,7 @@ export default function HomeTabProjects() {
     };
 
     const cancelEdit = () => {
-        setEditingProject(null);
-        setFormData({
-            title: '',
-            category: '',
-            source: '',
-            format: 'portrait',
-            order: 0,
-            isLatest: false,
-            thumbnail: '',
-        });
-        setPreviewImage(null);
-        setShowForm(false);
-        setStatusMessage(null);
+        resetForm();
     };
 
     // Fonction pour déterminer la classe de taille en fonction du format
@@ -564,21 +458,15 @@ export default function HomeTabProjects() {
         <>
             {/* Section Statistiques */}
             <div className="bg-white rounded-lg shadow p-6 mb-8">
-                <h2 className="text-xl font-semibold mb-4">Statistiques des Réalisations</h2>
+                <h2 className="text-xl font-semibold mb-4">Statistiques des Photos</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-blue-50 p-4 rounded-lg">
-                        <p className="text-sm text-blue-600 font-medium">Nombre total de médias</p>
-                        <p className="text-3xl font-bold">{stats.totalProjects}</p>
-                        <p className="text-sm text-gray-600 mt-1">
-                            {stats.totalImages} images • {stats.totalVideos} vidéos
-                        </p>
+                        <p className="text-sm text-blue-600 font-medium">Nombre total de photos</p>
+                        <p className="text-3xl font-bold">{stats.totalPhotos}</p>
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg">
                         <p className="text-sm text-green-600 font-medium">Taille totale</p>
                         <p className="text-3xl font-bold">{formatSize(stats.totalSize)}</p>
-                        <p className="text-sm text-gray-600 mt-1">
-                            {formatSize(stats.imagesSize)} images • {formatSize(stats.videosSize)} vidéos
-                        </p>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-lg">
                         <p className="text-sm text-purple-600 font-medium">Temps de chargement moyen</p>
@@ -592,33 +480,12 @@ export default function HomeTabProjects() {
             <div className="bg-white rounded-lg shadow">
                 <div className="p-6 border-b border-gray-200">
                     <div className="flex justify-between items-center mb-4">
-                        <div className="flex space-x-4">
-                            <button
-                                onClick={() => setActiveTab('all')}
-                                className={`px-4 py-2 rounded-md transition-colors ${
-                                    activeTab === 'all'
-                                        ? 'bg-black text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
-                            >
-                                Nos réalisations
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('latest')}
-                                className={`px-4 py-2 rounded-md transition-colors ${
-                                    activeTab === 'latest'
-                                        ? 'bg-black text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
-                            >
-                                Nos dernières réalisations
-                            </button>
-                        </div>
+                        <h2 className="text-lg font-semibold">Gestion des Photos</h2>
                         <div className="flex space-x-2">
-                            {projects.length > 0 && (
+                            {photos.length > 0 && (
                                 <>
                                     <button
-                                        onClick={() => handleDeleteAllProjects()}
+                                        onClick={() => handleDeleteAllPhotos()}
                                         className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -635,7 +502,7 @@ export default function HomeTabProjects() {
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                 </svg>
-                                Nouvelle réalisation
+                                Nouvelle photo
                             </button>
                         </div>
                     </div>
@@ -650,7 +517,7 @@ export default function HomeTabProjects() {
                         </div>
                     )}
 
-                    {/* Zone de drop pour les médias */}
+                    {/* Zone de drop pour les photos */}
                     <div
                         className={`border-2 border-dashed p-8 mb-8 rounded-lg text-center ${
                             isDragging ? 'border-primary bg-primary bg-opacity-10' : 'border-gray-300'
@@ -681,7 +548,7 @@ export default function HomeTabProjects() {
                                     <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                                 <p className="mt-2 text-gray-600">
-                                    Glissez-déposez des médias ici ou{' '}
+                                    Glissez-déposez des photos ici ou{' '}
                                     <button
                                         type="button"
                                         className="text-primary hover:text-primary-dark font-medium"
@@ -691,13 +558,13 @@ export default function HomeTabProjects() {
                                     </button>
                                 </p>
                                 <p className="mt-1 text-xs text-gray-500">
-                                    Images et vidéos acceptés
+                                    Images uniquement (JPG, PNG, WebP, etc.)
                                 </p>
                                 <input
                                     id="fileInput"
                                     type="file"
                                     className="hidden"
-                                    accept="image/*,video/*"
+                                    accept="image/*"
                                     multiple
                                     onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
                                 />
@@ -708,34 +575,35 @@ export default function HomeTabProjects() {
                     {showForm && (
                         <form onSubmit={handleSubmit} className="space-y-6 mb-8">
                             <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
-                                {editingProject
-                                    ? `Modifier: ${editingProject.title}`
-                                    : 'Ajouter une nouvelle réalisation'}
+                                {editingPhoto
+                                    ? `Modifier: ${editingPhoto.title || 'Photo sans titre'}`
+                                    : 'Ajouter une nouvelle photo'}
                             </h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <div className="mb-4">
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Titre
+                                            Titre (optionnel)
                                         </label>
                                         <input
                                             type="text"
-                                            value={formData.title}
+                                            value={formData.title || ''}
                                             onChange={(e) =>
                                                 setFormData({ ...formData, title: e.target.value })
                                             }
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                            placeholder="Titre de la photo"
                                         />
                                     </div>
 
                                     <div className="mb-4">
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Catégorie (optionnel)
+                                            Catégorie
                                         </label>
                                         <div className="flex space-x-2">
                                             <select
-                                                value={formData.category}
+                                                value={formData.category || ''}
                                                 onChange={(e) =>
                                                     setFormData({
                                                         ...formData,
@@ -755,7 +623,7 @@ export default function HomeTabProjects() {
                                             </select>
                                             <input
                                                 type="text"
-                                                value={formData.category}
+                                                value={formData.category || ''}
                                                 onChange={(e) =>
                                                     setFormData({
                                                         ...formData,
@@ -777,7 +645,7 @@ export default function HomeTabProjects() {
                                             Format
                                         </label>
                                         <select
-                                            value={formData.format}
+                                            value={formData.format || 'portrait'}
                                             onChange={(e) =>
                                                 setFormData({
                                                     ...formData,
@@ -798,12 +666,12 @@ export default function HomeTabProjects() {
                                 <div>
                                     <div className="mb-4">
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Média
+                                            Image
                                         </label>
                                         <div className="flex items-center space-x-2">
                                             <input
                                                 type="text"
-                                                value={formData.source}
+                                                value={formData.source || ''}
                                                 onChange={(e) =>
                                                     setFormData({
                                                         ...formData,
@@ -811,7 +679,7 @@ export default function HomeTabProjects() {
                                                     })
                                                 }
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                placeholder="URL du média"
+                                                placeholder="URL de l'image"
                                                 required
                                             />
                                             <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
@@ -819,79 +687,26 @@ export default function HomeTabProjects() {
                                                 <input
                                                     type="file"
                                                     className="hidden"
-                                                    accept="image/*,video/*"
+                                                    accept="image/*"
                                                     onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
                                                 />
                                             </label>
                                         </div>
                                     </div>
 
-                                    {/* Champ pour la miniature (visible uniquement si le média est une vidéo) */}
-                                    {formData.source && formData.source.match(/\.(mp4|webm|ogg)$/i) && (
-                                        <div className="mb-4">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Miniature personnalisée (optionnel)
-                                            </label>
-                                            <div className="flex items-center space-x-2">
-                                                <input
-                                                    type="text"
-                                                    value={formData.thumbnail || ''}
-                                                    onChange={(e) =>
-                                                        setFormData({
-                                                            ...formData,
-                                                            thumbnail: e.target.value,
-                                                        })
-                                                    }
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                    placeholder="URL de la miniature"
-                                                />
-                                                <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
-                                                    Parcourir
-                                                    <input
-                                                        type="file"
-                                                        className="hidden"
-                                                        accept="image/*"
-                                                        onChange={(e) => e.target.files && handleThumbnailUpload(e.target.files)}
-                                                    />
-                                                </label>
-                                            </div>
-                                            {formData.thumbnail && (
-                                                <div className="mt-2">
-                                                    <p className="text-sm text-gray-500 mb-1">Aperçu de la miniature :</p>
-                                                    <div className="w-32 h-24 relative overflow-hidden rounded">
-                                                        <Image
-                                                            src={formData.thumbnail}
-                                                            alt="Aperçu de la miniature"
-                                                            fill
-                                                            className="object-cover"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
                                     <div className="mt-4">
                                         <h4 className="text-sm font-medium text-gray-700 mb-2">
                                             Prévisualisation
                                         </h4>
-                                        <div className={`w-full max-w-[400px] mx-auto relative bg-gray-100 rounded-lg overflow-hidden group ${getItemSizeClass(formData.format || 'paysage')}`}>
+                                        <div className={`w-full max-w-[400px] mx-auto relative bg-gray-100 rounded-lg overflow-hidden group ${getItemSizeClass(formData.format || 'portrait')}`}>
                                             {previewImage ? (
                                                 <>
-                                                    {previewImage.match(/\.(mp4|webm|ogg)$/i) ? (
-                                                        <video
-                                                            src={previewImage}
-                                                            controls
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <Image
-                                                            src={previewImage}
-                                                            alt="Prévisualisation"
-                                                            fill
-                                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                                        />
-                                                    )}
+                                                    <Image
+                                                        src={previewImage}
+                                                        alt="Prévisualisation"
+                                                        fill
+                                                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                    />
                                                     {formData.category && (
                                                         <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
                                                             {formData.category}
@@ -907,7 +722,7 @@ export default function HomeTabProjects() {
                                                 </>
                                             ) : (
                                                 <div className="flex items-center justify-center h-full text-gray-400">
-                                                    Aucun média sélectionné
+                                                    Aucune image sélectionnée
                                                 </div>
                                             )}
                                         </div>
@@ -927,7 +742,7 @@ export default function HomeTabProjects() {
                                     type="submit"
                                     className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors"
                                 >
-                                    {editingProject ? 'Mettre à jour' : 'Ajouter'}
+                                    {editingPhoto ? 'Mettre à jour' : 'Ajouter'}
                                 </button>
                             </div>
                         </form>
@@ -942,10 +757,7 @@ export default function HomeTabProjects() {
                                             Ordre
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Media
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Miniature
+                                            Photo
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Titre
@@ -957,123 +769,80 @@ export default function HomeTabProjects() {
                                             Format
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Type
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Actions
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {projects
-                                        .filter((project) =>
-                                            activeTab === 'latest'
-                                                ? project.isLatest
-                                                : !project.isLatest,
-                                        )
-                                        .map((project) => (
-                                            <tr key={project.id}>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="flex items-center space-x-2">
-                                                        <button
-                                                            onClick={() =>
-                                                                handleReorder(
-                                                                    project.id!,
-                                                                    project.order - 1,
-                                                                )
-                                                            }
-                                                            disabled={project.order === 0}
-                                                            className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                                                        >
-                                                            ↑
-                                                        </button>
-                                                        <span>{project.order}</span>
-                                                        <button
-                                                            onClick={() =>
-                                                                handleReorder(
-                                                                    project.id!,
-                                                                    project.order + 1,
-                                                                )
-                                                            }
-                                                            disabled={
-                                                                project.order ===
-                                                                projects.length - 1
-                                                            }
-                                                            className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                                                        >
-                                                            ↓
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="h-10 w-10 relative overflow-hidden rounded">
-                                                        {project.source.match(
-                                                            /\.(mp4|webm|ogg)$/i,
-                                                        ) ? (
-                                                            <video
-                                                                src={project.source}
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        ) : (
-                                                            <Image
-                                                                src={project.source}
-                                                                alt={project.title}
-                                                                fill
-                                                                className="object-cover"
-                                                            />
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    {project.source.match(/\.(mp4|webm|ogg)$/i) && (
-                                                        <div className="h-10 w-10 relative overflow-hidden rounded">
-                                                            {project.thumbnail ? (
-                                                                <Image
-                                                                    src={project.thumbnail}
-                                                                    alt={`Miniature de ${project.title}`}
-                                                                    fill
-                                                                    className="object-cover"
-                                                                />
-                                                            ) : (
-                                                                <div className="h-full w-full flex items-center justify-center bg-gray-200 text-gray-400">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                                    </svg>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {project.title}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {project.category}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {project.format}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {project.source.match(/\.(mp4|webm|ogg)$/i)
-                                                        ? 'Vidéo'
-                                                        : 'Image'}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap space-x-2">
+                                    {photos.map((photo) => (
+                                        <tr key={photo.id}>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center space-x-2">
                                                     <button
-                                                        onClick={() => handleEdit(project)}
-                                                        className="text-indigo-600 hover:text-indigo-900"
+                                                        onClick={() =>
+                                                            handleReorder(
+                                                                photo.id!,
+                                                                photo.order - 1,
+                                                            )
+                                                        }
+                                                        disabled={photo.order === 0}
+                                                        className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
                                                     >
-                                                        Modifier
+                                                        ↑
                                                     </button>
+                                                    <span>{photo.order}</span>
                                                     <button
-                                                        onClick={() => handleDelete(project.id!)}
-                                                        className="text-red-600 hover:text-red-900"
+                                                        onClick={() =>
+                                                            handleReorder(
+                                                                photo.id!,
+                                                                photo.order + 1,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            photo.order ===
+                                                            photos.length - 1
+                                                        }
+                                                        className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
                                                     >
-                                                        Supprimer
+                                                        ↓
                                                     </button>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="h-16 w-16 relative overflow-hidden rounded">
+                                                    <Image
+                                                        src={photo.source}
+                                                        alt={photo.title || 'Photo sans titre'}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {photo.title || <span className="text-gray-400 italic">Sans titre</span>}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {photo.category}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {photo.format}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap space-x-2">
+                                                <button
+                                                    onClick={() => handleEdit(photo)}
+                                                    className="text-indigo-600 hover:text-indigo-900"
+                                                >
+                                                    Modifier
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(photo.id!)}
+                                                    className="text-red-600 hover:text-red-900"
+                                                >
+                                                    Supprimer
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>
@@ -1082,4 +851,4 @@ export default function HomeTabProjects() {
             </div>
         </>
     );
-}
+} 

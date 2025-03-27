@@ -14,6 +14,7 @@ export interface Project {
     source: string;
     isVideo?: boolean;
     format?: 'paysage' | 'portrait';
+    thumbnail?: string; // Miniature optionnelle pour les vidéos
 }
 
 interface PortfolioGridProps {
@@ -249,32 +250,65 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
                             >
                                 {project.isVideo ? (
                                     <>
-                                        <video
-                                            ref={(el) => addVideoRef(el, index)}
-                                            src={project.source}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                            loop
-                                            muted
-                                            playsInline
-                                        />
-                                        <div
-                                            className={`${styles.videoPlayBtn} ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
-                                        >
-                                            <div className={styles.videoPlayIcon}>
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    className="h-8 w-8 text-white"
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
+                                        {project.thumbnail ? (
+                                            <div className={styles.portfolioImageContainer}>
+                                                <Image
+                                                    src={project.thumbnail}
+                                                    alt={project.title ?? ''}
+                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                    fill
+                                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                                    style={{ objectFit: 'cover' }}
+                                                />
+                                                <div
+                                                    className={`${styles.videoPlayBtn} ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
                                                 >
-                                                    <path
-                                                        fillRule="evenodd"
-                                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                                                        clipRule="evenodd"
-                                                    />
-                                                </svg>
+                                                    <div className={styles.videoPlayIcon}>
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            className="h-8 w-8 text-white"
+                                                            viewBox="0 0 20 20"
+                                                            fill="currentColor"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
+                                        ) : (
+                                            <>
+                                                <video
+                                                    ref={(el) => addVideoRef(el, index)}
+                                                    src={project.source}
+                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                    loop
+                                                    muted
+                                                    playsInline
+                                                />
+                                                <div
+                                                    className={`${styles.videoPlayBtn} ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
+                                                >
+                                                    <div className={styles.videoPlayIcon}>
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            className="h-8 w-8 text-white"
+                                                            viewBox="0 0 20 20"
+                                                            fill="currentColor"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </>
                                 ) : (
                                     <div className={styles.portfolioImageContainer}>

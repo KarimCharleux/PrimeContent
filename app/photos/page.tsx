@@ -1,12 +1,13 @@
 'use client';
 
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 
+import { db } from '../backoffice/lib/firebase-client';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
-import PortfolioGrid from '../components/PortfolioGrid';
-import photosData from '../data/photosData';
+import PortfolioGrid, { Project } from '../components/PortfolioGrid';
 
 // Importation des styles
 import './photos.scss';
@@ -38,12 +39,43 @@ const fadeIn = {
 export default function PhotosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
+  const [photos, setPhotos] = useState<Project[]>([]);
 
   useEffect(() => {
-    // Simuler un chargement
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 600);
+    // Récupérer les photos depuis Firebase
+    const fetchPhotos = async () => {
+      try {
+        setIsLoading(true);
+        const photosCollection = collection(db, 'photos');
+        const photosQuery = query(photosCollection, orderBy('order', 'asc'));
+        const photosSnapshot = await getDocs(photosQuery);
+
+        if (!photosSnapshot.empty) {
+          const fetchedPhotos = photosSnapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              category: data.category || 'Non classé',
+              source: data.source || '',
+              format: data.format || 'portrait',
+              title: data.title || '',
+              order: data.order || 0,
+            } as Project;
+          });
+          setPhotos(fetchedPhotos);
+        } else {
+          setPhotos([]);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des photos:', error);
+      } finally {
+        // Simuler un délai minimum pour éviter un flash de chargement
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 300);
+      }
+    };
+
+    fetchPhotos();
 
     // Vérifier si le SplashScreen est terminé ou si on vient d'une autre page
     const checkSplashScreen = () => {
@@ -110,7 +142,7 @@ export default function PhotosPage() {
               variants={fadeIn}
               className="portfolio-container"
             >
-              <PortfolioGrid projects={photosData} showFilter={true} />
+              <PortfolioGrid projects={photos} showFilter={true} />
             </motion.div>
           )}
         </div>
