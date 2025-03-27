@@ -8,12 +8,17 @@ import { Spinner } from '@/app/admin/components/Spinner';
 import { db } from '@/app/admin/lib/firebase-client';
 import CustomerReviews, { Review } from '@/app/components/CustomerReviews';
 
+// Étendre l'interface Review pour inclure l'id pour l'administration
+interface AdminReview extends Review {
+    id?: string;
+}
+
 export default function HomeTabReviews() {
-    const [reviews, setReviews] = useState<Review[]>([]);
+    const [reviews, setReviews] = useState<AdminReview[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
-    const [editingReview, setEditingReview] = useState<Review | null>(null);
-    const [formData, setFormData] = useState<Review>({
+    const [editingReview, setEditingReview] = useState<AdminReview | null>(null);
+    const [formData, setFormData] = useState<AdminReview>({
         name: '',
         role: '',
         company: '',
@@ -40,7 +45,7 @@ export default function HomeTabReviews() {
                 const fetchedReviews = reviewsSnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
-                })) as Review[];
+                })) as AdminReview[];
                 setReviews(fetchedReviews);
             } else {
                 setReviews([]);
@@ -122,7 +127,7 @@ export default function HomeTabReviews() {
 
         try {
             await Promise.all(reviews.map(review => 
-                deleteDoc(doc(db, 'reviews', review.id!))
+                review.id ? deleteDoc(doc(db, 'reviews', review.id)) : Promise.resolve()
             ));
 
             setReviews([]);
