@@ -5,8 +5,8 @@ import Image from 'next/image';
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { Spinner } from '@/app/admin/components/Spinner';
-import { db } from '@/app/admin/lib/firebase-client';
+import { Spinner } from '@/app/backoffice/components/Spinner';
+import { db } from '@/app/backoffice/lib/firebase-client';
 import ExpertiseCard from '@/app/components/ExpertiseCard';
 
 interface Expertise {

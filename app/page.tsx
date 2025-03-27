@@ -2,7 +2,7 @@
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { useEffect, useRef, useState } from 'react';
 
-import { db } from './admin/lib/firebase-client';
+import { db } from './backoffice/lib/firebase-client';
 import AnimatedStat from './components/AnimatedStat';
 import BrandLogo from './components/BrandLogo';
 import ClientProfile from './components/ClientProfile';

@@ -128,7 +128,7 @@ export default function DashboardPage() {
         <StatCard 
           title="Photos" 
           value={stats.photos} 
-          linkTo="/admin/photos"
+          linkTo="/backoffice/photos"
           icon={
             <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -138,7 +138,7 @@ export default function DashboardPage() {
         <StatCard 
           title="Vidéos" 
           value={stats.videos} 
-          linkTo="/admin/videos"
+          linkTo="/backoffice/videos"
           icon={
             <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
@@ -148,7 +148,7 @@ export default function DashboardPage() {
         <StatCard 
           title="Événements" 
           value={stats.events} 
-          linkTo="/admin/events"
+          linkTo="/backoffice/events"
           icon={
             <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -158,7 +158,7 @@ export default function DashboardPage() {
         <StatCard 
           title="Clients" 
           value={stats.clients} 
-          linkTo="/admin/clients"
+          linkTo="/backoffice/clients"
           icon={
             <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
@@ -211,7 +211,7 @@ export default function DashboardPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link href={`/admin/${item.type}s/${item.id}`} className="text-blue-600 hover:text-blue-900">
+                      <Link href={`/backoffice/${item.type}s/${item.id}`} className="text-blue-600 hover:text-blue-900">
                         Voir
                       </Link>
                     </td>
@@ -229,25 +229,25 @@ export default function DashboardPage() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Link href="/admin/photos/new" className="text-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+          <Link href="/backoffice/photos/new" className="text-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
             <svg className="h-6 w-6 mx-auto mb-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
             </svg>
             <span className="text-sm font-medium text-gray-700">Ajouter des photos</span>
           </Link>
-          <Link href="/admin/videos/new" className="text-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+          <Link href="/backoffice/videos/new" className="text-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
             <svg className="h-6 w-6 mx-auto mb-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
             </svg>
             <span className="text-sm font-medium text-gray-700">Ajouter des vidéos</span>
           </Link>
-          <Link href="/admin/events/new" className="text-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+          <Link href="/backoffice/events/new" className="text-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
             <svg className="h-6 w-6 mx-auto mb-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
             </svg>
             <span className="text-sm font-medium text-gray-700">Créer un événement</span>
           </Link>
-          <Link href="/admin/clients/new" className="text-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+          <Link href="/backoffice/clients/new" className="text-center p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
             <svg className="h-6 w-6 mx-auto mb-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
             </svg>

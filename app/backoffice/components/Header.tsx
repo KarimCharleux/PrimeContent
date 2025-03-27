@@ -71,14 +71,14 @@ export default function Header() {
                   </p>
                 </div>
                 <Link 
-                  href="/admin/profile" 
+                  href="/backoffice/profile" 
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   onClick={() => setShowUserMenu(false)}
                 >
                   Profil
                 </Link>
                 <Link 
-                  href="/admin/settings" 
+                  href="/backoffice/settings" 
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   onClick={() => setShowUserMenu(false)}
                 >

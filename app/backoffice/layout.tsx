@@ -14,7 +14,7 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
-  const isLoginPage = pathname?.includes('/admin/login') || pathname?.includes('/admin/forgot-password');
+  const isLoginPage = pathname?.includes('/backoffice/login') || pathname?.includes('/backoffice/forgot-password');
 
   return (
     <div className="font-sora">

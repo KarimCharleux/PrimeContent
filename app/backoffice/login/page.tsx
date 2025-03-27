@@ -41,7 +41,7 @@ export default function LoginPage() {
         try {
             await signIn(email, password);
             // Redirection vers le tableau de bord après connexion réussie
-            router.push('/admin/dashboard');
+            router.push('/backoffice/dashboard');
         } catch (error: any) {
             setErrorMessage(error.message || 'Échec de la connexion. Veuillez réessayer.');
             setIsConnecting(false);
@@ -165,7 +165,7 @@ export default function LoginPage() {
 
                     <div className="text-sm">
                         <Link
-                            href="/admin/forgot-password"
+                            href="/backoffice/forgot-password"
                             className="font-medium text-primary hover:text-primary-dark"
                         >
                             Mot de passe oublié?

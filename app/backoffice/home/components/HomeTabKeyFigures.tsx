@@ -3,8 +3,8 @@
 import { addDoc, collection, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 
-import { Spinner } from '@/app/admin/components/Spinner';
-import { db } from '@/app/admin/lib/firebase-client';
+import { Spinner } from '@/app/backoffice/components/Spinner';
+import { db } from '@/app/backoffice/lib/firebase-client';
 
 interface KeyFigure {
   id?: string;

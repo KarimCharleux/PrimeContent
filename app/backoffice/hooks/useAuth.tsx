@@ -200,7 +200,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await firebaseSignOut(auth);
       setUser(null);
       setFirebaseUser(null);
-      router.push('/admin/login');
+      router.push('/backoffice/login');
     } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);
       setError(error.message);

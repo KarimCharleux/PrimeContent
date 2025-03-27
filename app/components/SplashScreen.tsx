@@ -30,7 +30,7 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
         let isMounted = true;
         
         // Vérifier si nous sommes sur une page admin via l'URL
-        const isAdminPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+        const isAdminPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/backoffice');
         
         // Ne pas précharger les images si nous sommes sur une page admin
         if (isAdminPage) {

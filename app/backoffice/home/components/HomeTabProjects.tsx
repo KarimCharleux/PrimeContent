@@ -13,8 +13,8 @@ import {
 import Image from 'next/image';
 import { useEffect, useState, useCallback } from 'react';
 
-import { Spinner } from '@/app/admin/components/Spinner';
-import { db } from '@/app/admin/lib/firebase-client';
+import { Spinner } from '@/app/backoffice/components/Spinner';
+import { db } from '@/app/backoffice/lib/firebase-client';
 
 interface Project {
     id?: string;

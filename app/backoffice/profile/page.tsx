@@ -67,16 +67,16 @@ export default function ProfilePage() {
       // Générer un nom de fichier unique
       const fileExtension = file.name.split('.').pop();
       const fileName = `${uuidv4()}.${fileExtension}`;
-      const filePath = `/admin/users/${fileName}`;
+      const filePath = `/backoffice/users/${fileName}`;
       
       // Créer un FormData pour l'upload
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('path', 'admin/users');
+      formData.append('path', 'backoffice/users');
       formData.append('fileName', fileName);
       
       // Ajouter l'ancien chemin d'image pour la suppression
-      if (oldPhotoURL && oldPhotoURL.startsWith('/admin/users/')) {
+      if (oldPhotoURL && oldPhotoURL.startsWith('/backoffice/users/')) {
         formData.append('oldFilePath', oldPhotoURL);
       }
       

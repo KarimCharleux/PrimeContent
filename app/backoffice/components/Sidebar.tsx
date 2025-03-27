@@ -69,15 +69,15 @@ export default function Sidebar() {
   
   // Navigation items - tous les utilisateurs sont admin
   const navigation = [
-    { name: 'Tableau de bord', href: '/admin/dashboard', icon: DashboardIcon },
-    { name: 'Page d\'accueil', href: '/admin/home', icon: HomeIcon },
-    { name: 'Galerie photos', href: '/admin/photos', icon: GalleryIcon },
-    { name: 'Galerie vidéos', href: '/admin/videos', icon: VideoIcon },
-    { name: 'Événements', href: '/admin/events', icon: EventsIcon },
-    { name: 'Mariages', href: '/admin/weddings', icon: WeddingsIcon },
-    { name: 'Clients', href: '/admin/clients', icon: ClientsIcon },
-    { name: 'Utilisateurs', href: '/admin/users', icon: UsersIcon },
-    { name: 'Paramètres', href: '/admin/settings', icon: SettingsIcon },
+    { name: 'Tableau de bord', href: '/backoffice/dashboard', icon: DashboardIcon },
+    { name: 'Page d\'accueil', href: '/backoffice/home', icon: HomeIcon },
+    { name: 'Galerie photos', href: '/backoffice/photos', icon: GalleryIcon },
+    { name: 'Galerie vidéos', href: '/backoffice/videos', icon: VideoIcon },
+    { name: 'Événements', href: '/backoffice/events', icon: EventsIcon },
+    { name: 'Mariages', href: '/backoffice/weddings', icon: WeddingsIcon },
+    { name: 'Clients', href: '/backoffice/clients', icon: ClientsIcon },
+    { name: 'Utilisateurs', href: '/backoffice/users', icon: UsersIcon },
+    { name: 'Paramètres', href: '/backoffice/settings', icon: SettingsIcon },
   ];
 
   return (

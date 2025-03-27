@@ -3,7 +3,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
-// Configuration Firebase côté serveur (admin)
+// Configuration Firebase côté serveur (backoffice)
 if (!getApps().length) {
   // Utiliser des variables d'environnement pour les informations sensibles
   const serviceAccount = {

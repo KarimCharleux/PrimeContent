@@ -10,7 +10,7 @@ import SplashScreen from './components/SplashScreen';
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
     const [isLoading, setIsLoading] = useState(true);
     const pathname = usePathname();
-    const isAdminPage = pathname?.startsWith('/admin');
+    const isAdminPage = pathname?.startsWith('/backoffice');
     
     // Si nous sommes sur une page admin, désactiver immédiatement le chargement
     useEffect(() => {
