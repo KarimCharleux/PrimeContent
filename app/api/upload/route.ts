@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
     const basePath = formData.get('path') as string || 'uploads';
     const customFileName = formData.get('fileName') as string;
     const oldFilePath = formData.get('oldFilePath') as string;
+    const useUuid = formData.get('useUuid') === 'true';
     
     if (!file) {
       return NextResponse.json(
@@ -46,16 +47,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérification des formats autorisés
-    const allowedFormats = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedFormats = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
     if (!allowedFormats.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Format de fichier non supporté. Utilisez JPEG, PNG, GIF ou WEBP.' },
+        { error: 'Format de fichier non supporté. Utilisez JPEG, PNG, GIF, WEBP, MP4, WEBM ou OGG.' },
         { status: 400 }
       );
     }
 
     // Générer un nom de fichier unique si aucun nom fourni
-    const fileName = customFileName || `${uuidv4()}.${file.name.split('.').pop()}`;
+    const fileName = customFileName || (useUuid ? `${uuidv4()}.${file.name.split('.').pop()}` : file.name);
     
     // Créer le chemin complet du dossier public
     const publicFolderPath = join(process.cwd(), 'public', basePath);

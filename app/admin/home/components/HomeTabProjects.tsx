@@ -44,6 +44,9 @@ export default function HomeTabProjects() {
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'all' | 'latest'>('all');
+    const [isDragging, setIsDragging] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [statusMessage, setStatusMessage] = useState<{
         type: 'success' | 'error';
         message: string;
@@ -150,6 +153,22 @@ export default function HomeTabProjects() {
         }
     }, [projects]);
 
+    // Fermer et réinitialiser le formulaire lors du changement d'onglet
+    useEffect(() => {
+        setShowForm(false);
+        setEditingProject(null);
+        setFormData({
+            title: '',
+            category: '',
+            source: '',
+            format: 'portrait',
+            order: 0,
+            isLatest: false,
+        });
+        setPreviewImage(null);
+        setStatusMessage(null);
+    }, [activeTab]);
+
     const fetchProjects = async () => {
         try {
             setLoading(true);
@@ -179,7 +198,16 @@ export default function HomeTabProjects() {
         e.preventDefault();
         try {
             if (editingProject?.id) {
-                await updateDoc(doc(db, 'projects', editingProject.id), formData);
+                const projectRef = doc(db, 'projects', editingProject.id);
+                await updateDoc(projectRef, {
+                    title: formData.title,
+                    source: formData.source || '',
+                    format: formData.format,
+                    order: formData.order,
+                    isLatest: formData.isLatest,
+                    isVideo: formData.source ? formData.source.match(/\.(mp4|webm|ogg)$/i) !== null : false,
+                    category: formData.category || '',
+                });
                 setStatusMessage({ type: 'success', message: 'Projet mis à jour avec succès' });
             } else {
                 const newProject = {
@@ -210,42 +238,177 @@ export default function HomeTabProjects() {
         }
     };
 
-    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
+    // Gérer le drag & drop des fichiers
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+        
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            await handleFileUpload(e.dataTransfer.files);
+        }
+    };
+
+    // Supprimer tous les projets
+    const handleDeleteAllProjects = async () => {
+        // Filtrer les projets selon l'onglet actif
+        const projectsToDelete = projects.filter(project => 
+            activeTab === 'latest' ? project.isLatest : !project.isLatest
+        );
+
+        if (!confirm(`Êtes-vous sûr de vouloir supprimer toutes les réalisations de l'onglet actuel (${projectsToDelete.length} projets) ? Cette action est irréversible.`)) {
+            return;
+        }
 
         try {
-            setStatusMessage({ type: 'success', message: 'Chargement du média...' });
+            // Supprimer d'abord tous les médias
+            await Promise.all(projectsToDelete.map(async (project) => {
+                if (project.source) {
+                    const fileName = project.source.split('/').pop();
+                    const filePath = project.source.substring(1, project.source.lastIndexOf('/'));
+                    
+                    if (fileName) {
+                        try {
+                            const response = await fetch(`/api/delete?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`, {
+                                method: 'DELETE',
+                            });
+                            
+                            if (!response.ok) {
+                                console.error('Erreur lors de la suppression du média:', await response.text());
+                            }
+                        } catch (mediaError) {
+                            console.error('Erreur lors de la suppression du média:', mediaError);
+                        }
+                    }
+                }
+            }));
 
-            // Créer un objet URL pour la prévisualisation locale
-            const objectUrl = URL.createObjectURL(file);
-            setPreviewImage(objectUrl);
+            // Ensuite supprimer les documents Firestore
+            await Promise.all(projectsToDelete.map(project => 
+                deleteDoc(doc(db, 'projects', project.id!))
+            ));
 
-            // Créer un FormData pour l'upload
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('path', 'home/projects');
+            // Mettre à jour l'état local des projets
+            setProjects(prevProjects => 
+                prevProjects.filter(project => 
+                    activeTab === 'latest' ? !project.isLatest : project.isLatest
+                )
+            );
 
-            // Faire une requête fetch à notre API locale pour sauvegarder le fichier
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
+            setStatusMessage({
+                type: 'success',
+                message: `Toutes les réalisations de l'onglet actuel (${projectsToDelete.length} projets) ont été supprimées avec succès`
             });
+        } catch (error) {
+            console.error('Erreur lors de la suppression des projets:', error);
+            setStatusMessage({
+                type: 'error',
+                message: 'Erreur lors de la suppression des projets'
+            });
+        }
+    };
 
-            if (!response.ok) {
-                throw new Error('Erreur lors du téléchargement du média');
+    // Détecter automatiquement le format (portrait/paysage)
+    const detectFormat = async (file: File): Promise<'portrait' | 'paysage'> => {
+        if (file.type.startsWith('video/')) {
+            return 'paysage'; // Les vidéos sont toujours en paysage
+        }
+
+        return new Promise((resolve) => {
+            const img = new window.Image();
+            img.onload = () => {
+                resolve(img.width < img.height ? 'portrait' : 'paysage');
+            };
+            img.src = URL.createObjectURL(file);
+        });
+    };
+
+    // Gérer l'upload des fichiers
+    const handleFileUpload = async (files: FileList) => {
+        setUploading(true);
+        setStatusMessage(null);
+        setUploadProgress(0);
+
+        try {
+            // Trouver le dernier ordre existant
+            const lastOrder = Math.max(...projects.map(p => p.order), -1);
+            let currentOrder = lastOrder + 1;
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const format = await detectFormat(file);
+
+                // Créer un objet URL pour la prévisualisation locale
+                const objectUrl = URL.createObjectURL(file);
+                setPreviewImage(objectUrl);
+
+                // Créer un FormData pour l'upload
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('path', 'home/projects');
+                formData.append('useUuid', 'false'); // Ne pas utiliser d'UUID pour les projets
+
+                // Faire une requête fetch à notre API locale pour sauvegarder le fichier
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erreur lors du téléchargement du média');
+                }
+
+                const data = await response.json();
+
+                // Créer un nouveau projet avec l'ordre incrémenté
+                const newProject = {
+                    title: '', // Laisser le titre vide
+                    source: data.fileUrl,
+                    format,
+                    order: currentOrder++,
+                    isLatest: activeTab === 'latest',
+                    isVideo: file.type.startsWith('video/'),
+                };
+
+                await addDoc(collection(db, 'projects'), newProject);
+
+                // Mettre à jour la progression
+                setUploadProgress(((i + 1) / files.length) * 100);
             }
 
-            const data = await response.json();
+            setStatusMessage({
+                type: 'success',
+                message: `${files.length} réalisation(s) ajoutée(s) avec succès`,
+            });
 
-            // Mettre à jour le formulaire avec l'URL
-            setFormData((prev) => ({ ...prev, source: data.fileUrl }));
-
-            // Mettre à jour le message de statut pour confirmer que l'image est chargée
-            setStatusMessage({ type: 'success', message: 'Média téléchargé avec succès' });
+            // Rafraîchir la liste des projets
+            fetchProjects();
         } catch (error) {
-            console.error('Erreur lors du téléchargement du média:', error);
-            setStatusMessage({ type: 'error', message: 'Erreur lors du téléchargement du média' });
+            console.error('Erreur lors du téléchargement:', error);
+            setStatusMessage({
+                type: 'error',
+                message: 'Erreur lors du téléchargement des médias',
+            });
+        } finally {
+            setUploading(false);
+            setUploadProgress(0);
         }
     };
 
@@ -318,6 +481,18 @@ export default function HomeTabProjects() {
         setStatusMessage(null);
     };
 
+    // Fonction pour déterminer la classe de taille en fonction du format
+    const getItemSizeClass = (format: 'portrait' | 'paysage') => {
+        switch (format) {
+            case 'paysage':
+                return 'aspect-[16/9]';
+            case 'portrait':
+                return 'aspect-[3/4]';
+            default:
+                return 'aspect-[16/9]';
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -343,17 +518,12 @@ export default function HomeTabProjects() {
                         <p className="text-sm text-green-600 font-medium">Taille totale</p>
                         <p className="text-3xl font-bold">{formatSize(stats.totalSize)}</p>
                         <p className="text-sm text-gray-600 mt-1">
-                            {formatSize(stats.imagesSize)} images • {formatSize(stats.videosSize)}{' '}
-                            vidéos
+                            {formatSize(stats.imagesSize)} images • {formatSize(stats.videosSize)} vidéos
                         </p>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-lg">
-                        <p className="text-sm text-purple-600 font-medium">
-                            Temps de chargement moyen
-                        </p>
-                        <p className="text-3xl font-bold">
-                            {formatLoadTime(stats.averageLoadTime)}
-                        </p>
+                        <p className="text-sm text-purple-600 font-medium">Temps de chargement moyen</p>
+                        <p className="text-3xl font-bold">{formatLoadTime(stats.averageLoadTime)}</p>
                         <p className="text-xs text-gray-500">
                             Estimation basée sur une connexion moyenne en France (15 Mbps)
                         </p>
@@ -363,25 +533,49 @@ export default function HomeTabProjects() {
             <div className="bg-white rounded-lg shadow">
                 <div className="p-6 border-b border-gray-200">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold">Gestion des Réalisations</h2>
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-4">
                             <button
-                                type="button"
-                                onClick={() => {
-                                    setEditingProject(null);
-                                    setFormData({
-                                        title: '',
-                                        category: '',
-                                        source: '',
-                                        format: 'portrait',
-                                        order: 0,
-                                        isLatest: false,
-                                    });
-                                    setPreviewImage(null);
-                                    setShowForm(true);
-                                }}
-                                className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors"
+                                onClick={() => setActiveTab('all')}
+                                className={`px-4 py-2 rounded-md transition-colors ${
+                                    activeTab === 'all'
+                                        ? 'bg-black text-white'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
                             >
+                                Nos réalisations
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('latest')}
+                                className={`px-4 py-2 rounded-md transition-colors ${
+                                    activeTab === 'latest'
+                                        ? 'bg-black text-white'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                            >
+                                Nos dernières réalisations
+                            </button>
+                        </div>
+                        <div className="flex space-x-2">
+                            {projects.length > 0 && (
+                                <>
+                                    <button
+                                        onClick={() => handleDeleteAllProjects()}
+                                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                        Tout supprimer
+                                    </button>
+                                </>
+                            )}
+                            <button
+                                onClick={() => setShowForm(true)}
+                                className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 flex items-center"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
                                 Nouvelle réalisation
                             </button>
                         </div>
@@ -389,11 +583,68 @@ export default function HomeTabProjects() {
 
                     {statusMessage && (
                         <div
-                            className={`p-4 mb-4 rounded-md ${statusMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
+                            className={`p-4 mb-4 rounded-md ${
+                                statusMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                            }`}
                         >
                             {statusMessage.message}
                         </div>
                     )}
+
+                    {/* Zone de drop pour les médias */}
+                    <div
+                        className={`border-2 border-dashed p-8 mb-8 rounded-lg text-center ${
+                            isDragging ? 'border-primary bg-primary bg-opacity-10' : 'border-gray-300'
+                        }`}
+                        onDragEnter={handleDragEnter}
+                        onDragLeave={handleDragLeave}
+                        onDragOver={handleDragOver}
+                        onDrop={handleDrop}
+                    >
+                        {uploading ? (
+                            <div className="space-y-4">
+                                <div className="flex justify-center">
+                                    <Spinner />
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div
+                                        className="bg-primary h-2.5 rounded-full transition-all duration-300"
+                                        style={{ width: `${uploadProgress}%` }}
+                                    ></div>
+                                </div>
+                                <p className="text-sm text-gray-600">
+                                    Téléchargement en cours... {Math.round(uploadProgress)}%
+                                </p>
+                            </div>
+                        ) : (
+                            <>
+                                <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                <p className="mt-2 text-gray-600">
+                                    Glissez-déposez des médias ici ou{' '}
+                                    <button
+                                        type="button"
+                                        className="text-primary hover:text-primary-dark font-medium"
+                                        onClick={() => document.getElementById('fileInput')?.click()}
+                                    >
+                                        parcourez votre ordinateur
+                                    </button>
+                                </p>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Images et vidéos acceptés
+                                </p>
+                                <input
+                                    id="fileInput"
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*,video/*"
+                                    multiple
+                                    onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                                />
+                            </>
+                        )}
+                    </div>
 
                     {showForm && (
                         <form onSubmit={handleSubmit} className="space-y-6 mb-8">
@@ -416,7 +667,6 @@ export default function HomeTabProjects() {
                                                 setFormData({ ...formData, title: e.target.value })
                                             }
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                            required
                                         />
                                     </div>
 
@@ -484,25 +734,6 @@ export default function HomeTabProjects() {
                                             <option value="paysage">Paysage</option>
                                         </select>
                                     </div>
-
-                                    <div className="space-y-4">
-                                        <div className="flex items-center">
-                                            <input
-                                                type="checkbox"
-                                                checked={formData.isLatest}
-                                                onChange={(e) =>
-                                                    setFormData({
-                                                        ...formData,
-                                                        isLatest: e.target.checked,
-                                                    })
-                                                }
-                                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                            />
-                                            <label className="ml-2 block text-sm text-gray-700">
-                                                Projet récent
-                                            </label>
-                                        </div>
-                                    </div>
                                 </div>
 
                                 <div>
@@ -530,7 +761,7 @@ export default function HomeTabProjects() {
                                                     type="file"
                                                     className="hidden"
                                                     accept="image/*,video/*"
-                                                    onChange={handleFileChange}
+                                                    onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
                                                 />
                                             </label>
                                         </div>
@@ -540,22 +771,41 @@ export default function HomeTabProjects() {
                                         <h4 className="text-sm font-medium text-gray-700 mb-2">
                                             Prévisualisation
                                         </h4>
-                                        <div className="h-[280px] w-full relative bg-gray-100 rounded-lg overflow-hidden">
-                                            {previewImage &&
-                                                (previewImage.match(/\.(mp4|webm|ogg)$/i) ? (
-                                                    <video
-                                                        src={previewImage}
-                                                        controls
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <Image
-                                                        src={previewImage}
-                                                        alt="Prévisualisation"
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                ))}
+                                        <div className={`w-full max-w-[400px] mx-auto relative bg-gray-100 rounded-lg overflow-hidden group ${getItemSizeClass(formData.format || 'paysage')}`}>
+                                            {previewImage ? (
+                                                <>
+                                                    {previewImage.match(/\.(mp4|webm|ogg)$/i) ? (
+                                                        <video
+                                                            src={previewImage}
+                                                            controls
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <Image
+                                                            src={previewImage}
+                                                            alt="Prévisualisation"
+                                                            fill
+                                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                        />
+                                                    )}
+                                                    {formData.category && (
+                                                        <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                                                            {formData.category}
+                                                        </div>
+                                                    )}
+                                                    {formData.title && (
+                                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                            <h3 className="text-white text-lg font-medium">
+                                                                {formData.title}
+                                                            </h3>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <div className="flex items-center justify-center h-full text-gray-400">
+                                                    Aucun média sélectionné
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -580,29 +830,6 @@ export default function HomeTabProjects() {
                     )}
 
                     <div className="mt-8">
-                        <div className="flex space-x-4 mb-4">
-                            <button
-                                onClick={() => setActiveTab('all')}
-                                className={`px-4 py-2 rounded-md transition-colors ${
-                                    activeTab === 'all'
-                                        ? 'bg-black text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
-                            >
-                                Nos réalisations
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('latest')}
-                                className={`px-4 py-2 rounded-md transition-colors ${
-                                    activeTab === 'latest'
-                                        ? 'bg-black text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
-                            >
-                                Nos dernières réalisations
-                            </button>
-                        </div>
-
                         <div className="overflow-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">

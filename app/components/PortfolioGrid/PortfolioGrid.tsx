@@ -175,7 +175,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
     // Extraire les catégories uniques des projets
     const categories = [
         'Tout',
-        ...Array.from(new Set(projects.map((project) => project.category))),
+        ...Array.from(new Set(projects.map((project) => project.category).filter(Boolean))),
     ];
 
     // Fonction pour déterminer la classe de taille en fonction du format de l'image
@@ -215,7 +215,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
         <>
             <div className={styles.portfolioContainer}>
                 {/* Filtres de catégories */}
-                {showFilter && categories.length > 2 && (
+                {showFilter && categories.length > 1 && (
                     <div className={styles.filterContainer}>
                         {categories.map((category) => (
                             <button
@@ -289,7 +289,9 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
                                     </div>
                                 )}
 
-                                <div className={styles.categoryBadge}>{project.category}</div>
+                                {project.category && (
+                                    <div className={styles.categoryBadge}>{project.category}</div>
+                                )}
 
                                 {project.title && (
                                     <div
