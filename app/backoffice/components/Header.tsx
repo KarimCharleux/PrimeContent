@@ -15,7 +15,7 @@ export default function Header() {
       <div className="px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
         <div>
           <h1 className="text-xl font-bold text-gray-800">
-            Backoffice - Admin
+            Backoffice
           </h1>
         </div>
         
