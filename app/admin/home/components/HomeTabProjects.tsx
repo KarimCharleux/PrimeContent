@@ -11,7 +11,7 @@ import {
     addDoc,
 } from 'firebase/firestore';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 import { Spinner } from '@/app/admin/components/Spinner';
 import { db } from '@/app/admin/lib/firebase-client';
@@ -97,7 +97,7 @@ export default function HomeTabProjects() {
     };
 
     // Fonction pour calculer les statistiques
-    const calculateStats = async () => {
+    const calculateStats = useCallback(async () => {
         let totalSize = 0;
         let imagesSize = 0;
         let videosSize = 0;
@@ -141,7 +141,7 @@ export default function HomeTabProjects() {
             videosSize,
             averageLoadTime: totalLoadTime / projects.length,
         });
-    };
+    }, [projects]);
 
     useEffect(() => {
         fetchProjects();
@@ -151,7 +151,7 @@ export default function HomeTabProjects() {
         if (projects.length > 0) {
             calculateStats();
         }
-    }, [projects]);
+    }, [projects, calculateStats]);
 
     // Fermer et réinitialiser le formulaire lors du changement d'onglet
     useEffect(() => {

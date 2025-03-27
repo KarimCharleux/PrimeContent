@@ -156,7 +156,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
                 }, 50);
             },
         });
-    }, [activeFilter, projects]);
+    }, [activeFilter, projects, activeVideoIndex]);
 
     // Gestion de la lecture des vidéos
     useEffect(() => {

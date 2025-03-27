@@ -1,7 +1,7 @@
 'use client';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 import gsap from '../lib/gsap-config';
 
@@ -30,6 +30,54 @@ export default function CustomerReviews({
   const [scrollLeft, setScrollLeft] = useState(0);
   const scrollAnimation = useRef<gsap.core.Timeline | null>(null);
   const totalWidthRef = useRef<number>(0);
+
+  // Fonction pour créer une nouvelle animation à partir de la position actuelle
+  const createNewAnimationFromCurrentPosition = useCallback(() => {
+    if (!sliderTrackRef.current || !scrollAnimation.current) return;
+    
+    // Obtenir la position actuelle
+    const currentX = gsap.getProperty(sliderTrackRef.current, "x") as number;
+    
+    // Calculer la durée restante proportionnellement
+    const totalWidth = totalWidthRef.current;
+    const halfWidth = totalWidth / 2;
+    const remainingDistance = halfWidth + currentX; // Distance jusqu'à la fin
+    const fullDuration = autoplaySpeed / 1000 * reviews.length;
+    const remainingDuration = (remainingDistance / halfWidth) * fullDuration;
+    
+    // Arrêter l'animation actuelle
+    scrollAnimation.current.kill();
+    
+    // Créer une nouvelle animation à partir de la position actuelle
+    const tl = gsap.timeline({
+      repeat: -1,
+      defaults: { ease: 'none' }
+    });
+    
+    // Première partie: terminer le défilement actuel
+    tl.to(sliderTrackRef.current, {
+      x: -halfWidth,
+      duration: remainingDuration,
+      ease: 'linear',
+      onComplete: () => {
+        // Réinitialiser la position sans animation visible
+        gsap.set(sliderTrackRef.current, { x: 0 });
+      }
+    });
+    
+    // Deuxième partie: défilement complet pour les répétitions suivantes
+    tl.to(sliderTrackRef.current, {
+      x: -halfWidth,
+      duration: fullDuration,
+      ease: 'linear',
+      onComplete: () => {
+        // Réinitialiser la position sans animation visible
+        gsap.set(sliderTrackRef.current, { x: 0 });
+      }
+    });
+    
+    scrollAnimation.current = tl;
+  }, [reviews.length, autoplaySpeed]);
 
   useEffect(() => {
     if (!sliderTrackRef.current || !sliderRef.current) return;
@@ -104,66 +152,20 @@ export default function CustomerReviews({
       });
     };
 
-    sliderRef.current.addEventListener('wheel', handleWheel, { passive: false });
+    // Stocker une référence pour le nettoyage
+    const sliderRefCurrent = sliderRef.current;
+    sliderRefCurrent.addEventListener('wheel', handleWheel, { passive: false });
 
     // Nettoyage
     return () => {
       if (scrollAnimation.current) {
         scrollAnimation.current.kill();
       }
-      if (sliderRef.current) {
-        sliderRef.current.removeEventListener('wheel', handleWheel);
+      if (sliderRefCurrent) {
+        sliderRefCurrent.removeEventListener('wheel', handleWheel);
       }
     };
-  }, [reviews.length, autoplaySpeed]);
-
-  // Fonction pour créer une nouvelle animation à partir de la position actuelle
-  const createNewAnimationFromCurrentPosition = () => {
-    if (!sliderTrackRef.current || !scrollAnimation.current) return;
-    
-    // Obtenir la position actuelle
-    const currentX = gsap.getProperty(sliderTrackRef.current, "x") as number;
-    
-    // Calculer la durée restante proportionnellement
-    const totalWidth = totalWidthRef.current;
-    const halfWidth = totalWidth / 2;
-    const remainingDistance = halfWidth + currentX; // Distance jusqu'à la fin
-    const fullDuration = autoplaySpeed / 1000 * reviews.length;
-    const remainingDuration = (remainingDistance / halfWidth) * fullDuration;
-    
-    // Arrêter l'animation actuelle
-    scrollAnimation.current.kill();
-    
-    // Créer une nouvelle animation à partir de la position actuelle
-    const tl = gsap.timeline({
-      repeat: -1,
-      defaults: { ease: 'none' }
-    });
-    
-    // Première partie: terminer le défilement actuel
-    tl.to(sliderTrackRef.current, {
-      x: -halfWidth,
-      duration: remainingDuration,
-      ease: 'linear',
-      onComplete: () => {
-        // Réinitialiser la position sans animation visible
-        gsap.set(sliderTrackRef.current, { x: 0 });
-      }
-    });
-    
-    // Deuxième partie: défilement complet pour les répétitions suivantes
-    tl.to(sliderTrackRef.current, {
-      x: -halfWidth,
-      duration: fullDuration,
-      ease: 'linear',
-      onComplete: () => {
-        // Réinitialiser la position sans animation visible
-        gsap.set(sliderTrackRef.current, { x: 0 });
-      }
-    });
-    
-    scrollAnimation.current = tl;
-  };
+  }, [reviews.length, autoplaySpeed, createNewAnimationFromCurrentPosition]);
 
   // Gestion du swipe sur mobile
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {

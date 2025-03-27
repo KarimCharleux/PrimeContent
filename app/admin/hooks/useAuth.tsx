@@ -17,7 +17,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 
 import { auth , db } from '../lib/firebase-client';
 import { User } from '../models/types';
@@ -69,7 +69,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter();
 
   // Fonction pour récupérer le profil utilisateur avec timeout et retry
-  const getUserProfile = async (uid: string, fbUser?: FirebaseUser | null, maxRetries = 2): Promise<User | null> => {
+  const getUserProfile = useCallback(async (uid: string, fbUser?: FirebaseUser | null, maxRetries = 2): Promise<User | null> => {
     let retries = 0;
     
     // Utiliser fbUser si fourni, sinon utiliser firebaseUser de l'état
@@ -133,7 +133,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
     
     return fetchWithRetry();
-  };
+  }, [firebaseUser]);
 
   // Observer les changements d'authentification
   useEffect(() => {
@@ -161,7 +161,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [getUserProfile]);
 
   // Connexion
   const signIn = async (email: string, password: string) => {

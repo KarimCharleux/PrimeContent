@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 import styles from './ImageCarousel.module.scss';
 
@@ -51,7 +51,7 @@ const ImageCarousel = ({
   const isVideo = currentItem?.isVideo;
   
   // Fonctions de contrôle vidéo
-  const togglePlay = () => {
+  const togglePlay = useCallback(() => {
     if (!videoRef.current) return;
     
     if (isPlaying) {
@@ -60,16 +60,16 @@ const ImageCarousel = ({
       videoRef.current.play().catch(err => console.error("Erreur de lecture vidéo:", err));
     }
     setIsPlaying(!isPlaying);
-  };
+  }, [isPlaying]);
   
-  const toggleMute = () => {
+  const toggleMute = useCallback(() => {
     if (!videoRef.current) return;
     
     videoRef.current.muted = !videoRef.current.muted;
     setIsMuted(!isMuted);
-  };
+  }, [isMuted]);
   
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     if (!videoRef.current) return;
     
     if (document.fullscreenElement) {
@@ -77,7 +77,7 @@ const ImageCarousel = ({
     } else {
       videoRef.current.requestFullscreen().catch(err => console.error("Erreur lors du passage en plein écran:", err));
     }
-  };
+  }, []);
   
   const handleTimeUpdate = () => {
     if (!videoRef.current) return;
