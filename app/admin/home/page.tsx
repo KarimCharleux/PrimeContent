@@ -9,7 +9,7 @@ import HomeTabExpertises from './components/HomeTabExpertises';
 import HomeTabGallery from './components/HomeTabGallery';
 import HomeTabKeyFigures from './components/HomeTabKeyFigures';
 import HomeTabProjects from './components/HomeTabProjects';
-import HomeTabTestimonials from './components/HomeTabTestimonials';
+import HomeTabReviews from './components/HomeTabReviews';
 
 export default function HomeEditPage() {
   const { loading } = useAuth();
@@ -88,7 +88,7 @@ export default function HomeEditPage() {
         {activeTab === 'clients' && <HomeTabClients />}
         {activeTab === 'keyFigures' && <HomeTabKeyFigures />}
         {activeTab === 'projects' && <HomeTabProjects />}
-        {activeTab === 'testimonials' && <HomeTabTestimonials />}
+        {activeTab === 'testimonials' && <HomeTabReviews />}
       </div>
     </div>
   );

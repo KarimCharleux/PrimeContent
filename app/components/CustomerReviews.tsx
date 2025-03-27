@@ -5,14 +5,13 @@ import { useEffect, useRef, useState } from 'react';
 
 import gsap from '../lib/gsap-config';
 
-
-interface Review {
-  id: string;
+export interface Review {
   name: string;
   role: string;
   company: string;
   text: string;
   imageSrc?: string;
+  order?: number;
 }
 
 interface CustomerReviewsProps {
@@ -253,11 +252,11 @@ export default function CustomerReviews({
     }
     
     // Variations subtiles de bleus
-    const hue1 = 210 + (hash % 20); // Base bleue
-    const sat1 = 70 + (hash % 20);
+    const hue1 = 200 + (hash % 10); // Base bleue
+    const sat1 = 50 + (hash % 10);
     const light1 = 15 + (hash % 10);
     
-    const hue2 = 220 + (hash % 30); // Bleu-indigo
+    const hue2 = 220 + (hash % 10); // Bleu-indigo
     const sat2 = 80 + (hash % 10);
     const light2 = 10 + (hash % 8);
     
@@ -285,10 +284,10 @@ export default function CustomerReviews({
         style={{ touchAction: 'pan-y' }}
       >
         {duplicatedReviews.map((review, index) => {
-          const gradient = generateGradient(review.id);
+          const gradient = generateGradient(review.text);
           return (
             <motion.div 
-              key={`${review.id}-${index}`}
+              key={`${review.order}-${index}`}
               className="review-item flex-shrink-0 w-96"
               whileHover={{ y: -5 }}
               transition={{ duration: 0.3 }}

@@ -14,7 +14,6 @@ import Header from './components/Header';
 import LatestProjects from './components/LatestProjects';
 import PortfolioGrid from './components/PortfolioGrid/PortfolioGrid';
 import PrimaryButton from './components/PrimaryButton';
-import customerReviewsData from './data/customerReviewsData';
 import gsap from './lib/gsap-config';
 // Firestore
 
@@ -74,6 +73,17 @@ interface PortfolioProject {
     link?: string;
 }
 
+// Interface pour les reviews
+interface Review {
+    id: string;
+    name: string;
+    role: string;
+    company: string;
+    text: string;
+    imageSrc?: string;
+    order: number;
+}
+
 export default function Page() {
     // Références pour les éléments à animer
     const heroTitleRef = useRef<HTMLHeadingElement>(null);
@@ -101,6 +111,7 @@ export default function Page() {
     const [keyFigures, setKeyFigures] = useState<KeyFigure[]>([]);
     const [projects, setProjects] = useState<PortfolioProject[]>([]);
     const [loading, setLoading] = useState(true);
+    const [reviews, setReviews] = useState<Review[]>([]);
 
     // Fonction pour obtenir l'icône à partir du nom
     const getIconFromName = (icon: string): React.ReactNode => {
@@ -307,6 +318,22 @@ export default function Page() {
                 } else {
                     console.log("Aucun projet trouvé dans Firestore");
                     setProjects([]);
+                }
+
+                // Récupérer les reviews
+                const reviewsCollection = collection(db, 'reviews');
+                const reviewsQuery = query(reviewsCollection, orderBy('order', 'asc'));
+                const reviewsSnapshot = await getDocs(reviewsQuery);
+
+                if (!reviewsSnapshot.empty) {
+                    const fetchedReviews = reviewsSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })) as Review[];
+                    setReviews(fetchedReviews);
+                } else {
+                    console.log("Aucun témoignage trouvé dans Firestore");
+                    setReviews([]);
                 }
                 
                 setLoading(false);
@@ -824,14 +851,22 @@ export default function Page() {
             </section>
 
             {/* Section CE QUE NOS CLIENTS DISENT DE NOUS */}
-            <section className="py-24 bg-gradient-to-b from-black via-gray-900 to-black reviews-section">
-                <div className="text-center mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
-                        CE QUE NOS CLIENTS DISENT DE NOUS
-                    </h2>
-                </div>
-                <CustomerReviews reviews={customerReviewsData} autoplaySpeed={13000} />
-            </section>
+            {reviews.length > 0 && (
+                <section className="py-24 bg-gradient-to-b from-black via-gray-900 to-black reviews-section">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
+                            CE QUE NOS CLIENTS DISENT DE NOUS
+                        </h2>
+                    </div>
+                    {loading ? (
+                        <div className="flex justify-center items-center py-20">
+                            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
+                        </div>
+                    ) : (
+                        <CustomerReviews reviews={reviews} autoplaySpeed={13000} />
+                    )}
+                </section>
+            )}
 
             <Footer />
         </main>
