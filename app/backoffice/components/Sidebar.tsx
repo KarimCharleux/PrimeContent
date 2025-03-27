@@ -62,6 +62,42 @@ const ClientsIcon = () => (
   </svg>
 );
 
+const AnalyticsIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+  </svg>
+);
+
+const ServerIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
+  </svg>
+);
+
+const SearchConsoleIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+  </svg>
+);
+
+const CalendlyIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+  </svg>
+);
+
+const SpeedIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+  </svg>
+);
+
+const ContactIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+  </svg>
+);
+
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
   const pathname = usePathname();
@@ -76,8 +112,17 @@ export default function Sidebar() {
     { name: 'Événements', href: '/backoffice/events', icon: EventsIcon },
     { name: 'Mariages', href: '/backoffice/weddings', icon: WeddingsIcon },
     { name: 'Clients', href: '/backoffice/clients', icon: ClientsIcon },
-    { name: 'Utilisateurs', href: '/backoffice/users', icon: UsersIcon },
+    { name: 'Contact', href: '/backoffice/contact', icon: ContactIcon },
     { name: 'Paramètres', href: '/backoffice/settings', icon: SettingsIcon },
+  ];
+
+  // Liens externes
+  const externalLinks = [
+    { name: 'Google Analytics', href: 'https://analytics.google.com/', icon: AnalyticsIcon },
+    { name: 'Google Search Console', href: 'https://search.google.com/search-console', icon: SearchConsoleIcon },
+    { name: 'PageSpeed Insights', href: 'https://pagespeed.web.dev/', icon: SpeedIcon },
+    { name: 'Calendly', href: 'https://calendly.com/', icon: CalendlyIcon },
+    { name: 'Panel o2switch', href: 'https://customer.o2switch.net/', icon: ServerIcon },
   ];
 
   return (
@@ -143,6 +188,29 @@ export default function Sidebar() {
             </Link>
           );
         })}
+      </nav>
+      <div className={`mt-5 px-4 ${isOpen ? 'block' : 'hidden'}`}>
+        <div className="border-t border-gray-700 pt-2">
+          <p className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-2">
+            Outils externes
+          </p>
+        </div>
+      </div>
+      <nav className="mt-2 px-2 space-y-1">
+        {externalLinks.map((item) => (
+          <a
+            key={item.name}
+            href={item.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-base font-medium rounded-md transition-colors"
+          >
+            <item.icon />
+            <span className={`ml-3 ${isOpen ? 'block' : 'hidden'}`}>
+              {item.name}
+            </span>
+          </a>
+        ))}
       </nav>
       <div className="absolute bottom-0 w-full p-4 space-y-2">
         <Link
