@@ -65,10 +65,10 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
-    visitors: { value: 0, change: '0%', trend: 'neutral' as const },
-    photos: { value: 0, change: '0%', trend: 'neutral' as const },
-    videos: { value: 0, change: '0%', trend: 'neutral' as const },
-    events: { value: 0, change: '0%', trend: 'neutral' as const },
+    visitors: { value: 0, change: '0%', trend: 'neutral' as 'up' | 'down' | 'neutral' },
+    photos: { value: 0, change: '0%', trend: 'neutral' as 'up' | 'down' | 'neutral' },
+    videos: { value: 0, change: '0%', trend: 'neutral' as 'up' | 'down' | 'neutral' },
+    events: { value: 0, change: '0%', trend: 'neutral' as 'up' | 'down' | 'neutral' },
   });
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
@@ -78,10 +78,10 @@ export default function Dashboard() {
     // Simule une requête API
     const loadData = setTimeout(() => {
       setStats({
-        visitors: { value: 1243, change: '+12.5%', trend: 'up' as const },
-        photos: { value: 89, change: '+5.2%', trend: 'up' as const },
-        videos: { value: 21, change: '-2.1%', trend: 'down' as const },
-        events: { value: 8, change: '+33.3%', trend: 'up' as const },
+        visitors: { value: 1243, change: '+12.5%', trend: 'up' },
+        photos: { value: 89, change: '+5.2%', trend: 'up' },
+        videos: { value: 21, change: '-2.1%', trend: 'down' },
+        events: { value: 8, change: '+33.3%', trend: 'up' },
       });
 
       setRecentActivities([
