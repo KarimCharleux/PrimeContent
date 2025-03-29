@@ -92,7 +92,7 @@ export type Event = {
   id: string;
   title: string;
   description: string;
-  location: string;
+  location?: string;
   startDate: Date | string;
   endDate?: Date | string;
   images: MediaItem[];
