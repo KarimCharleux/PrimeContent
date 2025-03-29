@@ -1,4 +1,6 @@
 'use client';
+import { log } from 'console';
+
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 
@@ -6,7 +8,6 @@ import gsap from '../../lib/gsap-config';
 import ImageCarousel from '../ImageCarousel/ImageCarousel';
 
 import styles from './PortfolioGrid.module.scss';
-import { log } from 'console';
 
 // Types pour les projets
 export interface Project {
