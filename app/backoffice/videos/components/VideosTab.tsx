@@ -140,11 +140,24 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         onStatusChange && onStatusChange(statusMessage);
     }, [statusMessage, onStatusChange]);
 
-    const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleVideoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             setVideoFile(file);
-            setFormData(prev => ({ ...prev, source: URL.createObjectURL(file) }));
+            
+            // Extraire la durée de la vidéo
+            const duration = await extractVideoDuration(file);
+            
+            // Détecter le format
+            const format = await detectFormat(file);
+            
+            setFormData(prev => ({ 
+                ...prev, 
+                source: URL.createObjectURL(file),
+                duration,
+                format,
+                size: file.size
+            }));
         }
     };
 
@@ -330,7 +343,6 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
             }
         } catch (error) {
             console.error('Erreur lors de la suppression du fichier:', error);
-            throw error; // Propager l'erreur pour la gestion dans handleDelete
         }
     };
 
@@ -353,6 +365,9 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
             ));
 
             setVideos([]);
+
+            resetForm();
+
             setStatusMessage({
                 type: 'success',
                 message: `Toutes les vidéos (${videos.length}) ont été supprimées avec succès`
@@ -541,6 +556,12 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                 // Supprimer le document Firestore
                 await deleteDoc(doc(db, 'videos', id));
                 setStatusMessage({ type: 'success', message: 'Vidéo supprimée avec succès' });
+                
+                // Fermer le formulaire si la vidéo supprimée était en cours d'édition
+                if (editingVideo?.id === id) {
+                    resetForm();
+                }
+                
                 fetchVideos();
             } catch (error) {
                 console.error('Erreur lors de la suppression de la vidéo:', error);

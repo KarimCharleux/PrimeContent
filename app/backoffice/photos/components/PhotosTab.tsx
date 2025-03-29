@@ -269,6 +269,9 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                 deleteDoc(doc(db, 'photos', photo.id!))
             ));
 
+            // Fermer le form
+            resetForm();
+
             setPhotos([]);
             setStatusMessage({
                 type: 'success',
