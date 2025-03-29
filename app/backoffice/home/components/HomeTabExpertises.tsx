@@ -277,6 +277,14 @@ export default function HomeTabExpertises() {
     setEditingExpertise(expertise);
     reset(expertise);
     setPreviewImage(expertise.backgroundImage);
+
+    // Faire défiler la page jusqu'au formulaire
+    setTimeout(() => {
+      const formElement = document.querySelector('form');
+      if (formElement) {
+          formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+  }, 100);
   };
 
   const handleDeleteExpertise = async (expertise: Expertise) => {

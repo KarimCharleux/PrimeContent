@@ -6,6 +6,7 @@ import gsap from '../../lib/gsap-config';
 import ImageCarousel from '../ImageCarousel/ImageCarousel';
 
 import styles from './PortfolioGrid.module.scss';
+import { log } from 'console';
 
 // Types pour les projets
 export interface Project {
@@ -46,29 +47,6 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
     // Fonction pour ajouter les références aux vidéos
     const addVideoRef = (el: HTMLVideoElement | null, index: number) => {
         videoRefs.current[index] = el;
-    };
-
-    // Fonction pour gérer la lecture des vidéos
-    const handleVideoPlay = (index: number) => {
-        // Si une vidéo est déjà en cours de lecture, on l'arrête
-        if (activeVideoIndex !== null && activeVideoIndex !== index) {
-            const currentVideo = videoRefs.current[activeVideoIndex];
-            if (currentVideo) {
-                currentVideo.pause();
-                currentVideo.currentTime = 0;
-            }
-        }
-
-        const video = videoRefs.current[index];
-        if (video) {
-            if (video.paused) {
-                video.play();
-                setActiveVideoIndex(index);
-            } else {
-                video.pause();
-                setActiveVideoIndex(null);
-            }
-        }
     };
 
     // Fonction pour ouvrir le carrousel
@@ -133,6 +111,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
 
                 // Mettre à jour les projets filtrés
                 setFilteredProjects(newFilteredProjects);
+
 
                 // Animation d'entrée après mise à jour
                 setTimeout(() => {

@@ -1,12 +1,13 @@
 'use client';
 
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 
+import { db } from '../backoffice/lib/firebase-client';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
 import PortfolioGrid from '../components/PortfolioGrid';
-import videosData from '../data/videosData';
 
 // Importation des styles
 import './videos.scss';
@@ -38,6 +39,32 @@ const fadeIn = {
 export default function VideosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
+  const [videos, setVideos] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchVideos = async () => {
+      try {
+        const videosCollection = collection(db, 'videos');
+        const videosQuery = query(videosCollection, orderBy('order', 'asc'));
+        const videosSnapshot = await getDocs(videosQuery);
+
+        if (!videosSnapshot.empty) {
+          const fetchedVideos = videosSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            isVideo: true,
+          }));
+          setVideos(fetchedVideos);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des vidéos:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchVideos();
+  }, []);
 
   useEffect(() => {
     // Simuler un chargement
@@ -109,7 +136,7 @@ export default function VideosPage() {
               variants={fadeIn}
               className="portfolio-container"
             >
-              <PortfolioGrid projects={videosData} showFilter={true} />
+              <PortfolioGrid projects={videos} showFilter={true} />
             </motion.div>
           )}
         </div>

@@ -99,6 +99,14 @@ export default function HomeTabKeyFigures() {
     setFormIsPercentage(figure.isPercentage || false);
     setIsFormVisible(true);
     setIsEditing(true);
+
+    // Faire défiler la page jusqu'au formulaire
+    setTimeout(() => {
+      const formElement = document.querySelector('form');
+      if (formElement) {
+          formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+  }, 100);
   };
 
   // Supprimer un chiffre clé

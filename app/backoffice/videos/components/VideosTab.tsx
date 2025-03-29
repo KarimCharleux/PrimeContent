@@ -16,31 +16,35 @@ import { useEffect, useState, useCallback } from 'react';
 import { Spinner } from '@/app/backoffice/components/Spinner';
 import { db } from '@/app/backoffice/lib/firebase-client';
 
-interface Photo {
+interface Video {
     id?: string;
     title?: string;
     category: string;
     source: string;
-    format: 'portrait' | 'paysage';
+    thumbnail: string;
+    duration: number;
     order: number;
+    size: number; // Taille en bytes
+    format: 'portrait' | 'paysage'; // Ajout du format
 }
 
-interface PhotoStats {
-    totalPhotos: number;
-    totalSize: number;
+interface VideoStats {
+    totalVideos: number;
+    totalDuration: number;
     averageLoadTime: number;
+    totalSize: number;
 }
 
-interface PhotosTabProps {
+interface VideosTabProps {
     onStatusChange?: (status: { type: 'success' | 'error'; message: string } | null) => void;
 }
 
-export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
-    const [photos, setPhotos] = useState<Photo[]>([]);
+export default function VideosTab({ onStatusChange }: VideosTabProps) {
+    const [videos, setVideos] = useState<Video[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
-    const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null);
-    const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [editingVideo, setEditingVideo] = useState<Video | null>(null);
+    const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -48,35 +52,32 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
         type: 'success' | 'error';
         message: string;
     } | null>(null);
-    const [stats, setStats] = useState<PhotoStats>({
-        totalPhotos: 0,
-        totalSize: 0,
+    const [stats, setStats] = useState<VideoStats>({
+        totalVideos: 0,
+        totalDuration: 0,
         averageLoadTime: 0,
+        totalSize: 0,
     });
-    const [formData, setFormData] = useState<Partial<Photo>>({
+    const [formData, setFormData] = useState<Partial<Video>>({
         title: '',
         category: '',
         source: '',
-        format: 'portrait',
+        thumbnail: '',
         order: 0,
     });
+    const [videoFile, setVideoFile] = useState<File | null>(null);
+    const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
 
-    // Extraire les catégories uniques des photos
-    const categories = Array.from(new Set(photos.map((photo) => photo.category))).filter(
+    // Extraire les catégories uniques des vidéos
+    const categories = Array.from(new Set(videos.map((video) => video.category))).filter(
         Boolean,
     );
 
-    // Fonction pour formater la taille en ko, Mo ou Go
-    const formatSize = (bytes: number): string => {
-        if (bytes < 1024) {
-            return bytes + ' octets';
-        } else if (bytes < 1024 * 1024) {
-            return (bytes / 1024).toFixed(2) + ' Ko';
-        } else if (bytes < 1024 * 1024 * 1024) {
-            return (bytes / (1024 * 1024)).toFixed(2) + ' Mo';
-        } else {
-            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' Go';
-        }
+    // Fonction pour formater la durée en minutes:secondes
+    const formatDuration = (seconds: number): string => {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     };
 
     // Fonction pour formater le temps de chargement
@@ -88,87 +89,95 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
         }
     };
 
+    // Fonction pour formater le poids
+    const formatSize = (bytes: number): string => {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
     // Fonction pour calculer les statistiques
     const calculateStats = useCallback(async () => {
-        let totalSize = 0;
+        let totalDuration = 0;
         let totalLoadTime = 0;
+        let totalSize = 0;
 
-        for (const photo of photos) {
+        for (const video of videos) {
+            totalDuration += video.duration || 0;
+            totalSize += video.size || 0;
+
             try {
-                const response = await fetch(photo.source, { method: 'HEAD' });
-                const contentLength = response.headers.get('content-length');
-
-                if (contentLength) {
-                    const size = parseInt(contentLength);
-                    totalSize += size;
-                }
-
                 // Estimation du temps de chargement (basé sur une connexion moyenne de 15 Mbps)
-                const loadTime = ((parseInt(contentLength || '0') * 8) / (15 * 1024 * 1024)) * 1000;
+                const loadTime = ((video.size || 0) * 8) / (15 * 1024 * 1024) * 1000;
                 totalLoadTime += loadTime;
             } catch (error) {
-                console.error(`Erreur lors de l'analyse de ${photo.source}:`, error);
+                console.error(`Erreur lors de l'analyse de ${video.source}:`, error);
             }
         }
 
         setStats({
-            totalPhotos: photos.length,
+            totalVideos: videos.length,
+            totalDuration,
+            averageLoadTime: videos.length > 0 ? totalLoadTime / videos.length : 0,
             totalSize,
-            averageLoadTime: totalLoadTime / photos.length,
         });
-    }, [photos]);
+    }, [videos]);
 
     useEffect(() => {
-        fetchPhotos();
+        fetchVideos();
     }, []);
 
     useEffect(() => {
-        if (photos.length > 0) {
+        if (videos.length > 0) {
             calculateStats();
         }
-    }, [photos, calculateStats]);
+    }, [videos, calculateStats]);
 
     // Mettre à jour le statut pour le composant parent
     useEffect(() => {
         onStatusChange && onStatusChange(statusMessage);
     }, [statusMessage, onStatusChange]);
 
-    // Fermer et réinitialiser le formulaire
-    const resetForm = () => {
-        setShowForm(false);
-        setEditingPhoto(null);
-        setFormData({
-            title: '',
-            category: '',
-            source: '',
-            format: 'portrait',
-            order: 0,
-        });
-        setPreviewImage(null);
-        setStatusMessage(null);
+    const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setVideoFile(file);
+            setFormData(prev => ({ ...prev, source: URL.createObjectURL(file) }));
+        }
     };
 
-    const fetchPhotos = async () => {
+    const handleThumbnailFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setThumbnailFile(file);
+            setFormData(prev => ({ ...prev, thumbnail: URL.createObjectURL(file) }));
+            setPreviewThumbnail(URL.createObjectURL(file));
+        }
+    };
+
+    const fetchVideos = async () => {
         try {
             setLoading(true);
-            const photosCollection = collection(db, 'photos');
-            const photosQuery = query(photosCollection, orderBy('order', 'asc'));
-            const photosSnapshot = await getDocs(photosQuery);
+            const videosCollection = collection(db, 'videos');
+            const videosQuery = query(videosCollection, orderBy('order', 'asc'));
+            const videosSnapshot = await getDocs(videosQuery);
 
-            if (!photosSnapshot.empty) {
-                const fetchedPhotos = photosSnapshot.docs.map((doc) => ({
+            if (!videosSnapshot.empty) {
+                const fetchedVideos = videosSnapshot.docs.map((doc) => ({
                     id: doc.id,
                     ...doc.data(),
-                })) as Photo[];
-                setPhotos(fetchedPhotos);
+                })) as Video[];
+                setVideos(fetchedVideos);
             } else {
-                setPhotos([]);
+                setVideos([]);
             }
         } catch (error) {
-            console.error('Erreur lors de la récupération des photos:', error);
+            console.error('Erreur lors de la récupération des vidéos:', error);
             setStatusMessage({
                 type: 'error',
-                message: 'Erreur lors de la récupération des photos',
+                message: 'Erreur lors de la récupération des vidéos',
             });
         } finally {
             setLoading(false);
@@ -178,33 +187,96 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            if (editingPhoto?.id) {
-                const photoRef = doc(db, 'photos', editingPhoto.id);
-                await updateDoc(photoRef, {
+            let videoUrl = formData.source;
+            let thumbnailUrl = formData.thumbnail;
+
+            // Upload de la vidéo si un nouveau fichier est sélectionné
+            if (videoFile) {
+                const videoFormData = new FormData();
+                videoFormData.append('file', videoFile);
+                videoFormData.append('path', 'videos');
+                videoFormData.append('useUuid', 'false');
+
+                const videoResponse = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: videoFormData,
+                });
+
+                if (!videoResponse.ok) {
+                    throw new Error('Erreur lors du téléchargement de la vidéo');
+                }
+
+                const videoData = await videoResponse.json();
+                videoUrl = videoData.fileUrl;
+            }
+
+            // Upload de la miniature si un nouveau fichier est sélectionné
+            if (thumbnailFile) {
+                const thumbnailFormData = new FormData();
+                thumbnailFormData.append('file', thumbnailFile);
+                thumbnailFormData.append('path', 'videos/thumbnails');
+                thumbnailFormData.append('useUuid', 'false');
+
+                const thumbnailResponse = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: thumbnailFormData,
+                });
+
+                if (!thumbnailResponse.ok) {
+                    throw new Error('Erreur lors du téléchargement de la miniature');
+                }
+
+                const thumbnailData = await thumbnailResponse.json();
+                thumbnailUrl = thumbnailData.fileUrl;
+            }
+
+            if (editingVideo?.id) {
+                const videoRef = doc(db, 'videos', editingVideo.id);
+                await updateDoc(videoRef, {
                     title: formData.title,
-                    source: formData.source || '',
-                    format: formData.format,
+                    source: videoUrl,
+                    thumbnail: thumbnailUrl,
                     order: formData.order,
                     category: formData.category || '',
+                    format: formData.format || 'paysage',
                 });
-                setStatusMessage({ type: 'success', message: 'Photo mise à jour avec succès' });
+                setStatusMessage({ type: 'success', message: 'Vidéo mise à jour avec succès' });
             } else {
-                const newPhoto = {
+                const newVideo = {
                     ...formData,
-                    order: photos.length,
+                    source: videoUrl,
+                    thumbnail: thumbnailUrl,
+                    order: videos.length,
+                    format: formData.format || 'paysage',
                 };
-                await addDoc(collection(db, 'photos'), newPhoto);
+                await addDoc(collection(db, 'videos'), newVideo);
                 setStatusMessage({
                     type: 'success',
-                    message: 'Nouvelle photo ajoutée avec succès',
+                    message: 'Nouvelle vidéo ajoutée avec succès',
                 });
             }
             resetForm();
-            fetchPhotos();
+            fetchVideos();
         } catch (error) {
-            console.error('Erreur lors de la sauvegarde de la photo:', error);
+            console.error('Erreur lors de la sauvegarde de la vidéo:', error);
             setStatusMessage({ type: 'error', message: 'Erreur lors de la sauvegarde' });
         }
+    };
+
+    const resetForm = () => {
+        setShowForm(false);
+        setEditingVideo(null);
+        setFormData({
+            title: '',
+            category: '',
+            source: '',
+            thumbnail: '',
+            order: 0,
+        });
+        setVideoFile(null);
+        setThumbnailFile(null);
+        setPreviewThumbnail(null);
+        setStatusMessage(null);
     };
 
     // Gérer le drag & drop des fichiers
@@ -235,74 +307,131 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
         }
     };
 
-    // Supprimer toutes les photos
-    const handleDeleteAllPhotos = async () => {
-        if (!confirm(`Êtes-vous sûr de vouloir supprimer toutes les photos (${photos.length} photos) ? Cette action est irréversible.`)) {
+    // Fonction pour extraire le nom du fichier du chemin
+    const extractFileName = (path: string): string => {
+        // Si le chemin commence par /videos/, on enlève ce préfixe
+        const cleanPath = path.replace(/^\/videos\//, '');
+        // On prend le dernier segment du chemin
+        return cleanPath.split('/').pop() || '';
+    };
+
+    // Fonction pour supprimer un fichier
+    const deleteFile = async (path: string) => {
+        try {
+            const fileName = extractFileName(path);
+            if (!fileName) return;
+
+            const response = await fetch(`/api/delete?path=videos&name=${encodeURIComponent(fileName)}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                throw new Error('Erreur lors de la suppression du fichier');
+            }
+        } catch (error) {
+            console.error('Erreur lors de la suppression du fichier:', error);
+            throw error; // Propager l'erreur pour la gestion dans handleDelete
+        }
+    };
+
+    // Supprimer toutes les vidéos
+    const handleDeleteAllVideos = async () => {
+        if (!confirm(`Êtes-vous sûr de vouloir supprimer toutes les vidéos (${videos.length} vidéos) ? Cette action est irréversible.`)) {
             return;
         }
 
         try {
-            // Supprimer d'abord tous les médias
-            await Promise.all(photos.map(async (photo) => {
-                if (photo.source) {
-                    const fileName = photo.source.split('/').pop();
-                    const filePath = photo.source.substring(1, photo.source.lastIndexOf('/'));
-                    
-                    if (fileName) {
-                        try {
-                            const response = await fetch(`/api/delete?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`, {
-                                method: 'DELETE',
-                            });
-                            
-                            if (!response.ok) {
-                                console.error('Erreur lors de la suppression du média:', await response.text());
-                            }
-                        } catch (mediaError) {
-                            console.error('Erreur lors de la suppression du média:', mediaError);
-                        }
-                    }
-                }
-            }));
+            // Supprimer tous les fichiers vidéo
+            await Promise.all(videos.map(video => deleteFile(video.source)));
+
+            // Supprimer tous les fichiers miniatures
+            await Promise.all(videos.map(video => video.thumbnail && deleteFile(video.thumbnail)));
 
             // Ensuite supprimer les documents Firestore
-            await Promise.all(photos.map(photo => 
-                deleteDoc(doc(db, 'photos', photo.id!))
+            await Promise.all(videos.map(video => 
+                deleteDoc(doc(db, 'videos', video.id!))
             ));
 
-            setPhotos([]);
+            setVideos([]);
             setStatusMessage({
                 type: 'success',
-                message: `Toutes les photos (${photos.length}) ont été supprimées avec succès`
+                message: `Toutes les vidéos (${videos.length}) ont été supprimées avec succès`
             });
         } catch (error) {
-            console.error('Erreur lors de la suppression des photos:', error);
+            console.error('Erreur lors de la suppression des vidéos:', error);
             setStatusMessage({
                 type: 'error',
-                message: 'Erreur lors de la suppression des photos'
+                message: 'Erreur lors de la suppression des vidéos'
             });
         }
+    };
+
+    // Extraire la durée d'une vidéo
+    const extractVideoDuration = (file: File): Promise<number> => {
+        return new Promise((resolve) => {
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            
+            video.onloadedmetadata = () => {
+                URL.revokeObjectURL(video.src);
+                resolve(video.duration);
+            };
+            
+            video.src = URL.createObjectURL(file);
+        });
+    };
+
+    // Générer une miniature à partir d'une vidéo
+    const generateThumbnail = async (file: File): Promise<string> => {
+        return new Promise((resolve) => {
+            const video = document.createElement('video');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            video.onloadeddata = () => {
+                // Chercher le milieu de la vidéo pour la miniature
+                video.currentTime = video.duration / 2;
+            };
+            
+            video.onseeked = () => {
+                // Une fois positionné, capturer l'image
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const thumbnail = canvas.toDataURL('image/jpeg', 0.7);
+                URL.revokeObjectURL(video.src);
+                resolve(thumbnail);
+            };
+            
+            video.src = URL.createObjectURL(file);
+        });
     };
 
     // Détecter automatiquement le format (portrait/paysage)
     const detectFormat = async (file: File): Promise<'portrait' | 'paysage'> => {
         return new Promise((resolve) => {
-            const img = new window.Image();
-            img.onload = () => {
-                resolve(img.width < img.height ? 'portrait' : 'paysage');
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            
+            video.onloadedmetadata = () => {
+                URL.revokeObjectURL(video.src);
+                resolve(video.videoWidth < video.videoHeight ? 'portrait' : 'paysage');
             };
-            img.src = URL.createObjectURL(file);
+            
+            video.src = URL.createObjectURL(file);
         });
     };
 
     // Gérer l'upload des fichiers
     const handleFileUpload = async (files: FileList) => {
-        // Filtrer les fichiers pour n'accepter que les images
-        const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+        // Filtrer les fichiers pour n'accepter que les vidéos
+        const videoFiles = Array.from(files).filter(file => file.type.startsWith('video/'));
         
-        if (imageFiles.length === 0) {
+        if (videoFiles.length === 0) {
             setStatusMessage({
                 type: 'error',
-                message: 'Veuillez sélectionner uniquement des fichiers image'
+                message: 'Veuillez sélectionner uniquement des fichiers vidéo'
             });
             return;
         }
@@ -313,21 +442,22 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
 
         try {
             // Trouver le dernier ordre existant
-            const lastOrder = Math.max(...photos.map(p => p.order), -1);
+            const lastOrder = Math.max(...videos.map(v => v.order), -1);
             let currentOrder = lastOrder + 1;
 
-            for (let i = 0; i < imageFiles.length; i++) {
-                const file = imageFiles[i];
-                const format = await detectFormat(file);
+            for (let i = 0; i < videoFiles.length; i++) {
+                const file = videoFiles[i];
+                
+                // Extraire la durée de la vidéo
+                const duration = await extractVideoDuration(file);
 
-                // Créer un objet URL pour la prévisualisation locale
-                const objectUrl = URL.createObjectURL(file);
-                setPreviewImage(objectUrl);
+                // Détecter le format
+                const format = await detectFormat(file);
 
                 // Créer un FormData pour l'upload
                 const formData = new FormData();
                 formData.append('file', file);
-                formData.append('path', 'photos');
+                formData.append('path', 'videos');
                 formData.append('useUuid', 'false');
 
                 // Faire une requête fetch à notre API locale pour sauvegarder le fichier
@@ -337,38 +467,41 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                 });
 
                 if (!response.ok) {
-                    throw new Error('Erreur lors du téléchargement de la photo');
+                    throw new Error('Erreur lors du téléchargement de la vidéo');
                 }
 
                 const data = await response.json();
 
-                // Créer une nouvelle photo avec l'ordre incrémenté
-                const newPhoto = {
+                // Créer une nouvelle vidéo avec l'ordre incrémenté
+                const newVideo = {
                     title: '', // Laisser le titre vide
                     source: data.fileUrl,
-                    format,
+                    thumbnail: '', // Laisser la miniature vide
+                    duration,
                     order: currentOrder++,
                     category: '',
+                    size: file.size, // Stocker la taille réelle du fichier
+                    format, // Ajouter le format détecté
                 };
 
-                await addDoc(collection(db, 'photos'), newPhoto);
+                await addDoc(collection(db, 'videos'), newVideo);
 
                 // Mettre à jour la progression
-                setUploadProgress(((i + 1) / imageFiles.length) * 100);
+                setUploadProgress(((i + 1) / videoFiles.length) * 100);
             }
 
             setStatusMessage({
                 type: 'success',
-                message: `${imageFiles.length} photo(s) ajoutée(s) avec succès`,
+                message: `${videoFiles.length} vidéo(s) ajoutée(s) avec succès`,
             });
 
-            // Rafraîchir la liste des photos
-            fetchPhotos();
+            // Rafraîchir la liste des vidéos
+            fetchVideos();
         } catch (error) {
             console.error('Erreur lors du téléchargement:', error);
             setStatusMessage({
                 type: 'error',
-                message: 'Erreur lors du téléchargement des photos',
+                message: 'Erreur lors du téléchargement des vidéos',
             });
         } finally {
             setUploading(false);
@@ -376,12 +509,12 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
         }
     };
 
-    const handleEdit = (photo: Photo) => {
-        setEditingPhoto(photo);
-        setFormData(photo);
-        setPreviewImage(photo.source);
+    const handleEdit = (video: Video) => {
+        setEditingVideo(video);
+        setFormData(video);
+        setPreviewThumbnail(video.thumbnail);
         setShowForm(true);
-
+        
         // Faire défiler la page jusqu'au formulaire
         setTimeout(() => {
             const formElement = document.querySelector('form');
@@ -392,46 +525,34 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm('Êtes-vous sûr de vouloir supprimer cette photo ?')) {
-            try {
-                const photo = photos.find(p => p.id === id);
-                if (!photo) return;
+        const video = videos.find(v => v.id === id);
+        if (!video) return;
 
-                // Supprimer le média si une source est définie
-                if (photo.source) {
-                    const fileName = photo.source.split('/').pop();
-                    const filePath = photo.source.substring(1, photo.source.lastIndexOf('/'));
-                    
-                    if (fileName) {
-                        try {
-                            const response = await fetch(`/api/delete?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`, {
-                                method: 'DELETE',
-                            });
-                            
-                            if (!response.ok) {
-                                console.error('Erreur lors de la suppression du média:', await response.text());
-                            }
-                        } catch (mediaError) {
-                            console.error('Erreur lors de la suppression du média:', mediaError);
-                        }
-                    }
+        if (window.confirm('Êtes-vous sûr de vouloir supprimer cette vidéo ?')) {
+            try {
+                // Supprimer le fichier vidéo
+                await deleteFile(video.source);
+
+                // Supprimer la miniature si elle existe
+                if (video.thumbnail) {
+                    await deleteFile(video.thumbnail);
                 }
 
-                // Supprimer la photo de Firestore
-                await deleteDoc(doc(db, 'photos', id));
-                setStatusMessage({ type: 'success', message: 'Photo supprimée avec succès' });
-                fetchPhotos();
+                // Supprimer le document Firestore
+                await deleteDoc(doc(db, 'videos', id));
+                setStatusMessage({ type: 'success', message: 'Vidéo supprimée avec succès' });
+                fetchVideos();
             } catch (error) {
-                console.error('Erreur lors de la suppression de la photo:', error);
+                console.error('Erreur lors de la suppression de la vidéo:', error);
                 setStatusMessage({ type: 'error', message: 'Erreur lors de la suppression' });
             }
         }
     };
 
-    const handleReorder = async (photoId: string, newOrder: number) => {
+    const handleReorder = async (videoId: string, newOrder: number) => {
         try {
-            await updateDoc(doc(db, 'photos', photoId), { order: newOrder });
-            fetchPhotos();
+            await updateDoc(doc(db, 'videos', videoId), { order: newOrder });
+            fetchVideos();
         } catch (error) {
             console.error('Erreur lors du réordonnancement:', error);
             setStatusMessage({ type: 'error', message: 'Erreur lors du réordonnancement' });
@@ -466,15 +587,19 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
         <>
             {/* Section Statistiques */}
             <div className="bg-white rounded-lg shadow p-6 mb-8">
-                <h2 className="text-xl font-semibold mb-4">Statistiques des Photos</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <h2 className="text-xl font-semibold mb-4">Statistiques des Vidéos</h2>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="bg-blue-50 p-4 rounded-lg">
-                        <p className="text-sm text-blue-600 font-medium">Nombre total de photos</p>
-                        <p className="text-3xl font-bold">{stats.totalPhotos}</p>
+                        <p className="text-sm text-blue-600 font-medium">Nombre total de vidéos</p>
+                        <p className="text-3xl font-bold">{stats.totalVideos}</p>
+                    </div>
+                    <div className="bg-orange-50 p-4 rounded-lg">
+                        <p className="text-sm text-orange-600 font-medium">Poids total estimé</p>
+                        <p className="text-3xl font-bold">{formatSize(stats.totalSize)}</p>
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg">
-                        <p className="text-sm text-green-600 font-medium">Taille totale</p>
-                        <p className="text-3xl font-bold">{formatSize(stats.totalSize)}</p>
+                        <p className="text-sm text-green-600 font-medium">Durée totale</p>
+                        <p className="text-3xl font-bold">{formatDuration(stats.totalDuration)}</p>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-lg">
                         <p className="text-sm text-purple-600 font-medium">Temps de chargement moyen</p>
@@ -488,12 +613,12 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
             <div className="bg-white rounded-lg shadow">
                 <div className="p-6 border-b border-gray-200">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-semibold">Gestion des Photos</h2>
+                        <h2 className="text-lg font-semibold">Gestion des Vidéos</h2>
                         <div className="flex space-x-2">
-                            {photos.length > 0 && (
+                            {videos.length > 0 && (
                                 <>
                                     <button
-                                        onClick={() => handleDeleteAllPhotos()}
+                                        onClick={() => handleDeleteAllVideos()}
                                         className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -510,7 +635,7 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                 </svg>
-                                Nouvelle photo
+                                Nouvelle vidéo
                             </button>
                         </div>
                     </div>
@@ -525,7 +650,7 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                         </div>
                     )}
 
-                    {/* Zone de drop pour les photos */}
+                    {/* Zone de drop pour les vidéos */}
                     <div
                         className={`border-2 border-dashed p-8 mb-8 rounded-lg text-center ${
                             isDragging ? 'border-primary bg-primary bg-opacity-10' : 'border-gray-300'
@@ -556,7 +681,7 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                     <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                                 <p className="mt-2 text-gray-600">
-                                    Glissez-déposez des photos ici ou{' '}
+                                    Glissez-déposez des vidéos ici ou{' '}
                                     <button
                                         type="button"
                                         className="text-primary hover:text-primary-dark font-medium"
@@ -566,13 +691,13 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                     </button>
                                 </p>
                                 <p className="mt-1 text-xs text-gray-500">
-                                    Images uniquement (JPG, PNG, WebP, etc.)
+                                    Vidéos uniquement (MP4, WebM, etc.)
                                 </p>
                                 <input
                                     id="fileInput"
                                     type="file"
                                     className="hidden"
-                                    accept="image/*"
+                                    accept="video/*"
                                     multiple
                                     onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
                                 />
@@ -583,9 +708,9 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                     {showForm && (
                         <form onSubmit={handleSubmit} className="space-y-6 mb-8">
                             <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
-                                {editingPhoto
-                                    ? `Modifier: ${editingPhoto.title || 'Photo sans titre'}`
-                                    : 'Ajouter une nouvelle photo'}
+                                {editingVideo
+                                    ? `Modifier: ${editingVideo.title || 'Vidéo sans titre'}`
+                                    : 'Ajouter une nouvelle vidéo'}
                             </h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -601,7 +726,7 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                                 setFormData({ ...formData, title: e.target.value })
                                             }
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                            placeholder="Titre de la photo"
+                                            placeholder="Titre de la vidéo"
                                         />
                                     </div>
 
@@ -653,20 +778,18 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                             Format
                                         </label>
                                         <select
-                                            value={formData.format || 'portrait'}
+                                            value={formData.format || 'paysage'}
                                             onChange={(e) =>
                                                 setFormData({
                                                     ...formData,
-                                                    format: e.target.value as
-                                                        | 'portrait'
-                                                        | 'paysage',
+                                                    format: e.target.value as 'portrait' | 'paysage',
                                                 })
                                             }
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                             required
                                         >
-                                            <option value="portrait">Portrait</option>
                                             <option value="paysage">Paysage</option>
+                                            <option value="portrait">Portrait</option>
                                         </select>
                                     </div>
                                 </div>
@@ -674,9 +797,9 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                 <div>
                                     <div className="mb-4">
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Image
+                                            Vidéo
                                         </label>
-                                        <div className="flex items-center space-x-2">
+                                        <div className="flex space-x-2">
                                             <input
                                                 type="text"
                                                 value={formData.source || ''}
@@ -686,17 +809,48 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                                         source: e.target.value,
                                                     })
                                                 }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                placeholder="URL de l'image"
+                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                placeholder="URL de la vidéo"
                                                 required
+                                                readOnly
                                             />
-                                            <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
-                                                Parcourir
+                                            <label className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 cursor-pointer flex items-center">
+                                                <span>Parcourir</span>
+                                                <input
+                                                    type="file"
+                                                    className="hidden"
+                                                    accept="video/*"
+                                                    onChange={handleVideoFileChange}
+                                                />
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Miniature (optionnel)
+                                        </label>
+                                        <div className="flex space-x-2">
+                                            <input
+                                                type="text"
+                                                value={formData.thumbnail || ''}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        thumbnail: e.target.value,
+                                                    })
+                                                }
+                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                placeholder="URL de la miniature"
+                                                readOnly
+                                            />
+                                            <label className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 cursor-pointer flex items-center">
+                                                <span>Parcourir</span>
                                                 <input
                                                     type="file"
                                                     className="hidden"
                                                     accept="image/*"
-                                                    onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                                                    onChange={handleThumbnailFileChange}
                                                 />
                                             </label>
                                         </div>
@@ -706,33 +860,52 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                         <h4 className="text-sm font-medium text-gray-700 mb-2">
                                             Prévisualisation
                                         </h4>
-                                        <div className={`w-full max-w-[400px] mx-auto relative bg-gray-100 rounded-lg overflow-hidden group ${getItemSizeClass(formData.format || 'portrait')}`}>
-                                            {previewImage ? (
-                                                <>
-                                                    <Image
-                                                        src={previewImage}
-                                                        alt="Prévisualisation"
-                                                        fill
-                                                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {/* Vidéo */}
+                                            <div className={`relative bg-gray-100 rounded-lg overflow-hidden ${getItemSizeClass(formData.format || 'paysage')}`}>
+                                                {formData.source ? (
+                                                    <video
+                                                        src={formData.source}
+                                                        className="w-full h-full object-cover"
+                                                        controls
+                                                        preload="metadata"
                                                     />
-                                                    {formData.category && (
-                                                        <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
-                                                            {formData.category}
-                                                        </div>
-                                                    )}
-                                                    {formData.title && (
-                                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                            <h3 className="text-white text-lg font-medium">
-                                                                {formData.title}
-                                                            </h3>
-                                                        </div>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <div className="flex items-center justify-center h-full text-gray-400">
-                                                    Aucune image sélectionnée
-                                                </div>
-                                            )}
+                                                ) : (
+                                                    <div className="flex items-center justify-center h-full text-gray-400">
+                                                        Aucune vidéo sélectionnée
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Miniature */}
+                                            <div className={`relative bg-gray-100 rounded-lg overflow-hidden group ${getItemSizeClass(formData.format || 'paysage')}`}>
+                                                {previewThumbnail ? (
+                                                    <>
+                                                        <Image
+                                                            src={previewThumbnail}
+                                                            alt="Prévisualisation"
+                                                            fill
+                                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                        />
+                                                        {formData.category && (
+                                                            <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                                                                {formData.category}
+                                                            </div>
+                                                        )}
+                                                        {formData.title && (
+                                                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                                <h3 className="text-white text-lg font-medium">
+                                                                    {formData.title}
+                                                                </h3>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <div className="flex items-center justify-center h-full text-gray-400">
+                                                        Aucune miniature sélectionnée
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -750,7 +923,7 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                     type="submit"
                                     className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors"
                                 >
-                                    {editingPhoto ? 'Mettre à jour' : 'Ajouter'}
+                                    {editingVideo ? 'Mettre à jour' : 'Ajouter'}
                                 </button>
                             </div>
                         </form>
@@ -765,7 +938,7 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                             Ordre
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Photo
+                                            Vidéo
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Titre
@@ -777,38 +950,41 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                             Format
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Durée
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Actions
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {photos.map((photo) => (
-                                        <tr key={photo.id}>
+                                    {videos.map((video) => (
+                                        <tr key={video.id}>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center space-x-2">
                                                     <button
                                                         onClick={() =>
                                                             handleReorder(
-                                                                photo.id!,
-                                                                photo.order - 1,
+                                                                video.id!,
+                                                                video.order - 1,
                                                             )
                                                         }
-                                                        disabled={photo.order === 0}
+                                                        disabled={video.order === 0}
                                                         className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
                                                     >
                                                         ↑
                                                     </button>
-                                                    <span>{photo.order}</span>
+                                                    <span>{video.order}</span>
                                                     <button
                                                         onClick={() =>
                                                             handleReorder(
-                                                                photo.id!,
-                                                                photo.order + 1,
+                                                                video.id!,
+                                                                video.order + 1,
                                                             )
                                                         }
                                                         disabled={
-                                                            photo.order ===
-                                                            photos.length - 1
+                                                            video.order ===
+                                                            videos.length - 1
                                                         }
                                                         className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
                                                     >
@@ -817,33 +993,47 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="h-16 w-16 relative overflow-hidden rounded">
-                                                    <Image
-                                                        src={photo.source}
-                                                        alt={photo.title || 'Photo sans titre'}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
+                                                <div className="h-16 w-24 relative overflow-hidden rounded">
+                                                    {video.thumbnail ? (
+                                                        <Image
+                                                            src={video.thumbnail}
+                                                            alt={video.title || 'Vidéo sans titre'}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    ) : (
+                                                        <video
+                                                            src={video.source}
+                                                            className="w-full h-full object-cover"
+                                                            preload="metadata"
+                                                        />
+                                                    )}
+                                                    <div className="absolute bottom-1 right-1 bg-black bg-opacity-70 text-white px-1 py-0.5 rounded text-xs">
+                                                        {formatDuration(video.duration)}
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                {photo.title || <span className="text-gray-400 italic">Sans titre</span>}
+                                                {video.title || <span className="text-gray-400 italic">Sans titre</span>}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                {photo.category}
+                                                {video.category}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                {photo.format}
+                                                {video.format || 'paysage'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {formatDuration(video.duration)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap space-x-2">
                                                 <button
-                                                    onClick={() => handleEdit(photo)}
+                                                    onClick={() => handleEdit(video)}
                                                     className="text-indigo-600 hover:text-indigo-900"
                                                 >
                                                     Modifier
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDelete(photo.id!)}
+                                                    onClick={() => handleDelete(video.id!)}
                                                     className="text-red-600 hover:text-red-900"
                                                 >
                                                     Supprimer

@@ -475,6 +475,14 @@ export default function HomeTabProjects() {
         setFormData(project);
         setPreviewImage(project.source);
         setShowForm(true);
+
+        // Faire défiler la page jusqu'au formulaire
+        setTimeout(() => {
+            const formElement = document.querySelector('form');
+            if (formElement) {
+                formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 100);
     };
 
     const handleDelete = async (id: string) => {

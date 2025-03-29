@@ -4,9 +4,9 @@ import React, { useState } from 'react';
 
 import { useAuth } from '../hooks/useAuth';
 
-import PhotosTab from './components/PhotosTab';
+import VideosTab from './components/VideosTab';
 
-export default function PhotosEditPage() {
+export default function VideosEditPage() {
   const { loading } = useAuth();
   const [isLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -25,7 +25,7 @@ export default function PhotosEditPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Édition de la Galerie Photos</h1>
+      <h1 className="text-2xl font-bold mb-6">Édition de la Galerie Vidéos</h1>
       
       {statusMessage && (
         <div className={`mb-4 p-4 rounded-md ${statusMessage.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
@@ -34,7 +34,7 @@ export default function PhotosEditPage() {
       )}
       
       <div className="mt-6">
-        <PhotosTab onStatusChange={handleStatusChange} />
+        <VideosTab onStatusChange={handleStatusChange} />
       </div>
     </div>
   );
