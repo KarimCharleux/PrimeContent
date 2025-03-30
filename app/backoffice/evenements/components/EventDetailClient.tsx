@@ -10,7 +10,7 @@ import { useAuth } from '@/app/backoffice/hooks/useAuth';
 import { db } from '@/app/backoffice/lib/firebase-client';
 import { Evenement } from '@/app/backoffice/models/eventTypes';
 
-import EventMediaManager, { MediaStats } from '../components/EventMediaManager';
+import EventMediaManager, { MediaStats } from './EventMediaManager';
 
 interface EventDetailClientProps {
   readonly eventId: string;
