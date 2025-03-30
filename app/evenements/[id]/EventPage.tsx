@@ -5,9 +5,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 
-import { Evenement } from '@/app/backoffice/models/eventTypes';
+import { Evenement, EventMediaItem } from '@/app/backoffice/models/eventTypes';
 
 import ImageCarousel from '../../components/ImageCarousel/ImageCarousel';
+import PortfolioGrid from '../../components/PortfolioGrid/PortfolioGrid';
 import PrimaryButton from '../../components/PrimaryButton';
 
 // Variants pour les animations
@@ -41,9 +42,9 @@ interface EventPageProps {
 
 export default function EventPage({ evenement }: EventPageProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const [loadedImages, setLoadedImages] = useState<string[]>([]);
+  const [loadedMedia, setLoadedMedia] = useState<EventMediaItem[]>([]);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
   // Utiliser une ref pour suivre si le chargement initial a été fait
@@ -53,12 +54,39 @@ export default function EventPage({ evenement }: EventPageProps) {
   const [isCarouselOpen, setIsCarouselOpen] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
 
+  // Calculer le prix total en fonction des sélections et des remises
+  const calculateTotalPrice = () => {
+    if (evenement.type === 'selection' && evenement.prixParPhoto) {
+      const selectedCount = selectedItems.size;
+      let remisePercent = 0;
+      
+      // Vérifier si des remises par quantité existent
+      if (evenement.tarifDegressif && evenement.tarifDegressif.length > 0) {
+        // Trier les tarifs dégressifs par quantité décroissante
+        const sortedTarifs = [...evenement.tarifDegressif].sort((a, b) => b.quantite - a.quantite);
+        
+        // Trouver la remise applicable
+        for (const tarif of sortedTarifs) {
+          if (selectedCount >= tarif.quantite) {
+            remisePercent = tarif.pourcentageRemise;
+            break;
+          }
+        }
+      }
+      
+      const basePrice = selectedCount * evenement.prixParPhoto;
+      const discount = basePrice * (remisePercent / 100);
+      return basePrice - discount;
+    }
+    return 0;
+  };
+
   useEffect(() => {
     // Réinitialiser l'état lors du changement d'événement
     setIsLoading(true);
-    setLoadedImages([]);
+    setLoadedMedia([]);
     setLoadingProgress(0);
-    setSelectedImages(new Set());
+    setSelectedItems(new Set());
     setErrorMessage(null);
     // Réinitialiser le flag de chargement initial
     initialLoadDone.current = false;
@@ -68,9 +96,9 @@ export default function EventPage({ evenement }: EventPageProps) {
       setShouldStartAnimations(true);
     }, 100);
 
-    // Vérifier si l'événement a des images
+    // Vérifier si l'événement a des médias
     if (!evenement.images || evenement.images.length === 0) {
-      setErrorMessage("Aucune image n'a été trouvée pour cet événement.");
+      setErrorMessage("Aucun média n'a été trouvé pour cet événement.");
       setIsLoading(false);
       return;
     }
@@ -81,103 +109,172 @@ export default function EventPage({ evenement }: EventPageProps) {
       return;
     }
 
-    // Précharger les images pour suivre la progression
-    const totalImages = evenement.images.length;
+    // Précharger les médias pour suivre la progression
+    const totalMedia = evenement.images?.length || 0;
     let loadedCount = 0;
 
     // Fonction pour précharger une image
-    const preloadImage = (src: string) => {
-      return new Promise<string>((resolve, reject) => {
+    const preloadImage = (mediaItem: EventMediaItem) => {
+      return new Promise<EventMediaItem>((resolve, reject) => {
         const img = new window.Image();
-        // Construire le chemin complet de l'image
-        const fullPath = evenement.dossierImages + src;
-        img.src = fullPath;
+        img.src = mediaItem.path;
         img.onload = () => {
           loadedCount++;
-          setLoadingProgress(Math.round((loadedCount / totalImages) * 100));
-          resolve(fullPath);
+          setLoadingProgress(Math.round((loadedCount / totalMedia) * 100));
+          resolve(mediaItem);
         };
-        img.onerror = () => reject(src);
+        img.onerror = () => reject(mediaItem);
       });
     };
 
-    // Précharger toutes les images avec un délai pour ne pas surcharger le navigateur
-    const preloadAllImages = async () => {
-      // S'assurer que le tableau d'images est vide avant de commencer
-      setLoadedImages([]);
+    // Précharger tous les médias
+    const preloadAllMedia = async () => {
+      // S'assurer que le tableau de médias est vide avant de commencer
+      setLoadedMedia([]);
       
-      const validImages: string[] = [];
+      const validMedia: EventMediaItem[] = [];
       
-      for (const image of evenement.images) {
-        try {
-          const loadedSrc = await preloadImage(image.source || '');
-          validImages.push(loadedSrc);
-          // Au lieu d'ajouter à l'état précédent, nous remplaçons complètement l'état à chaque fois
-          // pour éviter les doublons lors des re-renders
-        } catch (error) {
-          console.error(`Impossible de charger l'image: ${image.source}`);
+      if (evenement.images && evenement.images.length > 0) {
+        for (const media of evenement.images) {
+          try {
+            if (media.path) {
+              if (media.isVideo) {
+                // Pour les vidéos, nous ne préchargeons pas, nous les ajoutons directement
+                validMedia.push(media);
+                loadedCount++;
+                setLoadingProgress(Math.round((loadedCount / totalMedia) * 100));
+              } else {
+                // Pour les images, nous les préchargeons
+                const loadedMedia = await preloadImage(media);
+                validMedia.push(loadedMedia);
+              }
+            }
+          } catch (error) {
+            console.error(`Impossible de charger le média: ${media.path}`);
+          }
         }
       }
 
-      if (validImages.length === 0) {
-        setErrorMessage("Aucune image n'a pu être chargée pour cet événement.");
+      if (validMedia.length === 0) {
+        setErrorMessage("Aucun média n'a pu être chargé pour cet événement.");
       }
       
-      // Mettre à jour les images en une seule fois avec un tableau complet
-      setLoadedImages(validImages);
+      // Mettre à jour les médias en une seule fois avec un tableau complet
+      setLoadedMedia(validMedia);
       setIsLoading(false);
-      // Assurons-nous que les animations sont activées une fois les images chargées
+      // Assurons-nous que les animations sont activées une fois les médias chargés
       setShouldStartAnimations(true);
       // Marquer le chargement initial comme terminé
       initialLoadDone.current = true;
     };
 
-    preloadAllImages();
+    preloadAllMedia();
   }, [evenement]);
 
-  const toggleImageSelection = (imageSrc: string) => {
-    const newSelection = new Set(selectedImages);
-    // Vérifier si l'image est déjà sélectionnée en utilisant le chemin complet
-    if (newSelection.has(imageSrc)) {
-      newSelection.delete(imageSrc);
-    } else {
-      newSelection.add(imageSrc);
+  // Gestion de la sélection d'items
+  const handleSelectionChange = (newSelection: Set<string>) => {
+    setSelectedItems(newSelection);
+  };
+
+  // Gérer le paiement des photos sélectionnées
+  const handlePaySelectedPhotos = () => {
+    // Vérifier si des photos sont sélectionnées
+    if (selectedItems.size === 0) {
+      alert('Veuillez sélectionner au moins une photo.');
+      return;
     }
-    setSelectedImages(newSelection);
-  };
-  
-  // Ouvrir le carrousel avec l'index de l'image cliquée
-  const openCarousel = (index: number) => {
-    setCarouselIndex(index);
-    setIsCarouselOpen(true);
-    // Empêcher le défilement de la page quand le carrousel est ouvert
-    document.body.style.overflow = 'hidden';
-  };
-  
-  // Fermer le carrousel
-  const closeCarousel = () => {
-    setIsCarouselOpen(false);
-    // Rétablir le défilement de la page
-    document.body.style.overflow = '';
-  };
-  
-  // Navigation dans le carrousel
-  const goToNextImage = () => {
-    setCarouselIndex((prev) => (prev + 1) % loadedImages.length);
-  };
-  
-  const goToPrevImage = () => {
-    setCarouselIndex((prev) => (prev - 1 + loadedImages.length) % loadedImages.length);
+    alert(`Redirection vers la page de paiement pour ${selectedItems.size} photos (Total: ${calculateTotalPrice().toFixed(2)}€)...`);
   };
 
-  // Conversion des images chargées au format attendu par le carrousel
-  const carouselMedia = loadedImages.map(src => ({
-    src: src,
-    isVideo: false
-  }));
+  // Gérer le téléchargement de toutes les photos
+  const handleDownloadAllPhotos = () => {
+    alert('Téléchargement de toutes les photos...');
+  };
 
-  // Conversion des images sélectionnées pour utiliser uniquement les src
-  const selectedItemsSrc = new Set<string>(Array.from(selectedImages));
+  // Gérer le paiement pour télécharger toutes les photos
+  const handlePayForAllPhotos = () => {
+    alert(`Redirection vers la page de paiement pour toutes les photos (${evenement.prixParPhoto}€)...`);
+  };
+
+  // Fonction pour rendre le bouton approprié selon le type d'événement
+  const renderActionButton = () => {
+    switch (evenement.type) {
+      case 'selection':
+        return selectedItems.size > 0 ? (
+          <PrimaryButton 
+            text={`Payer mes medias (${calculateTotalPrice().toFixed(2)}€)`}
+            onClick={handlePaySelectedPhotos}
+            animateOnMount={true}
+            delay={0.5}
+          />
+        ) : null;
+      case 'paye':
+        return (
+          <PrimaryButton 
+            text="Télécharger toutes mes medias"
+            onClick={handleDownloadAllPhotos}
+            animateOnMount={true}
+            delay={0.5}
+          />
+        );
+      case 'non_paye':
+        return (
+          <PrimaryButton 
+            text={`Payer toutes les medias (${evenement.prixParPhoto}€)`}
+            onClick={handlePayForAllPhotos}
+            animateOnMount={true}
+            delay={0.5}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Fonction pour afficher les infos sur les remises (pour le mode sélection)
+  const renderDiscountInfo = () => {
+    if (evenement.type !== 'selection' || !evenement.tarifDegressif || evenement.tarifDegressif.length === 0) {
+      return null;
+    }
+
+    // Trier les tarifs par quantité croissante
+    const sortedTarifs = [...evenement.tarifDegressif].sort((a, b) => a.quantite - b.quantite);
+    
+    return (
+      <motion.div 
+        className="discount-info"
+        initial={{ opacity: 0, y: 20 }}
+        animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+        transition={{ duration: 0.6, delay: 0.35 }}
+      >
+        <div className="info-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
+          </svg>
+        </div>
+        <div className="info-text">
+          <strong>Remises disponibles :</strong>
+          <ul className="discount-list">
+            {sortedTarifs.map((tarif, index) => (
+              <li key={index}>{tarif.quantite}+ photos : {tarif.pourcentageRemise}% de remise</li>
+            ))}
+          </ul>
+        </div>
+      </motion.div>
+    );
+  };
+
+  // Convertir les médias EventMediaItem en format Project pour PortfolioGrid
+  const convertMediaToProjects = () => {
+    return loadedMedia.map(media => ({
+      title: media.title || '',
+      category: media.category || 'Photo',
+      source: media.path,
+      isVideo: media.isVideo,
+      format: media.format,
+      thumbnail: media.thumbnail
+    }));
+  };
 
   return (
     <div className="container">
@@ -197,8 +294,23 @@ export default function EventPage({ evenement }: EventPageProps) {
             <Link href="/evenements">Événements</Link> / {evenement.titre}
           </motion.h2>
         </motion.div>
+
+        {/* Description de l'événement si elle existe */}
+        {evenement.description && (
+          <motion.div 
+            className="w-full flex justify-center text-gray-300"
+            initial={{ opacity: 0, y: 20 }}
+            animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+            transition={{ duration: 0.6, delay: 0.25 }}
+          >
+            <p>{evenement.description}</p>
+          </motion.div>
+        )}
       </div>
 
+      
+
+      {/* Informations selon le type d'événement */}
       {evenement.type === 'selection' && (
         <motion.div 
           className="photo-selection-info"
@@ -219,23 +331,29 @@ export default function EventPage({ evenement }: EventPageProps) {
         </motion.div>
       )}
 
+      {/* Informations sur les remises (mode sélection uniquement) */}
+      {renderDiscountInfo()}
+
+      {/* Compteur de sélection et bouton d'action */}
       <motion.div 
-        className="selection-counter"
+        className="pb-5"
         initial={{ opacity: 0, y: 20 }}
         animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
         transition={{ duration: 0.6, delay: 0.4 }}
       >
-        {selectedImages.size > 0 && (
+        {evenement.type === 'selection' && selectedItems.size > 0 && (
           <div className="counter-text">
-            {selectedImages.size} photos sélectionnées
+            {selectedItems.size} photos sélectionnées
+            {evenement.tarifDegressif && evenement.tarifDegressif.length > 0 && (
+              <span className="price-text">
+                Total: {calculateTotalPrice().toFixed(2)}€
+              </span>
+            )}
           </div>
         )}
-        <PrimaryButton 
-          text="Payer mes photos"
-          onClick={() => alert('Redirection vers la page de paiement...')}
-          animateOnMount={true}
-          delay={0.5}
-        />
+        <div className='w-full flex justify-center'>
+          {renderActionButton()}
+        </div>
       </motion.div>
 
       {isLoading ? (
@@ -254,7 +372,7 @@ export default function EventPage({ evenement }: EventPageProps) {
               ></div>
             </div>
             <div className="progress-text">
-              Chargement des images: {loadingProgress}% ({loadedImages.length}/{evenement.images.length})
+              Chargement des médias: {loadingProgress}% ({loadedMedia.length}/{evenement.images.length})
             </div>
           </div>
         </motion.div>
@@ -273,64 +391,21 @@ export default function EventPage({ evenement }: EventPageProps) {
           <p>{errorMessage}</p>
         </motion.div>
       ) : (
-        <motion.div 
-          className="photos-grid"
-          initial={{ opacity: 1 }}
-          animate={shouldStartAnimations ? "visible" : { opacity: 1 }}
-          variants={staggerContainer}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6 }}
         >
-          {loadedImages.map((imageSrc, index) => (
-            <motion.div 
-              key={index} 
-              className={`photo-item ${selectedImages.has(imageSrc) ? 'selected' : ''}`}
-              onClick={() => openCarousel(index)}
-              variants={fadeInUp}
-              initial={{ opacity: 1, y: 0 }}
-              animate={shouldStartAnimations ? undefined : { opacity: 1, y: 0 }}
-              custom={index}
-            >
-              <Image 
-                src={imageSrc} 
-                alt={`Photo ${index + 1} - ${evenement.titre}`} 
-                className="photo-image"
-                width={400}
-                height={400}
-              />
-              <div className="photo-overlay"></div>
-              <div 
-                className="selection-checkbox"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleImageSelection(imageSrc);
-                }}
-              >
-                {selectedImages.has(imageSrc) && (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </div>
-            </motion.div>
-          ))}
+          <PortfolioGrid 
+            projects={convertMediaToProjects()}
+            showFilter={false}
+            selectionEnabled={evenement.type === 'selection'}
+            selectedItems={selectedItems}
+            onSelectionChange={handleSelectionChange}
+            selectionLabel="Sélectionner cette photo"
+          />
         </motion.div>
       )}
-      
-      {/* Carrousel Modal */}
-      <AnimatePresence>
-        {isCarouselOpen && (
-          <ImageCarousel 
-            media={carouselMedia}
-            currentIndex={carouselIndex}
-            onClose={closeCarousel}
-            onNext={goToNextImage}
-            onPrev={goToPrevImage}
-            selectionEnabled={true}
-            selectedItems={selectedItemsSrc}
-            toggleItemSelection={toggleImageSelection}
-            showCounter={true}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 } 

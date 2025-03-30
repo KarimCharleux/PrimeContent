@@ -22,9 +22,21 @@ export interface Project {
 interface PortfolioGridProps {
     projects: Project[];
     showFilter?: boolean;
+    // Options pour la sélection
+    selectionEnabled?: boolean;
+    onSelectionChange?: (selectedItems: Set<string>) => void;
+    selectedItems?: Set<string>;
+    selectionLabel?: string;
 }
 
-const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = true }) => {
+const PortfolioGrid: React.FC<PortfolioGridProps> = ({ 
+    projects, 
+    showFilter = true, 
+    selectionEnabled = false,
+    onSelectionChange,
+    selectedItems: externalSelectedItems,
+    selectionLabel = "Sélectionner"
+}) => {
     // État pour le filtre actif
     const [activeFilter, setActiveFilter] = useState('Tout');
     // État pour les projets filtrés
@@ -34,6 +46,11 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
     // État pour le carrousel d'images
     const [showCarousel, setShowCarousel] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    // État pour les éléments sélectionnés (gestion interne si pas fourni en props)
+    const [internalSelectedItems, setInternalSelectedItems] = useState<Set<string>>(new Set());
+
+    // Utiliser soit les selectedItems externes soit les internes
+    const selectedItems = externalSelectedItems || internalSelectedItems;
 
     // Références pour les animations
     const projectsContainerRef = useRef<HTMLDivElement>(null);
@@ -77,6 +94,29 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
         setCurrentImageIndex((prevIndex) =>
             prevIndex === 0 ? filteredProjects.length - 1 : prevIndex - 1,
         );
+    };
+
+    // Fonction pour gérer la sélection d'un projet
+    const toggleSelection = (source: string, e?: React.MouseEvent) => {
+        if (e) {
+            e.stopPropagation(); // Empêcher l'ouverture du carrousel lors de la sélection
+        }
+        if (!selectionEnabled) return;
+
+        const newSelection = new Set(selectedItems);
+        if (newSelection.has(source)) {
+            newSelection.delete(source);
+        } else {
+            newSelection.add(source);
+        }
+
+        // Si un callback externe a été fourni, l'utiliser
+        if (onSelectionChange) {
+            onSelectionChange(newSelection);
+        } else {
+            // Sinon, utiliser l'état interne
+            setInternalSelectedItems(newSelection);
+        }
     };
 
     // Effet pour filtrer les projets quand le filtre change
@@ -212,6 +252,13 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
                     </div>
                 )}
 
+                {/* Compteur de sélection (si la sélection est activée) */}
+                {selectionEnabled && selectedItems.size > 0 && (
+                    <div className={styles.selectionCounter}>
+                        {selectedItems.size} éléments sélectionnés
+                    </div>
+                )}
+
                 {/* Grille de projets */}
                 <div ref={projectsContainerRef} className={styles.portfolioGrid}>
                     {filteredProjects.length > 0 ? (
@@ -219,7 +266,9 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
                             <div
                                 key={`${project.title || project.category}-${index}`}
                                 ref={(el) => addProjectRef(el, index)}
-                                className={`${styles.portfolioItem} ${getItemSizeClass(project)} group`}
+                                className={`${styles.portfolioItem} ${getItemSizeClass(project)} ${
+                                    selectedItems.has(project.source) ? styles.selected : ''
+                                } group`}
                                 onClick={() => {
                                     if (!project.isVideo || activeVideoIndex !== index) {
                                         // Trouver l'index correct dans le tableau filtré
@@ -314,6 +363,31 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
                                         <h3 className={styles.itemTitle}>{project.title}</h3>
                                     </div>
                                 )}
+
+                                {/* Checkbox de sélection (si la sélection est activée) */}
+                                {selectionEnabled && (
+                                    <div 
+                                        className={styles.selectionCheckbox}
+                                        onClick={(e) => toggleSelection(project.source, e)}
+                                    >
+                                        {selectedItems.has(project.source) && (
+                                            <svg 
+                                                xmlns="http://www.w3.org/2000/svg" 
+                                                className="h-4 w-4 text-white" 
+                                                fill="none" 
+                                                viewBox="0 0 24 24" 
+                                                stroke="currentColor"
+                                            >
+                                                <path 
+                                                    strokeLinecap="round" 
+                                                    strokeLinejoin="round" 
+                                                    strokeWidth={3} 
+                                                    d="M5 13l4 4L19 7" 
+                                                />
+                                            </svg>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         ))
                     ) : (
@@ -332,6 +406,9 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ projects, showFilter = tr
                     onClose={closeCarousel}
                     onNext={nextImage}
                     onPrev={prevImage}
+                    selectionEnabled={selectionEnabled}
+                    selectedItems={selectedItems}
+                    toggleItemSelection={toggleSelection}
                 />
             )}
         </>

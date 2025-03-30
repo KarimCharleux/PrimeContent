@@ -1,53 +1,39 @@
+import { collection, getDocs } from 'firebase/firestore';
 import { Suspense } from 'react';
 
-import { Evenement } from '@/app/backoffice/models/eventTypes';
+import { db } from '@/app/backoffice/lib/firebase-client';
 
 import Footer from '../../components/Footer';
 import Header from '../../components/Header';
 
-import EventPage from './EventPage';
+import EventDetailClient from './EventDetailClient';
 
 // Importation des styles
 import '../evenements.scss';
+import './eventDetail.scss';
 
 // Fonction pour générer les paramètres statiques
 export async function generateStaticParams() {
-  //return evenementsData.map((evenement) => ({
-  //  id: evenement.id,
-  //}));
-  return [];
+  try {
+    // Récupérer tous les IDs d'événements visibles pour la génération statique
+    const eventsSnapshot = await getDocs(collection(db, 'evenements'));
+    return eventsSnapshot.docs.map(doc => ({ 
+      id: doc.id 
+    }));
+  } catch (error) {
+    console.error("Erreur lors de la récupération des événements pour generateStaticParams:", error);
+    return [];
+  }
 }
 
 // Types pour les props de la page
 type Props = {
-  params: {
+  readonly params: {
     id: string;
   };
 };
 
-// Fonction pour obtenir l'événement
-function getEvenement(id: string): Evenement | undefined {
-  //return evenementsData.find(e => e.id === id);
-  return undefined;
-}
-
 export default function EvenementDetailPage({ params }: Props) {
-  const evenement = getEvenement(params.id);
-
-  if (!evenement) {
-    return (
-      <main className="evenements-page">
-        <section className="px-4 py-12">
-          <div className="container">
-            <div className="loading-container">
-              <div>Événement non trouvé</div>
-            </div>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
   return (
     <main className="global-main-page">
       <Header />
@@ -55,10 +41,11 @@ export default function EvenementDetailPage({ params }: Props) {
         <div className="container">
           <div className="photos-loader">
             <div className="loader-spinner"></div>
+            <div className="loading-text">Chargement de l&apos;événement...</div>
           </div>
         </div>
       }>
-        <EventPage evenement={evenement} key={`event-${evenement.id}`} />
+        <EventDetailClient eventId={params.id} />
       </Suspense>
       <Footer hideCTA={true} />
     </main>

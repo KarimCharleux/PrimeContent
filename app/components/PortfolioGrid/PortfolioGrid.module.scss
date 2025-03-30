@@ -271,6 +271,64 @@
   }
 }
 
+// Styles pour la sélection
+.selectionCheckbox {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 20;
+  width: 1.75rem;
+  height: 1.75rem;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.1);
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+}
+
+// État sélectionné
+.portfolioItem.selected {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8), 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+  
+  .selectionCheckbox {
+    background-color: #3182ce;
+    border-color: white;
+  }
+}
+
+// Compteur de sélection
+.selectionCounter {
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
+  
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    background-color: #3182ce;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+  }
+}
+
 // Message "Aucun projet"
 .noProjects {
   grid-column: 1 / -1;

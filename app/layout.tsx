@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import './globals.css';
 import './styles/fonts.css';
 import { useState, useEffect } from 'react';
+import TagManager from 'react-gtm-module';
 
 import SplashScreen from './components/SplashScreen';
 
@@ -18,6 +19,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             setIsLoading(false);
         }
     }, [isAdminPage]);
+
+    // Initialisation de Google Tag Manager
+    useEffect(() => {
+        TagManager.initialize({
+            gtmId: 'GTM-55WMPSG8'
+        });
+    }, []);
 
     return (
         <html lang="fr" suppressHydrationWarning={true} className="font-sora">
