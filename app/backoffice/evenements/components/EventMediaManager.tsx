@@ -6,14 +6,14 @@ import { useRouter } from 'next/navigation';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 import { db } from '@/app/backoffice/lib/firebase-client';
-import { MediaItem } from '@/app/backoffice/models/eventTypes';
+import { EventMediaItem, Evenement } from '@/app/backoffice/models/eventTypes';
 
 
 
 interface EventMediaManagerProps {
-    evenement: MediaItem;
-    onStatusChange?: (status: { type: 'success' | 'error'; message: string } | null) => void;
-    onStatsChange?: (stats: MediaStats) => void;
+    readonly evenement: Evenement;
+    readonly onStatusChange?: (status: { type: 'success' | 'error'; message: string } | null) => void;
+    readonly onStatsChange?: (stats: MediaStats) => void;
 }
 
 export interface MediaStats {
@@ -21,13 +21,9 @@ export interface MediaStats {
     totalSize: number;
     videoCount: number;
     imageCount: number;
-    selectedCount: number;
     averageLoadTime: number;
-}
-
-// Structure étendue pour une image ou vidéo d'événement avec la taille
-interface ExtendedEventImage extends MediaItem {
-    size?: number; // Taille en octets
+    imagesSize: number;
+    videosSize: number;
 }
 
 export default function EventMediaManager({ evenement, onStatusChange, onStatsChange }: EventMediaManagerProps) {
@@ -37,12 +33,10 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [images, setImages] = useState<ExtendedEventImage[]>(evenement.images || []);
-    const [selectedImages, setSelectedImages] = useState<string[]>([]);
-    const [filterSelected, setFilterSelected] = useState(false);
+    const [images, setImages] = useState<EventMediaItem[]>(evenement.images || []);
     
     // Nouveaux états pour l'édition de médias
-    const [editingMedia, setEditingMedia] = useState<ExtendedEventImage | null>(null);
+    const [editingMedia, setEditingMedia] = useState<EventMediaItem | null>(null);
     const [showEditForm, setShowEditForm] = useState(false);
     const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
     const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(null);
@@ -54,9 +48,32 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
         totalSize: 0,
         videoCount: 0,
         imageCount: 0,
-        selectedCount: 0,
         averageLoadTime: 0,
+        imagesSize: 0,
+        videosSize: 0,
     });
+
+    useEffect(() => {
+        // Assurer que les images ont des ordres uniques
+        if (images && images.length > 0) {
+            const hasOrderProperty = images.some(img => img.order !== undefined);
+            
+            if (!hasOrderProperty) {
+                // Initialiser les ordres si pas définis
+                const imagesWithOrder = images.map((img, index) => ({
+                    ...img,
+                    order: index
+                }));
+                setImages(imagesWithOrder);
+                
+                // Mettre à jour dans Firestore
+                const eventRef = doc(db, 'evenements', evenement.id!);
+                updateDoc(eventRef, {
+                    images: imagesWithOrder
+                });
+            }
+        }
+    }, [images, evenement.id]);
 
     useEffect(() => {
         setImages(evenement.images || []);
@@ -98,12 +115,213 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
             totalSize,
             videoCount: totalVideos,
             imageCount: totalImages,
-            selectedCount: selectedImages.length,
             averageLoadTime,
+            imagesSize,
+            videosSize
         };
 
         setStats(stats);
         onStatsChange?.(stats);
+    };
+
+    // Fonction pour gérer le changement d'ordre d'un média
+    const handleReorder = async (imageId: string, direction: 'up' | 'down') => {
+        try {
+            // Trier les images par ordre
+            const sortedImages = [...images].sort((a, b) => (a.order || 0) - (b.order || 0));
+            
+            // Trouver l'index actuel de l'image
+            const currentIndex = sortedImages.findIndex(img => img.id === imageId);
+            if (currentIndex === -1) return;
+            
+            // Déterminer le nouvel index en fonction de la direction
+            const newIndex = direction === 'up' 
+                ? Math.max(0, currentIndex - 1)
+                : Math.min(sortedImages.length - 1, currentIndex + 1);
+            
+            // Si l'index ne change pas (déjà en haut ou en bas), ne rien faire
+            if (newIndex === currentIndex) return;
+            
+            // Échanger les ordres entre les deux images
+            const targetImage = sortedImages[newIndex];
+            const currentImage = sortedImages[currentIndex];
+            
+            const currentOrder = currentImage.order || 0;
+            const targetOrder = targetImage.order || 0;
+            
+            // Mettre à jour les ordres
+            const updatedImages = sortedImages.map(img => {
+                if (img.id === imageId) {
+                    return { ...img, order: targetOrder };
+                } else if (img.id === targetImage.id) {
+                    return { ...img, order: currentOrder };
+                }
+                return img;
+            });
+            
+            // Mettre à jour l'état local
+            setImages(updatedImages);
+            
+            // Mettre à jour Firestore
+            const eventRef = doc(db, 'evenements', evenement.id!);
+            await updateDoc(eventRef, {
+                images: updatedImages
+            });
+            
+            onStatusChange?.({
+                type: 'success',
+                message: `Ordre modifié avec succès`
+            });
+            
+        } catch (error) {
+            console.error("Erreur lors de la réorganisation:", error);
+            onStatusChange?.({
+                type: 'error',
+                message: "Erreur lors de la réorganisation des médias"
+            });
+        }
+    };
+
+    // Fonction pour supprimer un média
+    const handleDeleteMedia = async (imageId: string) => {
+        if (window.confirm("Êtes-vous sûr de vouloir supprimer ce média ?")) {
+            try {
+                // Trouver l'image à supprimer
+                const imageToDelete = images.find(img => img.id === imageId);
+                if (!imageToDelete) return;
+                
+                // Supprimer le fichier du stockage
+                if (imageToDelete.path) {
+                    // Extraire le nom du fichier de l'URL
+                    const fileName = imageToDelete.path.split('/').pop();
+                    if (fileName) {
+                        const response = await fetch(`/api/delete?path=evenements/${evenement.id}&name=${encodeURIComponent(fileName)}`, {
+                            method: 'DELETE',
+                        });
+                        if (!response.ok) {
+                            console.warn(`Erreur lors de la suppression du fichier ${fileName}`);
+                        }
+                    }
+                }
+                
+                // Supprimer la miniature si elle existe
+                if (imageToDelete.thumbnail) {
+                    const thumbnailName = imageToDelete.thumbnail.split('/').pop();
+                    if (thumbnailName) {
+                        const response = await fetch(`/api/delete?path=evenements/${evenement.id}/thumbnails&name=${encodeURIComponent(thumbnailName)}`, {
+                            method: 'DELETE',
+                        });
+                        if (!response.ok) {
+                            console.warn(`Erreur lors de la suppression de la miniature ${thumbnailName}`);
+                        }
+                    }
+                }
+                
+                // Filtrer pour enlever l'image à supprimer
+                const updatedImages = images.filter(img => img.id !== imageId);
+                
+                // Mettre à jour Firestore
+                const eventRef = doc(db, 'evenements', evenement.id!);
+                await updateDoc(eventRef, {
+                    images: updatedImages
+                });
+                
+                // Mettre à jour l'état local
+                setImages(updatedImages);
+                
+                onStatusChange?.({
+                    type: 'success',
+                    message: `Média supprimé avec succès`
+                });
+                
+                // Rafraîchir la page
+                router.refresh();
+                
+            } catch (error) {
+                console.error("Erreur lors de la suppression du média:", error);
+                onStatusChange?.({
+                    type: 'error',
+                    message: "Erreur lors de la suppression du média"
+                });
+            }
+        }
+    };
+
+    // Fonction pour supprimer tous les médias
+    const handleDeleteAllMedia = async () => {
+        if (images.length === 0) {
+            onStatusChange?.({
+                type: 'error',
+                message: "Aucun média à supprimer"
+            });
+            return;
+        }
+        
+        if (window.confirm(`ATTENTION: Vous êtes sur le point de supprimer tous les médias (${images.length}) de cet événement. Cette action est irréversible. Continuer?`)) {
+            try {
+                setUploading(true); // Utiliser l'état uploading pour montrer que le traitement est en cours
+                
+                // Supprimer les fichiers du stockage Firebase via l'API
+                for (const image of images) {
+                    try {
+                        // Supprimer l'image principale
+                        if (image.path) {
+                            // Extraire le nom du fichier de l'URL
+                            const fileName = image.path.split('/').pop();
+                            if (fileName) {
+                                const response = await fetch(`/api/delete?path=evenements/${evenement.id}&name=${encodeURIComponent(fileName)}`, {
+                                    method: 'DELETE',
+                                });
+                                if (!response.ok) {
+                                    console.warn(`Erreur lors de la suppression du fichier ${fileName}`);
+                                }
+                            }
+                        }
+                        
+                        // Supprimer la miniature si elle existe
+                        if (image.thumbnail) {
+                            const thumbnailName = image.thumbnail.split('/').pop();
+                            if (thumbnailName) {
+                                const response = await fetch(`/api/delete?path=evenements/${evenement.id}/thumbnails&name=${encodeURIComponent(thumbnailName)}`, {
+                                    method: 'DELETE',
+                                });
+                                if (!response.ok) {
+                                    console.warn(`Erreur lors de la suppression de la miniature ${thumbnailName}`);
+                                }
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Erreur lors de la suppression d'un fichier:", err);
+                    }
+                }
+                
+                // Mettre à jour Firestore en supprimant tous les médias
+                const eventRef = doc(db, 'evenements', evenement.id!);
+                await updateDoc(eventRef, {
+                    images: []
+                });
+                
+                // Mettre à jour l'état local
+                setImages([]);
+                
+                onStatusChange?.({
+                    type: 'success',
+                    message: `Tous les médias (${images.length}) ont été supprimés avec succès`
+                });
+                
+                // Rafraîchir la page
+                router.refresh();
+                
+            } catch (error) {
+                console.error("Erreur lors de la suppression de tous les médias:", error);
+                onStatusChange?.({
+                    type: 'error',
+                    message: "Erreur lors de la suppression des médias"
+                });
+            } finally {
+                setUploading(false);
+            }
+        }
     };
 
     // Fonction pour formater la taille en ko, Mo ou Go
@@ -190,7 +408,7 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
             const uploadResult = await response.json();
             
             // Traiter les fichiers un par un pour déterminer leur type et format
-            const newMedias: ExtendedEventImage[] = [];
+            const newMedias: EventMediaItem[] = [];
             
             for (let i = 0; i < selectedFiles.length; i++) {
                 const file = selectedFiles[i];
@@ -274,95 +492,6 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
         }
     };
 
-    const handleToggleImageSelection = (imageId: string) => {
-        if (selectedImages.includes(imageId)) {
-            setSelectedImages(selectedImages.filter(id => id !== imageId));
-        } else {
-            setSelectedImages([...selectedImages, imageId]);
-        }
-    };
-
-    const handleSelectAll = () => {
-        if (selectedImages.length === images.length) {
-            // Si toutes sont déjà sélectionnées, désélectionner tout
-            setSelectedImages([]);
-        } else {
-            // Sinon, sélectionner toutes les images
-            setSelectedImages(images.map(img => img.id));
-        }
-    };
-
-    const handleDeleteSelected = async () => {
-        if (selectedImages.length === 0) return;
-        
-        if (window.confirm(`Êtes-vous sûr de vouloir supprimer ${selectedImages.length} image(s) ?`)) {
-            try {
-                // Filtrer les images pour ne garder que celles qui ne sont pas sélectionnées
-                const updatedImages = images.filter(img => !selectedImages.includes(img.id));
-                
-                // Mettre à jour Firestore
-                const eventRef = doc(db, 'evenements', evenement.id!);
-                await updateDoc(eventRef, {
-                    images: updatedImages
-                });
-                
-                setImages(updatedImages);
-                setSelectedImages([]);
-                
-                onStatusChange?.({
-                    type: 'success',
-                    message: `${selectedImages.length} image(s) supprimée(s) avec succès`
-                });
-                
-                // Rafraîchir la page
-                router.refresh();
-                
-            } catch (error) {
-                console.error("Erreur lors de la suppression des images:", error);
-                onStatusChange?.({
-                    type: 'error',
-                    message: "Erreur lors de la suppression des images"
-                });
-            }
-        }
-    };
-
-    const handleToggleSelection = async (imageId: string) => {
-        try {
-            const updatedImages = images.map(img => {
-                if (img.id === imageId) {
-                    return { ...img, selected: !img.selected };
-                }
-                return img;
-            });
-            
-            // Mettre à jour Firestore
-            const eventRef = doc(db, 'evenements', evenement.id!);
-            await updateDoc(eventRef, {
-                images: updatedImages
-            });
-            
-            setImages(updatedImages);
-            
-            onStatusChange?.({
-                type: 'success',
-                message: `Image ${updatedImages.find(img => img.id === imageId)?.selected ? 'sélectionnée' : 'désélectionnée'}`
-            });
-            
-        } catch (error) {
-            console.error("Erreur lors de la mise à jour de la sélection:", error);
-            onStatusChange?.({
-                type: 'error',
-                message: "Erreur lors de la mise à jour de la sélection"
-            });
-        }
-    };
-
-    // Filtrer les images si nécessaire
-    const filteredImages = filterSelected 
-        ? images.filter(img => img.selected) 
-        : images;
-
     // Détecter automatiquement le format (portrait/paysage) d'une image ou vidéo
     const detectFormat = async (file: File): Promise<'portrait' | 'paysage'> => {
         return new Promise((resolve) => {
@@ -436,7 +565,7 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
     };
 
     // Fonction pour éditer un média
-    const handleEdit = (media: ExtendedEventImage) => {
+    const handleEdit = (media: EventMediaItem) => {
         setEditingMedia(media);
         setShowEditForm(true);
         setPreviewThumbnail(media.thumbnail || null);
@@ -671,13 +800,29 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
                                         {/* Miniature */}
                                         <div className={`relative bg-gray-100 rounded-lg overflow-hidden ${getItemSizeClass(editingMedia.format)}`}>
                                             {previewThumbnail || editingMedia.thumbnail ? (
-                                                <div className="relative h-full">
+                                                <div className="relative h-full group">
                                                     <Image
                                                         src={previewThumbnail || editingMedia.thumbnail!}
                                                         alt="Miniature"
                                                         fill
                                                         className="object-cover"
                                                     />
+                                                    
+                                                    {/* Catégorie (badge en haut à gauche) */}
+                                                    {editingMedia.category && (
+                                                        <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                                                            {editingMedia.category}
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {/* Titre avec effet de fondu */}
+                                                    {editingMedia.title && (
+                                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                            <h3 className="text-white text-lg font-medium">
+                                                                {editingMedia.title}
+                                                            </h3>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center justify-center h-full">
@@ -698,9 +843,20 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
                                                 fill
                                                 className="object-cover transition-transform duration-500 group-hover:scale-105"
                                             />
+                                            
+                                            {/* Catégorie (badge en haut à gauche) */}
                                             {editingMedia.category && (
                                                 <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
                                                     {editingMedia.category}
+                                                </div>
+                                            )}
+                                            
+                                            {/* Titre avec effet de fondu */}
+                                            {editingMedia.title && (
+                                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                    <h3 className="text-white text-lg font-medium">
+                                                        {editingMedia.title}
+                                                    </h3>
                                                 </div>
                                             )}
                                         </div>
@@ -830,36 +986,23 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
             <div>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-medium">
-                        Gestion des médias ({filteredImages.length})
+                        Gestion des médias ({images.length})
                     </h3>
-                    
-                    <div className="flex items-center space-x-4">
-                        {/* Toggle pour filtrer les images sélectionnées */}
-                        <div className="flex items-center">
-                            <input
-                                type="checkbox"
-                                id="filter-selected"
-                                checked={filterSelected}
-                                onChange={() => setFilterSelected(!filterSelected)}
-                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                            />
-                            <label htmlFor="filter-selected" className="ml-2 text-sm text-gray-600">
-                                Afficher uniquement les sélectionnées
-                            </label>
-                        </div>
-                        
-                        {/* Bouton de suppression */}
-                        {selectedImages.length > 0 && (
-                            <button
-                                onClick={handleDeleteSelected}
-                                className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                Supprimer ({selectedImages.length})
-                            </button>
-                        )}
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={handleDeleteAllMedia}
+                            disabled={images.length === 0}
+                            className={`px-3 py-1.5 rounded-md text-white flex items-center space-x-1 ${
+                                images.length === 0 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-red-600 hover:bg-red-700 transition-colors'
+                            }`}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            <span>Supprimer tous les médias ({images.length})</span>
+                        </button>
                     </div>
                 </div>
                 
@@ -868,12 +1011,7 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
                         <thead className="bg-gray-50">
                             <tr>
                                 <th scope="col" className="w-12 px-3 py-3">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedImages.length > 0 && selectedImages.length === images.length}
-                                        onChange={handleSelectAll}
-                                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                    />
+                                    Ordre
                                 </th>
                                 <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Aperçu
@@ -888,6 +1026,9 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
                                     Format
                                 </th>
                                 <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Poids
+                                </th>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Catégorie
                                 </th>
                                 <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -896,16 +1037,31 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredImages.length > 0 ? (
-                                filteredImages.map((image) => (
-                                    <tr key={image.id} className={selectedImages.includes(image.id) ? 'bg-indigo-50' : ''}>
+                            {images.length > 0 ? (
+                                images.sort((a, b) => (a.order || 0) - (b.order || 0)).map((image) => (
+                                    <tr key={image.id}>
                                         <td className="px-3 py-4 whitespace-nowrap">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedImages.includes(image.id)}
-                                                onChange={() => handleToggleImageSelection(image.id)}
-                                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                            />
+                                            <div className="flex flex-col items-center">
+                                                <button
+                                                    onClick={() => handleReorder(image.id, 'up')}
+                                                    disabled={image.order === 0}
+                                                    className={`text-gray-500 hover:text-gray-700 mb-1 ${image.order === 0 ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                                    </svg>
+                                                </button>
+                                                <span className="text-sm font-medium">{image.order}</span>
+                                                <button
+                                                    onClick={() => handleReorder(image.id, 'down')}
+                                                    disabled={image.order === images.length - 1}
+                                                    className={`text-gray-500 hover:text-gray-700 mt-1 ${image.order === images.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </td>
                                         <td className="px-3 py-4 whitespace-nowrap">
                                             <div className="w-20 h-12 relative rounded overflow-hidden">
@@ -948,6 +1104,9 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
                                             </span>
                                         </td>
                                         <td className="px-3 py-4 whitespace-nowrap">
+                                            {formatSize(image.size || 0)}
+                                        </td>
+                                        <td className="px-3 py-4 whitespace-nowrap">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${image.category ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800'}`}>
                                                 {image.category || 'Non catégorisé'}
                                             </span>
@@ -966,8 +1125,7 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setSelectedImages([image.id]);
-                                                        handleDeleteSelected();
+                                                        handleDeleteMedia(image.id);
                                                     }}
                                                     className="text-red-600 hover:text-red-900"
                                                 >
@@ -988,18 +1146,8 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
                                                 Aucun média trouvé
                                             </p>
                                             <p className="text-gray-400 text-sm mt-1">
-                                                {filterSelected 
-                                                    ? "Aucun média n'est sélectionné pour cet événement" 
-                                                    : "Importez des médias en utilisant la section ci-dessus"}
+                                                Importez des médias en utilisant la section ci-dessus
                                             </p>
-                                            {filterSelected && (
-                                                <button 
-                                                    onClick={() => setFilterSelected(false)}
-                                                    className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
-                                                >
-                                                    Afficher tous les médias
-                                                </button>
-                                            )}
                                         </div>
                                     </td>
                                 </tr>

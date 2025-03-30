@@ -16,7 +16,7 @@ export interface ProtectionMotDePasse {
 }
 
 // Structure pour une image ou vidéo d'événement
-export interface EventImage {
+export interface EventMediaItem {
   id: string;
   path: string;
   selected?: boolean;
@@ -27,6 +27,7 @@ export interface EventImage {
   format?: 'portrait' | 'paysage'; // Format du média
   order?: number; // Ordre d'affichage
   thumbnail?: string; // Miniature optionnelle pour les vidéos
+  size?: number; // Taille en octets
 }
 
 // Interface principale pour un événement
@@ -45,7 +46,7 @@ export interface Evenement {
   tarifDegressif?: TarifDegressif[];
   protectionMotDePasse?: ProtectionMotDePasse;
   visible: boolean;
-  images: EventImage[];
+  images: EventMediaItem[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }

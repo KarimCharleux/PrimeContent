@@ -10,7 +10,7 @@ import { useAuth } from '@/app/backoffice/hooks/useAuth';
 import { db } from '@/app/backoffice/lib/firebase-client';
 import { Evenement } from '@/app/backoffice/models/eventTypes';
 
-import EventMediaManager from '../components/EventMediaManager';
+import EventMediaManager, { MediaStats } from '../components/EventMediaManager';
 
 interface EventDetailClientProps {
   readonly eventId: string;
@@ -109,16 +109,16 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps): 
     }
   };
 
-  const handleMediaStatsChange = (stats: {
-    totalMedias: number;
-    totalImages: number;
-    totalVideos: number;
-    totalSize: number;
-    imagesSize: number;
-    videosSize: number;
-    averageLoadTime: number;
-  }) => {
-    setMediaStats(stats);
+  const handleMediaStatsChange = (stats: MediaStats) => {
+    setMediaStats({
+      totalMedias: stats.totalCount,
+      totalImages: stats.imageCount,
+      totalVideos: stats.videoCount,
+      totalSize: stats.totalSize,
+      imagesSize: stats.imagesSize,
+      videosSize: stats.videosSize,
+      averageLoadTime: stats.averageLoadTime
+    });
   };
 
   if (authLoading || loading) {
@@ -280,38 +280,22 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps): 
           <div>
             <h3 className="text-md font-medium mb-2">Statistiques</h3>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="mb-3">
-                <p className="text-sm text-gray-500">Images</p>
-                <p className="font-medium">{evenement.images.length} image(s)</p>
-              </div>
-              <div className="mb-3">
-                <p className="text-sm text-gray-500">Images sélectionnées</p>
-                <p className="font-medium">{evenement.images.filter(img => img.selected).length} image(s)</p>
-              </div>
-              {evenement.type === 'selection' && (
-                <div className="mb-3">
-                  <p className="text-sm text-gray-500">Prix par photo</p>
-                  <p className="font-medium">{evenement.prixParPhoto ? `${evenement.prixParPhoto} €` : 'Non spécifié'}</p>
-                </div>
-              )}
               
               {/* Détails des statistiques des médias */}
-              <div className="mt-4 pt-3 border-t border-gray-200">
-                <div className="mb-3 bg-blue-50 p-2 rounded">
-                  <p className="text-xs text-blue-600 font-medium">Nombre de médias</p>
-                  <p className="text-sm font-bold">{mediaStats.totalMedias} ({mediaStats.totalImages} images • {mediaStats.totalVideos} vidéos)</p>
-                </div>
-                <div className="mb-3 bg-green-50 p-2 rounded">
-                  <p className="text-xs text-green-600 font-medium">Taille totale</p>
-                  <p className="text-sm font-bold">{formatSize(mediaStats.totalSize)}</p>
-                  <p className="text-xs text-gray-500">Images: {formatSize(mediaStats.imagesSize)} • Vidéos: {formatSize(mediaStats.videosSize)}</p>
-                </div>
-                <div className="bg-purple-50 p-2 rounded">
-                  <p className="text-xs text-purple-600 font-medium">Temps de chargement moyen</p>
-                  <p className="text-sm font-bold">{formatLoadTime(mediaStats.averageLoadTime)}</p>
-                  <p className="text-xs text-gray-500">Connexion 15 Mbps</p>
-                </div>
-              </div>
+            <div className="mb-3 bg-blue-50 p-2 rounded">
+                <p className="text-xs text-blue-600 font-medium">Nombre de médias</p>
+                <p className="text-sm font-bold">{mediaStats.totalMedias} ({mediaStats.totalImages} images • {mediaStats.totalVideos} vidéos)</p>
+            </div>
+            <div className="mb-3 bg-green-50 p-2 rounded">
+                <p className="text-xs text-green-600 font-medium">Taille totale</p>
+                <p className="text-sm font-bold">{formatSize(mediaStats.totalSize)}</p>
+                <p className="text-xs text-gray-500">Images: {formatSize(mediaStats.imagesSize)} • Vidéos: {formatSize(mediaStats.videosSize)}</p>
+            </div>
+            <div className="bg-purple-50 p-2 rounded">
+                <p className="text-xs text-purple-600 font-medium">Temps de chargement moyen</p>
+                <p className="text-sm font-bold">{formatLoadTime(mediaStats.averageLoadTime)}</p>
+                <p className="text-xs text-gray-500">Connexion 15 Mbps</p>
+            </div>
             </div>
           </div>
         </div>
