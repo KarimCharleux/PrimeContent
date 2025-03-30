@@ -87,23 +87,6 @@ export type Project = {
   updatedAt: Date | string;
 };
 
-// Types pour Événements
-export type Event = {
-  id: string;
-  title: string;
-  description: string;
-  location?: string;
-  startDate: Date | string;
-  endDate?: Date | string;
-  images: MediaItem[];
-  videos?: VideoItem[];
-  isFeatured: boolean;
-  category?: string;
-  tags?: string[];
-  createdAt: Date | string;
-  updatedAt: Date | string;
-};
-
 // Types pour Mariages
 export type Wedding = {
   id: string;

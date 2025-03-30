@@ -15,11 +15,18 @@ export interface ProtectionMotDePasse {
   motDePasse: string;
 }
 
-// Structure pour une image d'événement
+// Structure pour une image ou vidéo d'événement
 export interface EventImage {
   id: string;
   path: string;
   selected?: boolean;
+  title?: string; // Titre optionnel
+  category?: string; // Catégorie optionnelle
+  source?: string; // Chemin source (peut être différent de path)
+  isVideo?: boolean; // Indique si c'est une vidéo
+  format?: 'portrait' | 'paysage'; // Format du média
+  order?: number; // Ordre d'affichage
+  thumbnail?: string; // Miniature optionnelle pour les vidéos
 }
 
 // Interface principale pour un événement

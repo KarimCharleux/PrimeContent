@@ -3,31 +3,133 @@
 import { doc, updateDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 import { db } from '@/app/backoffice/lib/firebase-client';
-import { Evenement, EventImage } from '@/app/backoffice/models/eventTypes';
+import { MediaItem } from '@/app/backoffice/models/eventTypes';
+
+
 
 interface EventMediaManagerProps {
-    evenement: Evenement;
+    evenement: MediaItem;
     onStatusChange?: (status: { type: 'success' | 'error'; message: string } | null) => void;
+    onStatsChange?: (stats: MediaStats) => void;
 }
 
-export default function EventMediaManager({ evenement, onStatusChange }: EventMediaManagerProps) {
+export interface MediaStats {
+    totalCount: number;
+    totalSize: number;
+    videoCount: number;
+    imageCount: number;
+    selectedCount: number;
+    averageLoadTime: number;
+}
+
+// Structure étendue pour une image ou vidéo d'événement avec la taille
+interface ExtendedEventImage extends MediaItem {
+    size?: number; // Taille en octets
+}
+
+export default function EventMediaManager({ evenement, onStatusChange, onStatsChange }: EventMediaManagerProps) {
     const router = useRouter();
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [images, setImages] = useState<EventImage[]>(evenement.images || []);
+    const [images, setImages] = useState<ExtendedEventImage[]>(evenement.images || []);
     const [selectedImages, setSelectedImages] = useState<string[]>([]);
-    const [isGridView, setIsGridView] = useState(true);
     const [filterSelected, setFilterSelected] = useState(false);
+    
+    // Nouveaux états pour l'édition de médias
+    const [editingMedia, setEditingMedia] = useState<ExtendedEventImage | null>(null);
+    const [showEditForm, setShowEditForm] = useState(false);
+    const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+    const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(null);
+    const [loadTimes, setLoadTimes] = useState<Record<string, number>>({});
+
+    // État pour les statistiques
+    const [stats, setStats] = useState<MediaStats>({
+        totalCount: 0,
+        totalSize: 0,
+        videoCount: 0,
+        imageCount: 0,
+        selectedCount: 0,
+        averageLoadTime: 0,
+    });
 
     useEffect(() => {
         setImages(evenement.images || []);
     }, [evenement]);
+
+    // Calculer les statistiques quand les images changent
+    useEffect(() => {
+        calculateStats();
+    }, [images]);
+
+    // Fonction pour calculer les statistiques
+    const calculateStats = () => {
+        let totalImages = 0;
+        let totalVideos = 0;
+        let imagesSize = 0;
+        let videosSize = 0;
+        let totalSize = 0;
+        const averageSizePerImage = 500 * 1024; // ~500 KB par image (estimation)
+        const averageSizePerVideo = 5 * 1024 * 1024; // ~5 MB par vidéo (estimation)
+
+        // Compter le nombre d'images et de vidéos
+        images.forEach(media => {
+            if (media.isVideo) {
+                totalVideos++;
+                videosSize += media.size || averageSizePerVideo;
+            } else {
+                totalImages++;
+                imagesSize += media.size || averageSizePerImage;
+            }
+        });
+
+        totalSize = imagesSize + videosSize;
+
+        // Estimation du temps de chargement (basé sur une connexion moyenne de 15 Mbps)
+        const averageLoadTime = images.length > 0 ? (totalSize * 8) / (15 * 1024 * 1024) * 1000 / images.length : 0;
+
+        const stats: MediaStats = {
+            totalCount: images.length,
+            totalSize,
+            videoCount: totalVideos,
+            imageCount: totalImages,
+            selectedCount: selectedImages.length,
+            averageLoadTime,
+        };
+
+        setStats(stats);
+        onStatsChange?.(stats);
+    };
+
+    // Fonction pour formater la taille en ko, Mo ou Go
+    const formatSize = (bytes: number): string => {
+        if (bytes < 1024) {
+            return bytes + ' octets';
+        } else if (bytes < 1024 * 1024) {
+            return (bytes / 1024).toFixed(2) + ' Ko';
+        } else if (bytes < 1024 * 1024 * 1024) {
+            return (bytes / (1024 * 1024)).toFixed(2) + ' Mo';
+        } else {
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' Go';
+        }
+    };
+
+    // Fonction pour formater le temps de chargement
+    const formatLoadTime = (ms: number): string => {
+        if (ms < 1000) {
+            return ms.toFixed(0) + ' ms';
+        } else {
+            return (ms / 1000).toFixed(2) + ' s';
+        }
+    };
+
+    // Extraire les catégories uniques des médias
+    const categories = Array.from(new Set(images.map((media) => media.category))).filter(Boolean) as string[];
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -82,19 +184,66 @@ export default function EventMediaManager({ evenement, onStatusChange }: EventMe
             });
             
             if (!response.ok) {
-                throw new Error("Erreur lors de l'upload des images");
+                throw new Error("Erreur lors de l'upload des médias");
             }
             
             const uploadResult = await response.json();
             
-            // Ajouter les nouvelles images à la liste existante
-            const newImages: EventImage[] = uploadResult.fileUrls.map((url: string) => ({
-                id: url.split('/').pop()?.split('.')[0] || `img-${Date.now()}`,
-                path: url,
-                selected: false
-            }));
+            // Traiter les fichiers un par un pour déterminer leur type et format
+            const newMedias: ExtendedEventImage[] = [];
             
-            const updatedImages = [...images, ...newImages];
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const url = uploadResult.fileUrls[i];
+                
+                if (!url) continue;
+                
+                const id = url.split('/').pop()?.split('.')[0] || `media-${Date.now()}`;
+                const isVideo = file.type.startsWith('video/');
+                const format = await detectFormat(file);
+                
+                // Pour les vidéos, générer automatiquement une miniature
+                let thumbnail = '';
+                if (isVideo) {
+                    thumbnail = await generateThumbnail(file);
+                    
+                    // Si une miniature a été générée, l'uploader
+                    if (thumbnail) {
+                        const thumbnailBlob = await fetch(thumbnail).then(r => r.blob());
+                        const thumbnailFile = new File([thumbnailBlob], `${id}-thumbnail.jpg`, { type: 'image/jpeg' });
+                        
+                        const thumbnailFormData = new FormData();
+                        thumbnailFormData.append('file', thumbnailFile);
+                        thumbnailFormData.append('path', `evenements/${evenement.id}/thumbnails`);
+                        thumbnailFormData.append('useUuid', 'false');
+                        
+                        const thumbnailResponse = await fetch('/api/upload', {
+                            method: 'POST',
+                            body: thumbnailFormData,
+                        });
+                        
+                        if (thumbnailResponse.ok) {
+                            const thumbnailResult = await thumbnailResponse.json();
+                            thumbnail = thumbnailResult.fileUrl;
+                        }
+                    }
+                }
+                
+                newMedias.push({
+                    id,
+                    path: url,
+                    title: '',
+                    source: url,
+                    isVideo,
+                    format,
+                    order: images.length + i,
+                    thumbnail,
+                    selected: false,
+                    size: file.size
+                });
+            }
+            
+            const updatedImages = [...images, ...newMedias];
             
             // Mettre à jour Firestore
             const eventRef = doc(db, 'evenements', evenement.id!);
@@ -107,17 +256,17 @@ export default function EventMediaManager({ evenement, onStatusChange }: EventMe
             
             onStatusChange?.({
                 type: 'success',
-                message: `${newImages.length} image(s) importée(s) avec succès`
+                message: `${newMedias.length} média(s) importé(s) avec succès`
             });
             
-            // Rafraîchir la page pour montrer les nouvelles images
+            // Rafraîchir la page pour montrer les nouveaux médias
             router.refresh();
             
         } catch (error) {
             console.error("Erreur lors de l'upload:", error);
             onStatusChange?.({
                 type: 'error',
-                message: "Erreur lors de l'upload des images"
+                message: "Erreur lors de l'upload des médias"
             });
         } finally {
             setUploading(false);
@@ -214,15 +363,375 @@ export default function EventMediaManager({ evenement, onStatusChange }: EventMe
         ? images.filter(img => img.selected) 
         : images;
 
+    // Détecter automatiquement le format (portrait/paysage) d'une image ou vidéo
+    const detectFormat = async (file: File): Promise<'portrait' | 'paysage'> => {
+        return new Promise((resolve) => {
+            if (file.type.startsWith('video/')) {
+                // Pour les vidéos
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                
+                video.onloadedmetadata = () => {
+                    URL.revokeObjectURL(video.src);
+                    resolve(video.videoWidth < video.videoHeight ? 'portrait' : 'paysage');
+                };
+                
+                video.src = URL.createObjectURL(file);
+            } else {
+                // Pour les images
+                const img = document.createElement('img');
+                
+                img.onload = () => {
+                    URL.revokeObjectURL(img.src);
+                    resolve(img.width < img.height ? 'portrait' : 'paysage');
+                };
+                
+                img.src = URL.createObjectURL(file);
+            }
+        });
+    };
+
+    // Générer une miniature à partir d'une vidéo
+    const generateThumbnail = async (file: File): Promise<string> => {
+        if (!file.type.startsWith('video/')) return '';
+        
+        return new Promise((resolve) => {
+            const video = document.createElement('video');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            video.onloadeddata = () => {
+                // Chercher le milieu de la vidéo pour la miniature
+                video.currentTime = video.duration / 2;
+            };
+            
+            video.onseeked = () => {
+                // Une fois positionné, capturer l'image
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const thumbnail = canvas.toDataURL('image/jpeg', 0.7);
+                URL.revokeObjectURL(video.src);
+                resolve(thumbnail);
+            };
+            
+            video.src = URL.createObjectURL(file);
+        });
+    };
+
+    const handleThumbnailFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setThumbnailFile(file);
+            setPreviewThumbnail(URL.createObjectURL(file));
+            
+            if (editingMedia) {
+                setEditingMedia({
+                    ...editingMedia,
+                    thumbnail: URL.createObjectURL(file)
+                });
+            }
+        }
+    };
+
+    // Fonction pour éditer un média
+    const handleEdit = (media: ExtendedEventImage) => {
+        setEditingMedia(media);
+        setShowEditForm(true);
+        setPreviewThumbnail(media.thumbnail || null);
+        
+        // Faire défiler la page jusqu'au formulaire
+        setTimeout(() => {
+            const formElement = document.querySelector('#media-edit-form');
+            if (formElement) {
+                formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 100);
+    };
+    
+    // Fonction pour sauvegarder les modifications d'un média
+    const handleSaveMedia = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        if (!editingMedia) return;
+        
+        try {
+            // Upload de la miniature si un nouveau fichier est sélectionné
+            let thumbnailUrl = editingMedia.thumbnail || '';
+            
+            if (thumbnailFile) {
+                const thumbnailFormData = new FormData();
+                thumbnailFormData.append('file', thumbnailFile);
+                thumbnailFormData.append('path', `evenements/${evenement.id}/thumbnails`);
+                thumbnailFormData.append('useUuid', 'false');
+                
+                const thumbnailResponse = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: thumbnailFormData,
+                });
+                
+                if (thumbnailResponse.ok) {
+                    const thumbnailResult = await thumbnailResponse.json();
+                    thumbnailUrl = thumbnailResult.fileUrl;
+                } else {
+                    throw new Error("Erreur lors de l'upload de la miniature");
+                }
+            }
+            
+            // Mettre à jour le média dans la liste
+            const updatedImages = images.map(img => 
+                img.id === editingMedia.id 
+                    ? { ...editingMedia, thumbnail: thumbnailUrl || editingMedia.thumbnail } 
+                    : img
+            );
+            
+            // Mettre à jour Firestore
+            const eventRef = doc(db, 'evenements', evenement.id!);
+            await updateDoc(eventRef, {
+                images: updatedImages
+            });
+            
+            setImages(updatedImages);
+            setShowEditForm(false);
+            setEditingMedia(null);
+            setThumbnailFile(null);
+            setPreviewThumbnail(null);
+            
+            onStatusChange?.({
+                type: 'success',
+                message: "Média mis à jour avec succès"
+            });
+            
+        } catch (error) {
+            console.error("Erreur lors de la mise à jour du média:", error);
+            onStatusChange?.({
+                type: 'error',
+                message: "Erreur lors de la mise à jour du média"
+            });
+        }
+    };
+    
+    // Fonction pour annuler l'édition
+    const cancelEdit = () => {
+        setShowEditForm(false);
+        setEditingMedia(null);
+        setThumbnailFile(null);
+        setPreviewThumbnail(null);
+    };
+    
+    // Fonction pour obtenir la classe de taille en fonction du format
+    const getItemSizeClass = (format: 'portrait' | 'paysage' = 'paysage') => {
+        switch (format) {
+            case 'portrait':
+                return 'aspect-[3/4]';
+            case 'paysage':
+            default:
+                return 'aspect-[16/9]';
+        }
+    };
+
+    // Mesurer le temps de chargement des images
+    const handleImageLoad = useCallback((id: string, startTime: number) => {
+        const loadTime = performance.now() - startTime;
+        setLoadTimes(prev => ({
+            ...prev,
+            [id]: loadTime
+        }));
+    }, []);
+
     return (
         <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold mb-6">
                 Gestion des médias pour "{evenement.titre}"
             </h2>
             
+            {/* Formulaire d'édition de média */}
+            {showEditForm && editingMedia && (
+                <form onSubmit={handleSaveMedia} className="space-y-6 mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
+                    <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
+                        Modifier: {editingMedia.title || 'Média sans titre'}
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Titre (optionnel)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={editingMedia.title || ''}
+                                    onChange={e => setEditingMedia({ ...editingMedia, title: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="Titre du média"
+                                />
+                            </div>
+                            
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Catégorie (optionnel)
+                                </label>
+                                <div className="flex space-x-2">
+                                    <select
+                                        value={editingMedia.category || ''}
+                                        onChange={e => setEditingMedia({ ...editingMedia, category: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                    >
+                                        <option value="">Sélectionnez une catégorie</option>
+                                        {categories.map((category) => (
+                                            <option key={category} value={category}>{category}</option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        type="text"
+                                        value={editingMedia.category || ''}
+                                        onChange={e => setEditingMedia({ ...editingMedia, category: e.target.value })}
+                                        placeholder="Ou créer une nouvelle catégorie"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                    />
+                                </div>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    La catégorie est utilisée pour organiser les médias dans la galerie
+                                </p>
+                            </div>
+                            
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Ordre d'affichage
+                                </label>
+                                <input
+                                    type="number"
+                                    value={editingMedia.order || 0}
+                                    onChange={e => setEditingMedia({ ...editingMedia, order: parseInt(e.target.value) })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Format
+                                </label>
+                                <select
+                                    value={editingMedia.format || 'paysage'}
+                                    onChange={(e) => setEditingMedia({ ...editingMedia, format: e.target.value as 'portrait' | 'paysage' })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                >
+                                    <option value="paysage">Paysage (16:9)</option>
+                                    <option value="portrait">Portrait (3:4)</option>
+                                </select>
+                            </div>
+                            
+                            {/* Upload de miniature (pour les vidéos) */}
+                            {editingMedia.isVideo && (
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Miniature personnalisée
+                                    </label>
+                                    <div className="flex space-x-2">
+                                        <input
+                                            type="text"
+                                            value={editingMedia.thumbnail || ''}
+                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                            placeholder="URL de la miniature"
+                                            readOnly
+                                        />
+                                        <label className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 cursor-pointer flex items-center">
+                                            <span>Parcourir</span>
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={handleThumbnailFileChange}
+                                                id="thumbnail-upload"
+                                            />
+                                        </label>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            <div className="mt-4">
+                                <h4 className="text-sm font-medium text-gray-700 mb-2">
+                                    Prévisualisation
+                                </h4>
+                                {editingMedia.isVideo ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Lecteur vidéo */}
+                                        <div className={`relative bg-black rounded-lg overflow-hidden ${getItemSizeClass(editingMedia.format)}`}>
+                                            <video 
+                                                src={editingMedia.path} 
+                                                className="w-full h-full object-contain" 
+                                                controls
+                                                poster={previewThumbnail || editingMedia.thumbnail}
+                                            />
+                                        </div>
+                                        
+                                        {/* Miniature */}
+                                        <div className={`relative bg-gray-100 rounded-lg overflow-hidden ${getItemSizeClass(editingMedia.format)}`}>
+                                            {previewThumbnail || editingMedia.thumbnail ? (
+                                                <div className="relative h-full">
+                                                    <Image
+                                                        src={previewThumbnail || editingMedia.thumbnail!}
+                                                        alt="Miniature"
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-center h-full">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                    </svg>
+                                                    <p className="text-gray-500 text-sm mt-2">Aucune miniature</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className={`relative bg-gray-100 rounded-lg overflow-hidden ${getItemSizeClass(editingMedia.format)}`}>
+                                        <div className="relative group h-full">
+                                            <Image
+                                                src={editingMedia.path}
+                                                alt={editingMedia.title || 'Aperçu'}
+                                                fill
+                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                            />
+                                            {editingMedia.category && (
+                                                <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                                                    {editingMedia.category}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Boutons d'action */}
+                    <div className="flex justify-end space-x-3">
+                        <button
+                            type="button"
+                            onClick={cancelEdit}
+                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                        >
+                            Annuler
+                        </button>
+                        <button
+                            type="submit"
+                            className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors"
+                        >
+                            Mettre à jour
+                        </button>
+                    </div>
+                </form>
+            )}
+            
             {/* Section pour l'import des images */}
             <div className="mb-8">
-                <h3 className="text-lg font-medium mb-4">Importer des images</h3>
+                <h3 className="text-lg font-medium mb-4">Importer des médias</h3>
                 
                 <div 
                     className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
@@ -236,7 +745,7 @@ export default function EventMediaManager({ evenement, onStatusChange }: EventMe
                     <input 
                         type="file" 
                         multiple 
-                        accept="image/*"
+                        accept="image/*,video/*"
                         className="hidden" 
                         ref={fileInputRef}
                         onChange={handleFileSelect}
@@ -247,10 +756,10 @@ export default function EventMediaManager({ evenement, onStatusChange }: EventMe
                     </svg>
                     
                     <p className="text-gray-600 mb-2">
-                        Glissez-déposez vos images ici ou cliquez pour parcourir
+                        Glissez-déposez vos médias ici ou cliquez pour parcourir
                     </p>
                     <p className="text-gray-500 text-sm">
-                        JPG, PNG, GIF (max 10Mo par image)
+                        Formats acceptés: JPG, PNG, GIF pour les images, MP4, WEBM pour les vidéos
                     </p>
                 </div>
                 
@@ -271,12 +780,20 @@ export default function EventMediaManager({ evenement, onStatusChange }: EventMe
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
                             {selectedFiles.map((file, index) => (
                                 <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                                    <Image 
-                                        src={URL.createObjectURL(file)} 
-                                        alt={file.name}
-                                        fill
-                                        className="object-cover"
-                                    />
+                                    {file.type.startsWith('video/') ? (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                    ) : (
+                                        <Image 
+                                            src={URL.createObjectURL(file)} 
+                                            alt={file.name}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -284,23 +801,25 @@ export default function EventMediaManager({ evenement, onStatusChange }: EventMe
                         <button
                             onClick={handleUpload}
                             disabled={uploading}
-                            className="w-full py-2 bg-black text-white rounded-md hover:bg-black/80 flex items-center justify-center"
+                            className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                                uploading ? 'bg-indigo-400' : 'bg-black hover:bg-black/80'
+                            } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors`}
                         >
                             {uploading ? (
-                                <>
-                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <span className="flex items-center justify-center">
+                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
-                                    Upload en cours... {uploadProgress}%
-                                </>
+                                    Upload en cours... {Math.round(uploadProgress)}%
+                                </span>
                             ) : (
-                                <>
+                                <span className="flex items-center justify-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                     </svg>
-                                    Importer {selectedFiles.length} fichier(s)
-                                </>
+                                    Importer les médias
+                                </span>
                             )}
                         </button>
                     </div>
@@ -311,7 +830,7 @@ export default function EventMediaManager({ evenement, onStatusChange }: EventMe
             <div>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-medium">
-                        Gestion des images ({filteredImages.length})
+                        Gestion des médias ({filteredImages.length})
                     </h3>
                     
                     <div className="flex items-center space-x-4">
@@ -329,154 +848,58 @@ export default function EventMediaManager({ evenement, onStatusChange }: EventMe
                             </label>
                         </div>
                         
-                        {/* Boutons de vue */}
-                        <div className="flex space-x-2">
-                            <button
-                                onClick={() => setIsGridView(true)}
-                                className={`p-2 rounded-md ${isGridView ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                                </svg>
-                            </button>
-                            <button
-                                onClick={() => setIsGridView(false)}
-                                className={`p-2 rounded-md ${!isGridView ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                {/* Actions sur les images sélectionnées */}
-                <div className="flex justify-between items-center mb-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center">
-                        <input
-                            type="checkbox"
-                            id="select-all"
-                            checked={selectedImages.length > 0 && selectedImages.length === images.length}
-                            onChange={handleSelectAll}
-                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                        />
-                        <label htmlFor="select-all" className="ml-2 text-sm text-gray-700">
-                            {selectedImages.length === 0 
-                                ? 'Tout sélectionner' 
-                                : `${selectedImages.length} image(s) sélectionnée(s)`
-                            }
-                        </label>
-                    </div>
-                    
-                    {selectedImages.length > 0 && (
-                        <div className="flex space-x-2">
+                        {/* Bouton de suppression */}
+                        {selectedImages.length > 0 && (
                             <button
                                 onClick={handleDeleteSelected}
-                                className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
+                                className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center"
                             >
-                                Supprimer la sélection
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Supprimer ({selectedImages.length})
                             </button>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
                 
-                {/* Affichage des images en mode grille */}
-                {isGridView && (
-                    <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4`}>
-                        {filteredImages.map((image) => (
-                            <div 
-                                key={image.id} 
-                                className={`relative group aspect-square bg-gray-100 rounded-lg overflow-hidden ${
-                                    selectedImages.includes(image.id) ? 'ring-2 ring-indigo-500' : ''
-                                }`}
-                            >
-                                <Image 
-                                    src={image.path} 
-                                    alt={`Image ${image.id}`}
-                                    fill
-                                    className="object-cover"
-                                />
-                                
-                                {/* Overlay pour la sélection */}
-                                <div 
-                                    className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                    onClick={() => handleToggleImageSelection(image.id)}
-                                >
-                                    <div className="flex flex-col items-center space-y-2">
-                                        <div className="p-2 bg-white rounded-full">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                        </div>
-                                        <span className="text-white text-xs font-medium">
-                                            {selectedImages.includes(image.id) ? 'Désélectionner' : 'Sélectionner'}
-                                        </span>
-                                    </div>
-                                </div>
-                                
-                                {/* Badge pour indiquer si l'image est sélectionnée pour l'événement */}
-                                <div 
-                                    className={`absolute top-2 right-2 p-1.5 rounded-full cursor-pointer transition-colors
-                                        ${image.selected ? 'bg-pink-500 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
-                                    onClick={() => handleToggleSelection(image.id)}
-                                    title={image.selected ? 'Désélectionner pour l\'événement' : 'Sélectionner pour l\'événement'}
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill={image.selected ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                    </svg>
-                                </div>
-                                
-                                {/* Checkbox pour la sélection multiple */}
-                                <div className="absolute top-2 left-2">
+                <div className="border rounded-lg overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th scope="col" className="w-12 px-3 py-3">
                                     <input
                                         type="checkbox"
-                                        checked={selectedImages.includes(image.id)}
-                                        onChange={() => handleToggleImageSelection(image.id)}
+                                        checked={selectedImages.length > 0 && selectedImages.length === images.length}
+                                        onChange={handleSelectAll}
                                         className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                                     />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-                
-                {/* Affichage des images en mode liste */}
-                {!isGridView && (
-                    <div className="border rounded-lg overflow-hidden">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th scope="col" className="w-12 px-3 py-3">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedImages.length > 0 && selectedImages.length === images.length}
-                                            onChange={handleSelectAll}
-                                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                        />
-                                    </th>
-                                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aperçu
-                                    </th>
-                                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        ID
-                                    </th>
-                                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Chemin
-                                    </th>
-                                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Sélectionnée
-                                    </th>
-                                    <th scope="col" className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {filteredImages.map((image) => (
+                                </th>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Aperçu
+                                </th>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Type
+                                </th>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Titre
+                                </th>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Format
+                                </th>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Catégorie
+                                </th>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {filteredImages.length > 0 ? (
+                                filteredImages.map((image) => (
                                     <tr key={image.id} className={selectedImages.includes(image.id) ? 'bg-indigo-50' : ''}>
-                                        <td className="px-3 py-4">
+                                        <td className="px-3 py-4 whitespace-nowrap">
                                             <input
                                                 type="checkbox"
                                                 checked={selectedImages.includes(image.id)}
@@ -484,75 +907,106 @@ export default function EventMediaManager({ evenement, onStatusChange }: EventMe
                                                 className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                                             />
                                         </td>
-                                        <td className="px-3 py-4">
-                                            <div className="w-16 h-16 relative">
-                                                <Image 
-                                                    src={image.path} 
-                                                    alt={`Image ${image.id}`}
-                                                    fill
-                                                    className="object-cover rounded-md"
-                                                />
+                                        <td className="px-3 py-4 whitespace-nowrap">
+                                            <div className="w-20 h-12 relative rounded overflow-hidden">
+                                                {image.isVideo ? (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black">
+                                                        {image.thumbnail ? (
+                                                            <Image 
+                                                                src={image.thumbnail}
+                                                                alt={image.title || "Miniature vidéo"}
+                                                                fill
+                                                                className="object-cover"
+                                                            />
+                                                        ) : (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <Image 
+                                                        src={image.path} 
+                                                        alt={image.title || "Image"}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                )}
                                             </div>
                                         </td>
-                                        <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {image.id}
+                                        <td className="px-3 py-4 whitespace-nowrap">
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${image.isVideo ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                                                {image.isVideo ? 'Vidéo' : 'Image'}
+                                            </span>
                                         </td>
-                                        <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <div className="max-w-xs truncate">
-                                                {image.path}
+                                        <td className="px-3 py-4 whitespace-nowrap">
+                                            {image.title || 'Sans titre'}
+                                        </td>
+                                        <td className="px-3 py-4 whitespace-nowrap">
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${image.format === 'portrait' ? 'bg-purple-100 text-purple-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                                {image.format === 'portrait' ? 'Portrait' : 'Paysage'}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-4 whitespace-nowrap">
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${image.category ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800'}`}>
+                                                {image.category || 'Non catégorisé'}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-4 whitespace-nowrap">
+                                            <div className="flex space-x-2">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleEdit(image);
+                                                    }}
+                                                    className="text-indigo-600 hover:text-indigo-900"
+                                                >
+                                                    Modifier
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedImages([image.id]);
+                                                        handleDeleteSelected();
+                                                    }}
+                                                    className="text-red-600 hover:text-red-900"
+                                                >
+                                                    Supprimer
+                                                </button>
                                             </div>
-                                        </td>
-                                        <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <button
-                                                onClick={() => handleToggleSelection(image.id)}
-                                                className={`p-1.5 rounded-full ${
-                                                    image.selected ? 'bg-pink-500 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                                                }`}
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill={image.selected ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                                </svg>
-                                            </button>
-                                        </td>
-                                        <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedImages([image.id]);
-                                                    handleDeleteSelected();
-                                                }}
-                                                className="text-red-600 hover:text-red-900"
-                                            >
-                                                Supprimer
-                                            </button>
                                         </td>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-                
-                {filteredImages.length === 0 && (
-                    <div className="text-center py-12 bg-gray-50 rounded-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <p className="text-gray-500">
-                            {filterSelected 
-                                ? "Aucune image sélectionnée pour cet événement" 
-                                : "Aucune image n'a encore été ajoutée à cet événement"
-                            }
-                        </p>
-                        {filterSelected && (
-                            <button
-                                onClick={() => setFilterSelected(false)}
-                                className="mt-2 text-sm text-indigo-600 hover:text-indigo-800"
-                            >
-                                Afficher toutes les images
-                            </button>
-                        )}
-                    </div>
-                )}
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={7} className="px-6 py-10 text-center">
+                                        <div className="flex flex-col items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            <p className="text-gray-500 text-lg font-medium">
+                                                Aucun média trouvé
+                                            </p>
+                                            <p className="text-gray-400 text-sm mt-1">
+                                                {filterSelected 
+                                                    ? "Aucun média n'est sélectionné pour cet événement" 
+                                                    : "Importez des médias en utilisant la section ci-dessus"}
+                                            </p>
+                                            {filterSelected && (
+                                                <button 
+                                                    onClick={() => setFilterSelected(false)}
+                                                    className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                                                >
+                                                    Afficher tous les médias
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

@@ -22,6 +22,37 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps): 
   const [evenement, setEvenement] = useState<Evenement | null>(null);
   const [loading, setLoading] = useState(true);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [mediaStats, setMediaStats] = useState({
+    totalMedias: 0,
+    totalImages: 0,
+    totalVideos: 0,
+    totalSize: 0,
+    imagesSize: 0,
+    videosSize: 0,
+    averageLoadTime: 0,
+  });
+  
+  // Fonction pour formater la taille en ko, Mo ou Go
+  const formatSize = (bytes: number): string => {
+    if (bytes < 1024) {
+      return bytes + ' octets';
+    } else if (bytes < 1024 * 1024) {
+      return (bytes / 1024).toFixed(2) + ' Ko';
+    } else if (bytes < 1024 * 1024 * 1024) {
+      return (bytes / (1024 * 1024)).toFixed(2) + ' Mo';
+    } else {
+      return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' Go';
+    }
+  };
+
+  // Fonction pour formater le temps de chargement
+  const formatLoadTime = (ms: number): string => {
+    if (ms < 1000) {
+      return ms.toFixed(0) + ' ms';
+    } else {
+      return (ms / 1000).toFixed(2) + ' s';
+    }
+  };
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -76,6 +107,18 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps): 
     if (status) {
       setTimeout(() => setStatusMessage(null), 5000);
     }
+  };
+
+  const handleMediaStatsChange = (stats: {
+    totalMedias: number;
+    totalImages: number;
+    totalVideos: number;
+    totalSize: number;
+    imagesSize: number;
+    videosSize: number;
+    averageLoadTime: number;
+  }) => {
+    setMediaStats(stats);
   };
 
   if (authLoading || loading) {
@@ -246,11 +289,29 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps): 
                 <p className="font-medium">{evenement.images.filter(img => img.selected).length} image(s)</p>
               </div>
               {evenement.type === 'selection' && (
-                <div>
+                <div className="mb-3">
                   <p className="text-sm text-gray-500">Prix par photo</p>
                   <p className="font-medium">{evenement.prixParPhoto ? `${evenement.prixParPhoto} €` : 'Non spécifié'}</p>
                 </div>
               )}
+              
+              {/* Détails des statistiques des médias */}
+              <div className="mt-4 pt-3 border-t border-gray-200">
+                <div className="mb-3 bg-blue-50 p-2 rounded">
+                  <p className="text-xs text-blue-600 font-medium">Nombre de médias</p>
+                  <p className="text-sm font-bold">{mediaStats.totalMedias} ({mediaStats.totalImages} images • {mediaStats.totalVideos} vidéos)</p>
+                </div>
+                <div className="mb-3 bg-green-50 p-2 rounded">
+                  <p className="text-xs text-green-600 font-medium">Taille totale</p>
+                  <p className="text-sm font-bold">{formatSize(mediaStats.totalSize)}</p>
+                  <p className="text-xs text-gray-500">Images: {formatSize(mediaStats.imagesSize)} • Vidéos: {formatSize(mediaStats.videosSize)}</p>
+                </div>
+                <div className="bg-purple-50 p-2 rounded">
+                  <p className="text-xs text-purple-600 font-medium">Temps de chargement moyen</p>
+                  <p className="text-sm font-bold">{formatLoadTime(mediaStats.averageLoadTime)}</p>
+                  <p className="text-xs text-gray-500">Connexion 15 Mbps</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -272,6 +333,7 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps): 
       <EventMediaManager 
         evenement={evenement} 
         onStatusChange={handleStatusChange}
+        onStatsChange={handleMediaStatsChange}
       />
     </div>
   );
