@@ -5,9 +5,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 
+import { Evenement } from '@/app/backoffice/models/eventTypes';
+
 import ImageCarousel from '../../components/ImageCarousel/ImageCarousel';
 import PrimaryButton from '../../components/PrimaryButton';
-import { Evenement } from '../../data/evenementsData';
 
 // Variants pour les animations
 const fadeInUp = {

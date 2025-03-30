@@ -104,7 +104,7 @@ export default function EventList({ evenements, handleEdit, handleDelete }: Even
                                     Modifier
                                 </button>
                                 <Link
-                                    href={`/backoffice/evenements/${evenement.id}`}
+                                    href={`/backoffice/evenements/media?id=${evenement.id}`}
                                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors w-32 text-center"
                                 >
                                     Médias
