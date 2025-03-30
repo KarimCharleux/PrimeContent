@@ -108,14 +108,14 @@ export default function EventPage({ evenement }: EventPageProps) {
       
       const validImages: string[] = [];
       
-      for (const imageSrc of evenement.images) {
+      for (const image of evenement.images) {
         try {
-          const loadedSrc = await preloadImage(imageSrc);
+          const loadedSrc = await preloadImage(image.source || '');
           validImages.push(loadedSrc);
           // Au lieu d'ajouter à l'état précédent, nous remplaçons complètement l'état à chaque fois
           // pour éviter les doublons lors des re-renders
         } catch (error) {
-          console.error(`Impossible de charger l'image: ${imageSrc}`);
+          console.error(`Impossible de charger l'image: ${image.source}`);
         }
       }
 

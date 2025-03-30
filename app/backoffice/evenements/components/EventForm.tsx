@@ -150,7 +150,7 @@ export default function EventForm({
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                     >
-                        Type d'événement
+                        Type d&apos;événement
                     </button>
                     <button
                         type="button"
@@ -313,7 +313,7 @@ export default function EventForm({
                 {activeTab === 'type' && (
                     <div>
                         <div className="mb-6">
-                            <h4 className="text-md font-medium mb-3">Type d'événement</h4>
+                            <h4 className="text-md font-medium mb-3">Type d&apos;événement</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className={`p-4 border rounded-lg cursor-pointer transition-colors ${formData.type === 'visionner' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-gray-400'}`}
                                     onClick={() => handleTypeChange('visionner')}>
@@ -329,7 +329,7 @@ export default function EventForm({
                                         </label>
                                     </div>
                                     <p className="text-xs text-gray-500 ml-6">
-                                        Les utilisateurs peuvent simplement voir toutes les photos sans option d'achat.
+                                        Les utilisateurs peuvent simplement voir toutes les photos sans option d&apos;achat.
                                     </p>
                                 </div>
 
@@ -365,7 +365,7 @@ export default function EventForm({
                                         </label>
                                     </div>
                                     <p className="text-xs text-gray-500 ml-6">
-                                        L'utilisateur a accès au téléchargement de toutes les photos sans paiement supplémentaire.
+                                        L&apos;utilisateur a accès au téléchargement de toutes les photos sans paiement supplémentaire.
                                     </p>
                                 </div>
 
@@ -383,7 +383,7 @@ export default function EventForm({
                                         </label>
                                     </div>
                                     <p className="text-xs text-gray-500 ml-6">
-                                        L'utilisateur doit payer pour télécharger toutes les photos.
+                                        L&apos;utilisateur doit payer pour télécharger toutes les photos.
                                     </p>
                                 </div>
                             </div>
@@ -561,7 +561,7 @@ export default function EventForm({
                                 <div className="bg-gray-50 p-4 rounded-md">
                                     <h5 className="text-sm font-medium text-gray-700 mb-2">Comment ça marche ?</h5>
                                     <ul className="list-disc pl-5 text-xs text-gray-600 space-y-1">
-                                        <li>L'accès à l'événement nécessitera la saisie du mot de passe</li>
+                                        <li>L&apos;accès à l&apos;événement nécessitera la saisie du mot de passe</li>
                                         <li>Partagez le mot de passe uniquement avec les personnes autorisées</li>
                                         <li>Idéal pour les événements privés ou professionnels</li>
                                     </ul>

@@ -138,7 +138,7 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps): 
           </div>
         )}
         <div className="text-center py-12">
-          <p className="text-gray-500 mb-4">Chargement de l'événement...</p>
+          <p className="text-gray-500 mb-4">Chargement de l&apos;événement...</p>
         </div>
       </div>
     );
@@ -186,7 +186,7 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps): 
       
       {/* Informations sur l'événement */}
       <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4">Informations de l'événement</h2>
+        <h2 className="text-xl font-semibold mb-4">Informations de l&apos;événement</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
@@ -215,7 +215,7 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps): 
             <h3 className="text-md font-medium mb-2">Configuration</h3>
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="mb-3">
-                <p className="text-sm text-gray-500">Type d'événement</p>
+                <p className="text-sm text-gray-500">Type d&apos;événement</p>
                 <div className="mt-1">
                   {(() => {
                     switch (evenement.type) {
@@ -308,7 +308,7 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps): 
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
-            Modifier l'événement
+            Modifier l&apos;événement
           </Link>
         </div>
       </div>

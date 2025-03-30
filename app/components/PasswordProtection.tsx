@@ -1,11 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 
 interface PasswordProtectionProps {
-  correctPassword: string;
-  onPasswordVerified: () => void;
-  eventTitle: string;
+  readonly correctPassword: string;
+  readonly onPasswordVerified: () => void;
+  readonly eventTitle: string;
 }
 
 export default function PasswordProtection({ 
@@ -121,7 +122,7 @@ export default function PasswordProtection({
             </div>
             <div className="ml-3">
               <p className="text-sm text-red-700">
-                Trop de tentatives incorrectes. Veuillez contacter l'organisateur pour obtenir le mot de passe correct.
+                Trop de tentatives incorrectes. Veuillez contacter l&apos;organisateur pour obtenir le mot de passe correct.
               </p>
             </div>
           </div>
@@ -129,9 +130,9 @@ export default function PasswordProtection({
       )}
 
       <div className="mt-6 text-center">
-        <a href="/evenements" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+        <Link href="/evenements" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
           Retour à la liste des événements
-        </a>
+        </Link>
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ export async function generateStaticParams() {
   //return evenementsData.map((evenement) => ({
   //  id: evenement.id,
   //}));
+  return [];
 }
 
 // Types pour les props de la page

@@ -672,7 +672,7 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
     return (
         <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold mb-6">
-                Gestion des médias pour "{evenement.titre}"
+                Gestion des médias pour &quot;{evenement.titre}&quot;
             </h2>
             
             {/* Formulaire d'édition de média */}
@@ -727,7 +727,7 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
                             
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Ordre d'affichage
+                                    Ordre d&apos;affichage
                                 </label>
                                 <input
                                     type="number"
