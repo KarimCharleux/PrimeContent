@@ -1,6 +1,6 @@
 'use client';
 
-import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -16,7 +16,7 @@ interface EventDetailClientProps {
   readonly eventId: string;
 }
 
-export default function EventDetailClient({ eventId }: EventDetailClientProps) {
+export default function EventDetailClient({ eventId }: EventDetailClientProps): JSX.Element {
   const { loading: authLoading } = useAuth();
   const router = useRouter();
   const [evenement, setEvenement] = useState<Evenement | null>(null);
@@ -27,6 +27,16 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
     const fetchEvent = async () => {
       try {
         setLoading(true);
+        
+        if (!eventId || eventId === 'invalid' || eventId === 'placeholder') {
+          setStatusMessage({
+            type: 'error',
+            message: "ID d'événement invalide ou manquant"
+          });
+          setTimeout(() => router.push('/backoffice/evenements'), 2000);
+          return;
+        }
+        
         const eventRef = doc(db, 'evenements', eventId);
         const eventDoc = await getDoc(eventRef);
 
@@ -54,7 +64,7 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
       }
     };
 
-    if (!authLoading && eventId) {
+    if (!authLoading) {
       fetchEvent();
     }
   }, [eventId, authLoading, router]);
@@ -93,7 +103,6 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* En-tête avec navigation */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <Link href="/backoffice/evenements" className="inline-flex items-center text-blue-600 hover:text-blue-800">
@@ -248,9 +257,8 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
         
         <div className="mt-4 flex justify-end">
           <Link 
-            href={`/backoffice/evenements`} 
+            href="/backoffice/evenements"
             className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 flex items-center"
-            onClick={() => router.push('/backoffice/evenements')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
