@@ -1,10 +1,11 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import './globals.css';
-import './styles/fonts.css';
+import Script from 'next/script';
 import { useState, useEffect } from 'react';
 import TagManager from 'react-gtm-module';
+import './globals.css';
+import './styles/fonts.css';
 
 import SplashScreen from './components/SplashScreen';
 
@@ -29,6 +30,18 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
     return (
         <html lang="fr" suppressHydrationWarning={true} className="font-sora">
+            <head>
+                {/* Google Analytics */}
+                <Script async src="https://www.googletagmanager.com/gtag/js?id=G-N9S47LLDZZ" />
+                <Script id="google-analytics">
+                    {`
+                    window.dataLayer = window.dataLayer || [];
+                    function gtag(){dataLayer.push(arguments);}
+                    gtag('js', new Date());
+                    gtag('config', 'G-N9S47LLDZZ');
+                    `}
+                </Script>
+            </head>
             <body className="font-sora">
                 {!isAdminPage && (
                     <SplashScreen onLoadingComplete={() => setIsLoading(false)} />

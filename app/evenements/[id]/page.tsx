@@ -36,17 +36,19 @@ type Props = {
 export default function EvenementDetailPage({ params }: Props) {
   return (
     <main className="global-main-page">
-      <Header />
-      <Suspense fallback={
-        <div className="container">
-          <div className="photos-loader">
-            <div className="loader-spinner"></div>
-            <div className="loading-text">Chargement de l&apos;événement...</div>
+      <section className="min-h-screen">
+        <Header />
+        <Suspense fallback={
+          <div className="container">
+            <div className="photos-loader">
+              <div className="loader-spinner"></div>
+              <div className="loading-text">Chargement de l&apos;événement...</div>
+            </div>
           </div>
-        </div>
-      }>
-        <EventDetailClient eventId={params.id} />
-      </Suspense>
+        }>
+          <EventDetailClient eventId={params.id} />
+        </Suspense>
+      </section>
       <Footer hideCTA={true} />
     </main>
   );

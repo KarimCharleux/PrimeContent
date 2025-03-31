@@ -270,18 +270,73 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
         const eventToDelete = evenements.find((e) => e.id === id);
         if (!eventToDelete) return;
 
-        if (window.confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) {
+        if (window.confirm('Êtes-vous sûr de vouloir supprimer cet événement ? Tous les médias associés seront également supprimés.')) {
             try {
-                // Supprimer le document de Firestore
-                await deleteDoc(doc(db, 'evenements', id));
+                setStatusMessage({
+                    type: 'success',
+                    message: 'Suppression en cours...',
+                });
 
-                // Note: Dans une implémentation complète, vous devriez également:
-                // 1. Supprimer les images associées du stockage
-                // 2. Supprimer tout autre document lié (commandes, etc.)
+                // 1. Supprimer tous les médias de l'événement
+                if (eventToDelete.images && eventToDelete.images.length > 0) {
+                    // Supprimer les fichiers du stockage
+                    for (const image of eventToDelete.images) {
+                        try {
+                            // Supprimer l'image principale
+                            if (image.path) {
+                                // Extraire le nom du fichier de l'URL
+                                const fileName = image.path.split('/').pop();
+                                if (fileName) {
+                                    const response = await fetch(`/api/delete?path=evenements/${id}&name=${encodeURIComponent(fileName)}`, {
+                                        method: 'DELETE',
+                                    });
+                                    if (!response.ok) {
+                                        console.warn(`Erreur lors de la suppression du fichier ${fileName}`);
+                                    }
+                                }
+                            }
+                            
+                            // Supprimer la miniature si elle existe
+                            if (image.thumbnail) {
+                                const thumbnailName = image.thumbnail.split('/').pop();
+                                if (thumbnailName) {
+                                    const response = await fetch(`/api/delete?path=evenements/${id}/thumbnails&name=${encodeURIComponent(thumbnailName)}`, {
+                                        method: 'DELETE',
+                                    });
+                                    if (!response.ok) {
+                                        console.warn(`Erreur lors de la suppression de la miniature ${thumbnailName}`);
+                                    }
+                                }
+                            }
+                        } catch (err) {
+                            console.error("Erreur lors de la suppression d'un fichier:", err);
+                        }
+                    }
+                }
+
+                // 2. Supprimer l'image principale de l'événement (affiche)
+                if (eventToDelete.imageSrc) {
+                    try {
+                        const imageName = eventToDelete.imageSrc.split('/').pop();
+                        if (imageName) {
+                            const response = await fetch(`/api/delete?path=evenements/covers&name=${encodeURIComponent(imageName)}`, {
+                                method: 'DELETE',
+                            });
+                            if (!response.ok) {
+                                console.warn(`Erreur lors de la suppression de l'image principale ${imageName}`);
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Erreur lors de la suppression de l'image principale:", err);
+                    }
+                }
+
+                // 3. Supprimer le document de Firestore
+                await deleteDoc(doc(db, 'evenements', id));
 
                 setStatusMessage({
                     type: 'success',
-                    message: 'Événement supprimé avec succès',
+                    message: 'Événement et tous ses médias supprimés avec succès',
                 });
 
                 // Fermer le formulaire si l'événement supprimé était en cours d'édition
