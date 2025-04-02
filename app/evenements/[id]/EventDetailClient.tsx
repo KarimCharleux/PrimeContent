@@ -4,8 +4,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
-import { db } from '@/app/backoffice/lib/firebase-client';
-import { Evenement } from '@/app/backoffice/models/eventTypes';
+import { db } from '../../backoffice/lib/firebase-client';
+import { Evenement } from '../../backoffice/models/eventTypes';
 
 import EventPage from './EventPage';
 

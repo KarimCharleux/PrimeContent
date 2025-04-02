@@ -4,9 +4,9 @@ import { addDoc, collection, deleteDoc, doc, getDocs, query, orderBy, updateDoc 
 import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
 
-import { Spinner } from '@/app/backoffice/components/Spinner';
-import { db } from '@/app/backoffice/lib/firebase-client';
-import CustomerReviews, { Review } from '@/app/components/CustomerReviews';
+import CustomerReviews, { Review } from '../../../components/CustomerReviews';
+import { Spinner } from '../../components/Spinner';
+import { db } from '../../lib/firebase-client';
 
 // Étendre l'interface Review pour inclure l'id pour l'administration
 interface AdminReview extends Review {

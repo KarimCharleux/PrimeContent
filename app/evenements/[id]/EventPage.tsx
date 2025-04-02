@@ -1,13 +1,10 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 
-import { Evenement, EventMediaItem } from '@/app/backoffice/models/eventTypes';
-
-import ImageCarousel from '../../components/ImageCarousel/ImageCarousel';
+import { Evenement, EventMediaItem } from '../../backoffice/models/eventTypes';
 import PortfolioGrid from '../../components/PortfolioGrid/PortfolioGrid';
 import PrimaryButton from '../../components/PrimaryButton';
 

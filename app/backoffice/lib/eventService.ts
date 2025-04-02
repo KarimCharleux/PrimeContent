@@ -1,7 +1,7 @@
 import { doc, getDoc, collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 
-import { db } from '@/app/backoffice/lib/firebase-client';
-import { Evenement } from '@/app/backoffice/models/eventTypes';
+import { db } from '../lib/firebase-client';
+import { Evenement } from '../models/eventTypes';
 
 /**
  * Récupère un événement par son ID

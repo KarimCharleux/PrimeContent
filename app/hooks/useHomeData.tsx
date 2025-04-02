@@ -3,7 +3,7 @@
 import { collection, getDocs } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 
-import { db } from '@/app/backoffice/lib/firebase-client';
+import { db } from '../backoffice/lib/firebase-client';
 
 interface Brand {
   id?: string;

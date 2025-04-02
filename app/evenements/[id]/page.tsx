@@ -1,8 +1,6 @@
 import { Suspense } from 'react';
 
-import { getEventById, getAllEvents } from '@/app/backoffice/lib/eventService';
-
-
+import { getEventById, getAllEvents } from '../../backoffice/lib/eventService';
 import Footer from '../../components/Footer';
 import Header from '../../components/Header';
 

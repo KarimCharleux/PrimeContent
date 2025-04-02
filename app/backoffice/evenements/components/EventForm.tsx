@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 
-import { Evenement, EventType, TarifDegressif } from '@/app/backoffice/models/eventTypes';
+import { Evenement, EventType, TarifDegressif } from '../../models/eventTypes';
 
 // Styles pour le toggle switch
 import './toggle.scss';

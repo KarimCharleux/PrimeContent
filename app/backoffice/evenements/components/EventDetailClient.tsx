@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { Spinner } from '@/app/backoffice/components/Spinner';
-import { useAuth } from '@/app/backoffice/hooks/useAuth';
-import { db } from '@/app/backoffice/lib/firebase-client';
-import { Evenement } from '@/app/backoffice/models/eventTypes';
+import { Spinner } from '../../components/Spinner';
+import { useAuth } from '../../hooks/useAuth';
+import { db } from '../../lib/firebase-client';
+import { Evenement } from '../../models/eventTypes';
 
 import EventMediaManager, { MediaStats } from './EventMediaManager';
 

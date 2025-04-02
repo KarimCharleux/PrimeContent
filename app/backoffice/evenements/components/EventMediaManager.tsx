@@ -5,8 +5,8 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
-import { db } from '@/app/backoffice/lib/firebase-client';
-import { EventMediaItem, Evenement } from '@/app/backoffice/models/eventTypes';
+import { db } from '../../lib/firebase-client';
+import { EventMediaItem, Evenement } from '../../models/eventTypes';
 
 
 

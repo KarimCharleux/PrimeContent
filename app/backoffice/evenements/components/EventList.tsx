@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 
-import EventCard from '@/app/components/EventCard';
-
+import EventCard from '../../../components/EventCard';
 import { Evenement } from '../../models/eventTypes';
 
 interface EventListProps {
