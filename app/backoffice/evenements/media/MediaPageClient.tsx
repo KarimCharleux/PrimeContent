@@ -3,7 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import EventDetailClient from '@/app/backoffice/evenements/components/EventDetailClient';
+import EventDetailClient from '../components/EventDetailClient';
 
 export default function MediaPageClient(): JSX.Element {
   const searchParams = useSearchParams();

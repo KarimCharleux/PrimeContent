@@ -10,13 +10,13 @@ import {
     updateDoc,
     addDoc,
     Timestamp,
-    where,
 } from 'firebase/firestore';
 import { useEffect, useState, useCallback } from 'react';
 
-import { Spinner } from '@/app/backoffice/components/Spinner';
-import { db } from '@/app/backoffice/lib/firebase-client';
 import { Evenement, EventFilter, EventStats } from '@/app/backoffice/models/eventTypes';
+
+import { Spinner } from '../../components/Spinner';
+import { db } from '../../lib/firebase-client';
 
 import EventForm from './EventForm';
 import EventList from './EventList';

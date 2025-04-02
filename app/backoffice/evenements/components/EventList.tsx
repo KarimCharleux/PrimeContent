@@ -1,15 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
 
-import { Evenement } from '@/app/backoffice/models/eventTypes';
 import EventCard from '@/app/components/EventCard';
 
+import { Evenement } from '../../models/eventTypes';
+
 interface EventListProps {
-    evenements: Evenement[];
-    handleEdit: (event: Evenement) => void;
-    handleDelete: (id: string) => void;
+    readonly evenements: Evenement[];
+    readonly handleEdit: (event: Evenement) => void;
+    readonly handleDelete: (id: string) => void;
 }
 
 export default function EventList({ evenements, handleEdit, handleDelete }: EventListProps) {
