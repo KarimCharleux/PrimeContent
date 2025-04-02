@@ -1,14 +1,30 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    output: 'export',
     images: {
         unoptimized: true,
     },
-    distDir: 'build',
     trailingSlash: true,
-    experimental: {
-        workerThreads: false,
-        cpus: 1
+    assetPrefix: process.env.NODE_ENV === 'production' ? '/' : '',
+    async headers() {
+        return [
+            {
+                source: '/(.*)',
+                headers: [
+                    {
+                        key: 'X-Content-Type-Options',
+                        value: 'nosniff',
+                    },
+                    {
+                        key: 'X-Frame-Options',
+                        value: 'DENY',
+                    },
+                    {
+                        key: 'X-XSS-Protection',
+                        value: '1; mode=block',
+                    },
+                ],
+            },
+        ];
     },
 };
 export default nextConfig;

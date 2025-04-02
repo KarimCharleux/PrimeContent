@@ -1,30 +1,30 @@
-import { collection, getDocs } from 'firebase/firestore';
 import { Suspense } from 'react';
 
-import { db } from '@/app/backoffice/lib/firebase-client';
+import { getEventById, getAllEvents } from '@/app/backoffice/lib/eventService';
+
 
 import Footer from '../../components/Footer';
 import Header from '../../components/Header';
 
 import EventDetailClient from './EventDetailClient';
 
+
 // Importation des styles
 import '../evenements.scss';
 import './eventDetail.scss';
 
-// Fonction pour générer les paramètres statiques
+// Cette fonction est maintenant pour la génération initiale seulement
 export async function generateStaticParams() {
-  try {
-    // Récupérer tous les IDs d'événements visibles pour la génération statique
-    const eventsSnapshot = await getDocs(collection(db, 'evenements'));
-    return eventsSnapshot.docs.map(doc => ({ 
-      id: doc.id 
-    }));
-  } catch (error) {
-    console.error("Erreur lors de la récupération des événements pour generateStaticParams:", error);
-    return [];
-  }
+  const events = await getAllEvents();
+  return events.map(event => ({
+    id: event.id,
+  }));
 }
+
+// Configuration ISR - revalidation toutes les 60 secondes
+export const dynamic = 'force-dynamic'; // Force le rendu dynamique
+export const revalidate = 60;
+export const dynamicParams = true;
 
 // Types pour les props de la page
 type Props = {
@@ -33,7 +33,13 @@ type Props = {
   };
 };
 
-export default function EvenementDetailPage({ params }: Props) {
+async function EventPage({ params }: Props) {
+  const event = await getEventById(params.id);
+  
+  if (!event) {
+    return <div>Événement non trouvé</div>;
+  }
+  
   return (
     <main className="global-main-page">
       <section className="min-h-screen">
@@ -52,4 +58,6 @@ export default function EvenementDetailPage({ params }: Props) {
       <Footer hideCTA={true} />
     </main>
   );
-} 
+}
+
+export default EventPage; 
