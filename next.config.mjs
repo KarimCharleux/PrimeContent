@@ -5,6 +5,14 @@ const nextConfig = {
     },
     trailingSlash: true,
     assetPrefix: process.env.NODE_ENV === 'production' ? '/' : '',
+    webpack: (config, { dev, isServer }) => {
+        // Ajout de la résolution des alias
+        config.resolve.alias = {
+            ...config.resolve.alias,
+            '@': '.',
+        };
+        return config;
+    },
     async headers() {
         return [
             {

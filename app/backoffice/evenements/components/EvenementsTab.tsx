@@ -16,7 +16,7 @@ import { useEffect, useState, useCallback } from 'react';
 
 import { Spinner } from '@/app/backoffice/components/Spinner';
 import { db } from '@/app/backoffice/lib/firebase-client';
-import { Evenement, EventFilter, EventStats, EventType } from '@/app/backoffice/models/eventTypes';
+import { Evenement, EventFilter, EventStats } from '@/app/backoffice/models/eventTypes';
 
 import EventForm from './EventForm';
 import EventList from './EventList';
