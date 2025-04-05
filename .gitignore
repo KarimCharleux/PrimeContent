@@ -48,3 +48,6 @@ next-env.d.ts
 *.gif
 *.mp4
 *.webm
+
+# temp
+temp/
