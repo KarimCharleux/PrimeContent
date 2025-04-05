@@ -6,7 +6,7 @@
     "scripts": {
         "dev": "next dev",
         "clean": "rm -rf build .next",
-        "build": "npm run clean && next build",
+        "build": "npm run clean && NODE_OPTIONS='--use-npm' next build",
         "start": "NODE_ENV=production node server.js",
         "lint": "eslint .",
         "lint:fix": "eslint --fix .",
