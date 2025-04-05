@@ -1,7 +1,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import Footer from './components/Footer';
@@ -75,7 +74,7 @@ export default function NotFound() {
                     transition={{ delay: 1.2, duration: 1 }}
                     className="mt-12 text-sm text-gray-500"
                 >
-                    © Prime Content
+                    © Primecontent
                 </motion.div>
             </div>
 
