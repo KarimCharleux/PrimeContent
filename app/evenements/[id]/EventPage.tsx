@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Evenement, EventMediaItem } from '../../backoffice/models/eventTypes';
 import PortfolioGrid from '../../components/PortfolioGrid/PortfolioGrid';
 import PrimaryButton from '../../components/PrimaryButton';
+import { getMediaUrl } from '../../utils/mediaUrl';
 
 // Variants pour les animations
 const fadeInUp = {
@@ -288,7 +289,7 @@ export default function EventPage({ evenement }: EventPageProps) {
         return loadedMedia.map((media) => ({
             title: media.title || '',
             category: media.category || 'Photo',
-            source: media.path,
+            source: getMediaUrl(media.path),
             isVideo: media.isVideo,
             format: media.format,
             thumbnail: media.thumbnail,
