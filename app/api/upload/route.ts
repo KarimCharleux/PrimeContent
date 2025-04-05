@@ -28,13 +28,8 @@ function getStoragePath(basePath: string): string {
 
 // Fonction pour générer l'URL publique
 function getPublicUrl(basePath: string, fileName: string): string {
-    if (process.env.NODE_ENV === 'production') {
-        // URL absolue vers le sous-domaine média
-        return `https://media.primecontent.fr/${basePath}/${fileName}`;
-    } else {
-        // URL relative pour le développement
-        return `/${basePath}/${fileName}`;
-    }
+    // Toujours retourner le chemin relatif, même en production
+    return `/${basePath}/${fileName}`;
 }
 
 export async function POST(request: NextRequest) {
