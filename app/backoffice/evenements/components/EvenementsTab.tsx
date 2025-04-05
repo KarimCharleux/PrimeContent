@@ -169,7 +169,7 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
             setPreviewImage(objectUrl);
             setFormData((prev) => ({
                 ...prev,
-                imageSrc: objectUrl,
+                _tempImagePreview: objectUrl,
             }));
         }
     };

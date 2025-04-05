@@ -1049,7 +1049,7 @@ export default function EventMediaManager({
                                         </div>
                                     ) : (
                                         <Image
-                                            src={getMediaUrl(URL.createObjectURL(file))}
+                                            src={URL.createObjectURL(file)}
                                             alt={file.name}
                                             fill
                                             className="object-cover"

@@ -117,7 +117,7 @@ export default function EventPage({ evenement }: EventPageProps) {
         const preloadImage = (mediaItem: EventMediaItem) => {
             return new Promise<EventMediaItem>((resolve, reject) => {
                 const img = new window.Image();
-                img.src = mediaItem.path;
+                img.src = getMediaUrl(mediaItem.path);
                 img.onload = () => {
                     loadedCount++;
                     setLoadingProgress(Math.round((loadedCount / totalMedia) * 100));
@@ -289,7 +289,7 @@ export default function EventPage({ evenement }: EventPageProps) {
         return loadedMedia.map((media) => ({
             title: media.title || '',
             category: media.category || 'Photo',
-            source: getMediaUrl(media.path),
+            source: media.path,
             isVideo: media.isVideo,
             format: media.format,
             thumbnail: media.thumbnail,
