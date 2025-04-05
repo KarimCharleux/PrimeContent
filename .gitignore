@@ -39,10 +39,12 @@ next-env.d.ts
 .vscode
 
 # media
-/public/*.jpg
-/public/*.png
-/public/*.svg
-/public/*.webp
-/public/*.gif
-/public/*.mp4
-/public/*.webm
+*.jpg
+*.jpeg
+*.psd
+*.png
+*.svg
+*.webp
+*.gif
+*.mp4
+*.webm
