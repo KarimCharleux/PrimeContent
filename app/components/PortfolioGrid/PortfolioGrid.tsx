@@ -8,6 +8,7 @@ import gsap from '../../lib/gsap-config';
 import ImageCarousel from '../ImageCarousel/ImageCarousel';
 
 import styles from './PortfolioGrid.module.scss';
+import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 // Types pour les projets
 export interface Project {
@@ -282,7 +283,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                         {project.thumbnail ? (
                                             <div className={styles.portfolioImageContainer}>
                                                 <Image
-                                                    src={project.thumbnail}
+                                                    src={getMediaUrl(project.thumbnail)}
                                                     alt={project.title ?? ''}
                                                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                                     fill
@@ -312,7 +313,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                             <>
                                                 <video
                                                     ref={(el) => addVideoRef(el, index)}
-                                                    src={project.source}
+                                                    src={getMediaUrl(project.source)}
                                                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                                     loop
                                                     muted
@@ -342,7 +343,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                 ) : (
                                     <div className={styles.portfolioImageContainer}>
                                         <Image
-                                            src={project.source}
+                                            src={getMediaUrl(project.source)}
                                             alt={project.title ?? ''}
                                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                             fill

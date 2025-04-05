@@ -5,6 +5,7 @@ import Link from 'next/link';
 import React, { useState } from 'react';
 
 import { useAuth } from '../hooks/useAuth';
+import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 export default function Header() {
   const { user, signOut } = useAuth();
@@ -42,7 +43,7 @@ export default function Header() {
               <div className="h-8 w-8 rounded-full bg-gray-200 overflow-hidden">
                 {user?.photoURL ? (
                   <Image 
-                    src={user.photoURL} 
+                    src={getMediaUrl(user.photoURL)} 
                     alt={user.displayName ?? 'User avatar'} 
                     width={32}
                     height={32}

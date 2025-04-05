@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form';
 import ExpertiseCard from '../../../components/ExpertiseCard';
 import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
+import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 interface Expertise {
   id?: string;
@@ -559,7 +560,7 @@ export default function HomeTabExpertises() {
                           <td className="px-6 py-4">
                             <div className="h-10 w-10 relative overflow-hidden rounded">
                               <Image 
-                                src={expertise.backgroundImage} 
+                                src={getMediaUrl(expertise.backgroundImage)} 
                                 alt={expertise.title} 
                                 fill 
                                 className="object-cover"

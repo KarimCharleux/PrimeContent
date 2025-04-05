@@ -2,6 +2,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
+import { getMediaUrl } from '../utils/mediaUrl';
 
 interface ClientProfileProps {
   readonly name: string;
@@ -94,7 +95,7 @@ export default function ClientProfile({
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black overflow-hidden">
         {imageBackground && !imageError ? (
           <Image
-            src={imageBackground}
+            src={getMediaUrl(imageBackground)}
             alt={`${name} background`}
             fill
             style={{ objectFit: 'cover', opacity: 0.6 }}
@@ -110,7 +111,7 @@ export default function ClientProfile({
       <div className="client-image absolute inset-0 transition-transform duration-200 ease-out">
         {imageSrc && !imageError ? (
           <Image
-            src={imageSrc}
+            src={getMediaUrl(imageSrc)}
             alt={name}
             fill
             style={{ objectFit: 'cover' }}

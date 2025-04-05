@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 import gsap from '../lib/gsap-config';
+import { getMediaUrl } from '../utils/mediaUrl';
 
 export interface Review {
   name: string;
@@ -326,7 +327,7 @@ export default function CustomerReviews({
                       <div className="flex-shrink-0">
                         <div className="w-12 h-12 rounded-full overflow-hidden relative border-2 border-white/20 group-hover:border-white/40 transition-all duration-300 shadow-lg">
                           <Image 
-                            src={review.imageSrc} 
+                            src={getMediaUrl(review.imageSrc)}
                             alt={review.name}
                             fill
                             sizes="48px"

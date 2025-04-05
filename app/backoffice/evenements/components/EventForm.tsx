@@ -7,6 +7,7 @@ import { Evenement, EventType, TarifDegressif } from '../../models/eventTypes';
 
 // Styles pour le toggle switch
 import './toggle.scss';
+import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 interface EventFormProps {
     formData: Partial<Evenement>;
@@ -277,7 +278,7 @@ export default function EventForm({
                                 <div className="relative aspect-[3/2] bg-gray-100 rounded-lg overflow-hidden">
                                     {previewImage ? (
                                         <Image
-                                            src={previewImage}
+                                            src={getMediaUrl(previewImage)}
                                             alt="Prévisualisation"
                                             fill
                                             className="object-cover"

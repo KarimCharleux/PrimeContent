@@ -4,6 +4,22 @@ import { join } from 'path';
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 
+// Définir le chemin racine pour les médias selon l'environnement
+const MEDIA_ROOT = process.env.NODE_ENV === 'production' 
+  ? '/home/aymo1441/PrimeContentMedia' 
+  : join(process.cwd(), 'public');
+
+// Fonction pour générer l'URL publique
+function getPublicUrl(basePath: string, fileName: string): string {
+  if (process.env.NODE_ENV === 'production') {
+    // URL absolue vers le sous-domaine média
+    return `https://media.primecontent.fr/${basePath}/${fileName}`;
+  } else {
+    // URL relative pour le développement
+    return `/${basePath}/${fileName}`;
+  }
+}
+
 // Fonction pour obtenir les dimensions d'une image
 async function getImageDimensions(buffer: Uint8Array): Promise<{ width: number; height: number } | null> {
   try {
@@ -45,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Créer le chemin complet du dossier public
-    const galleryPath = join(process.cwd(), 'public', 'home', 'gallery');
+    const galleryPath = join(MEDIA_ROOT, 'home', 'gallery');
     
     // Créer le dossier s'il n'existe pas
     try {
@@ -70,12 +86,16 @@ export async function POST(request: NextRequest) {
       // Écrire le fichier
       await writeFile(filePath, buffer);
       
+      // Générer l'URL publique
+      const fileUrl = getPublicUrl('home/gallery', fileName);
+      
       return {
         originalName: file.name,
         savedName: fileName,
         size: file.size,
         type: file.type,
-        dimensions
+        dimensions,
+        url: fileUrl
       };
     });
     

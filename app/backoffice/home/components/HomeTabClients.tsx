@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 
 import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
+import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 interface Brand {
   id?: string;
@@ -554,7 +555,7 @@ export default function HomeTabClients() {
                       {previewBrandImage ? (
                         <div className="relative h-32 w-32">
                           <Image 
-                            src={previewBrandImage} 
+                            src={getMediaUrl(previewBrandImage)} 
                             alt="Prévisualisation" 
                             fill 
                             className="object-contain"
@@ -612,7 +613,7 @@ export default function HomeTabClients() {
                           <td className="px-6 py-4">
                             <div className="h-10 w-24 relative bg-gray-200 rounded-md">
                               <Image 
-                                src={brand.imageSrc} 
+                                src={getMediaUrl(brand.imageSrc)} 
                                 alt={brand.name} 
                                 fill 
                                 className="object-contain"
@@ -730,7 +731,7 @@ export default function HomeTabClients() {
                       {previewClientImage ? (
                         <div className="relative h-32 w-32">
                           <Image 
-                            src={previewClientImage} 
+                            src={getMediaUrl(previewClientImage)} 
                             alt="Prévisualisation" 
                             fill 
                             className="object-contain"
@@ -748,7 +749,7 @@ export default function HomeTabClients() {
                       {previewClientBgImage ? (
                         <div className="relative h-full w-full">
                           <Image 
-                            src={previewClientBgImage} 
+                            src={getMediaUrl(previewClientBgImage)} 
                             alt="Prévisualisation de l'arrière-plan" 
                             fill 
                             className="object-cover"
@@ -808,7 +809,7 @@ export default function HomeTabClients() {
                           <td className="px-6 py-4">
                             <div className="h-12 w-12 relative">
                               <Image 
-                                src={client.imageSrc} 
+                                src={getMediaUrl(client.imageSrc)} 
                                 alt={client.name} 
                                 fill 
                                 className="object-cover rounded-full"
@@ -818,7 +819,7 @@ export default function HomeTabClients() {
                           <td className="px-6 py-4">
                             <div className="h-12 w-24 relative">
                               <Image 
-                                src={client.imageBackground} 
+                                src={getMediaUrl(client.imageBackground)} 
                                 alt={`${client.name} background`} 
                                 fill 
                                 className="object-cover rounded-md"

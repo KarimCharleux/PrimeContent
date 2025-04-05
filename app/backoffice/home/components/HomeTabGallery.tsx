@@ -1,5 +1,6 @@
 'use client';
 
+import { getMediaUrl } from '@/app/utils/mediaUrl';
 import { saveAs } from 'file-saver';
 import JSZip from 'jszip';
 import Image from 'next/image';
@@ -465,7 +466,7 @@ export default function HomeTabGallery({ onStatusChange }: HomeTabGalleryProps) 
                 <div key={index} className="relative group">
                   <div className="aspect-w-1 aspect-h-1 overflow-hidden rounded-lg bg-gray-100">
                     <Image
-                      src={image.url}
+                      src={getMediaUrl(image.url)}
                       alt={image.name}
                       width={300}
                       height={300}

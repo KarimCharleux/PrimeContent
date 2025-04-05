@@ -5,6 +5,22 @@ import { join } from 'path';
 import { NextResponse } from 'next/server';
 import sharp from 'sharp';
 
+// Définir le chemin racine pour les médias selon l'environnement
+const MEDIA_ROOT = process.env.NODE_ENV === 'production' 
+  ? '/home/aymo1441/PrimeContentMedia' 
+  : join(process.cwd(), 'public');
+
+// Fonction pour générer l'URL publique
+function getPublicUrl(basePath: string, fileName: string): string {
+  if (process.env.NODE_ENV === 'production') {
+    // URL absolue vers le sous-domaine média
+    return `https://media.primecontent.fr/${basePath}/${fileName}`;
+  } else {
+    // URL relative pour le développement
+    return `/${basePath}/${fileName}`;
+  }
+}
+
 // Vitesse de connexion moyenne en France en bits par seconde (15 Mbps)
 const AVERAGE_CONNECTION_SPEED = 15 * 1024 * 1024 / 8; // Convertir en octets par seconde
 
@@ -24,7 +40,7 @@ async function getImageDimensions(filePath: string): Promise<{ width: number; he
 
 export async function GET() {
   try {
-    const galleryPath = join(process.cwd(), 'public', 'home', 'gallery');
+    const galleryPath = join(MEDIA_ROOT, 'home', 'gallery');
     
     // Lire tous les fichiers du dossier
     const files = await readdir(galleryPath);
@@ -44,7 +60,7 @@ export async function GET() {
       
       return {
         name: fileName,
-        url: `/home/gallery/${fileName}`,
+        url: getPublicUrl('home/gallery', fileName),
         size: fileStats.size,
         dimensions,
         lastModified: fileStats.mtime

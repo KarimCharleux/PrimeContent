@@ -7,6 +7,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 import { db } from '../../lib/firebase-client';
 import { EventMediaItem, Evenement } from '../../models/eventTypes';
+import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 
 
@@ -790,7 +791,7 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
                                         {/* Lecteur vidéo */}
                                         <div className={`relative bg-black rounded-lg overflow-hidden ${getItemSizeClass(editingMedia.format)}`}>
                                             <video 
-                                                src={editingMedia.path} 
+                                                src={getMediaUrl(editingMedia.path)} 
                                                 className="w-full h-full object-contain" 
                                                 controls
                                                 poster={previewThumbnail || editingMedia.thumbnail}
@@ -802,7 +803,7 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
                                             {previewThumbnail || editingMedia.thumbnail ? (
                                                 <div className="relative h-full group">
                                                     <Image
-                                                        src={previewThumbnail || editingMedia.thumbnail!}
+                                                        src={getMediaUrl(previewThumbnail || editingMedia.thumbnail!)}
                                                         alt="Miniature"
                                                         fill
                                                         className="object-cover"
@@ -838,7 +839,7 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
                                     <div className={`relative bg-gray-100 rounded-lg overflow-hidden ${getItemSizeClass(editingMedia.format)}`}>
                                         <div className="relative group h-full">
                                             <Image
-                                                src={editingMedia.path}
+                                                src={getMediaUrl(editingMedia.path)}
                                                 alt={editingMedia.title || 'Aperçu'}
                                                 fill
                                                 className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -944,7 +945,7 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
                                         </div>
                                     ) : (
                                         <Image 
-                                            src={URL.createObjectURL(file)} 
+                                            src={getMediaUrl(URL.createObjectURL(file))} 
                                             alt={file.name}
                                             fill
                                             className="object-cover"
@@ -1069,7 +1070,7 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
                                                     <div className="absolute inset-0 flex items-center justify-center bg-black">
                                                         {image.thumbnail ? (
                                                             <Image 
-                                                                src={image.thumbnail}
+                                                                src={getMediaUrl(image.thumbnail)}
                                                                 alt={image.title || "Miniature vidéo"}
                                                                 fill
                                                                 className="object-cover"
@@ -1082,7 +1083,7 @@ export default function EventMediaManager({ evenement, onStatusChange, onStatsCh
                                                     </div>
                                                 ) : (
                                                     <Image 
-                                                        src={image.path} 
+                                                        src={getMediaUrl(image.path)} 
                                                         alt={image.title || "Image"}
                                                         fill
                                                         className="object-cover"

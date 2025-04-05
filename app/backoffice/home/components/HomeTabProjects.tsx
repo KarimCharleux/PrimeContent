@@ -15,6 +15,7 @@ import { useEffect, useState, useCallback } from 'react';
 
 import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
+import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 interface Project {
     id?: string;
@@ -868,7 +869,7 @@ export default function HomeTabProjects() {
                                                     <p className="text-sm text-gray-500 mb-1">Aperçu de la miniature :</p>
                                                     <div className="w-32 h-24 relative overflow-hidden rounded">
                                                         <Image
-                                                            src={formData.thumbnail}
+                                                            src={getMediaUrl(formData.thumbnail)}
                                                             alt="Aperçu de la miniature"
                                                             fill
                                                             className="object-cover"
@@ -888,13 +889,13 @@ export default function HomeTabProjects() {
                                                 <>
                                                     {previewImage.match(/\.(mp4|webm|ogg)$/i) ? (
                                                         <video
-                                                            src={previewImage}
+                                                            src={getMediaUrl(previewImage)}
                                                             controls
                                                             className="w-full h-full object-cover"
                                                         />
                                                     ) : (
                                                         <Image
-                                                            src={previewImage}
+                                                            src={getMediaUrl(previewImage)}
                                                             alt="Prévisualisation"
                                                             fill
                                                             className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1019,12 +1020,12 @@ export default function HomeTabProjects() {
                                                             /\.(mp4|webm|ogg)$/i,
                                                         ) ? (
                                                             <video
-                                                                src={project.source}
+                                                                src={getMediaUrl(project.source)}
                                                                 className="w-full h-full object-cover"
                                                             />
                                                         ) : (
                                                             <Image
-                                                                src={project.source}
+                                                                src={getMediaUrl(project.source)}
                                                                 alt={project.title}
                                                                 fill
                                                                 className="object-cover"
@@ -1037,7 +1038,7 @@ export default function HomeTabProjects() {
                                                         <div className="h-10 w-10 relative overflow-hidden rounded">
                                                             {project.thumbnail ? (
                                                                 <Image
-                                                                    src={project.thumbnail}
+                                                                    src={getMediaUrl(project.thumbnail)}
                                                                     alt={`Miniature de ${project.title}`}
                                                                     fill
                                                                     className="object-cover"

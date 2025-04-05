@@ -4,6 +4,11 @@ import { join } from 'path';
 
 import { NextRequest, NextResponse } from 'next/server';
 
+// Définir le chemin racine pour les médias selon l'environnement
+const MEDIA_ROOT = process.env.NODE_ENV === 'production' 
+  ? '/home/aymo1441/PrimeContentMedia' 
+  : join(process.cwd(), 'public');
+
 async function fileExists(path: string): Promise<boolean> {
   try {
     await access(path, constants.F_OK);
@@ -36,7 +41,7 @@ export async function DELETE(request: NextRequest) {
     }
     
     // Construire le chemin complet du fichier
-    const fullPath = join(process.cwd(), 'public', filePath, fileName);
+    const fullPath = join(MEDIA_ROOT, filePath, fileName);
     
     // Vérifier si le fichier existe
     const exists = await fileExists(fullPath);

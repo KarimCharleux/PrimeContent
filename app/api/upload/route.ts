@@ -1,9 +1,14 @@
 import { constants } from 'fs';
 import { writeFile, mkdir, unlink, access } from 'fs/promises';
-import { join } from 'path';
+import { join, resolve } from 'path';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+
+// Définir le chemin racine pour les médias selon l'environnement
+const MEDIA_ROOT = process.env.NODE_ENV === 'production' 
+  ? '/home/aymo1441/PrimeContentMedia' 
+  : join(process.cwd(), 'public');
 
 // Fonction pour vérifier si un fichier existe
 async function fileExists(path: string): Promise<boolean> {
@@ -15,18 +20,19 @@ async function fileExists(path: string): Promise<boolean> {
   }
 }
 
-// Fonction pour supprimer un fichier existant
-async function deleteFile(filePath: string): Promise<boolean> {
-  try {
-    const exists = await fileExists(filePath);
-    if (exists) {
-      await unlink(filePath);
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error(`Erreur lors de la suppression du fichier ${filePath}:`, error);
-    return false;
+// Fonction pour déterminer le chemin d'enregistrement
+function getStoragePath(basePath: string): string {
+  return join(MEDIA_ROOT, basePath);
+}
+
+// Fonction pour générer l'URL publique
+function getPublicUrl(basePath: string, fileName: string): string {
+  if (process.env.NODE_ENV === 'production') {
+    // URL absolue vers le sous-domaine média
+    return `https://media.primecontent.fr/${basePath}/${fileName}`;
+  } else {
+    // URL relative pour le développement
+    return `/${basePath}/${fileName}`;
   }
 }
 
@@ -36,7 +42,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const basePath = formData.get('path') as string || 'uploads';
     const customFileName = formData.get('fileName') as string;
-    const oldFilePath = formData.get('oldFilePath') as string;
+    let oldFilePath = formData.get('oldFilePath') as string;
     const useUuid = formData.get('useUuid') === 'true';
     
     if (!file) {
@@ -58,36 +64,45 @@ export async function POST(request: NextRequest) {
     // Générer un nom de fichier unique si aucun nom fourni
     const fileName = customFileName || (useUuid ? `${uuidv4()}.${file.name.split('.').pop()}` : file.name);
     
-    // Créer le chemin complet du dossier public
-    const publicFolderPath = join(process.cwd(), 'public', basePath);
+    // Créer le chemin complet du dossier de stockage
+    const storageFolderPath = getStoragePath(basePath);
     
     // Créer le dossier s'il n'existe pas
     try {
-      await mkdir(publicFolderPath, { recursive: true });
+      await mkdir(storageFolderPath, { recursive: true });
+      console.log(`Dossier créé ou vérifié: ${storageFolderPath}`);
     } catch (error) {
-      console.log('Le dossier existe déjà ou erreur lors de sa création');
+      console.error('Erreur lors de la création du dossier:', error);
+      return NextResponse.json(
+        { error: `Impossible de créer le dossier de destination: ${(error as Error).message}` },
+        { status: 500 }
+      );
     }
     
     // Supprimer l'ancien fichier si spécifié
     if (oldFilePath) {
       try {
-        // Extraire le nom du fichier depuis le chemin
-        const oldFileName = oldFilePath.split('/').pop();
+        let oldFileName, oldFileFolderPath;
+        
+        // Gérer les URLs absolues et relatives
+        if (oldFilePath.includes('media.primecontent.fr')) {
+          // URL absolue du sous-domaine
+          const urlParts = oldFilePath.split('media.primecontent.fr/')[1].split('/');
+          oldFileName = urlParts.pop();
+          oldFileFolderPath = urlParts.join('/');
+        } else {
+          // Chemin relatif
+          if (oldFilePath.startsWith('/')) {
+            oldFilePath = oldFilePath.substring(1);
+          }
+          const pathParts = oldFilePath.split('/');
+          oldFileName = pathParts.pop();
+          oldFileFolderPath = pathParts.join('/');
+        }
         
         if (oldFileName) {
-          // Déterminer le chemin du dossier parent
-          let oldFileFolderPath;
-          
-          if (oldFilePath.startsWith('/')) {
-            // Si le chemin commence par un slash, supprimer le premier caractère
-            oldFileFolderPath = oldFilePath.substring(1, oldFilePath.lastIndexOf('/'));
-          } else {
-            // Sinon, prendre le chemin tel quel
-            oldFileFolderPath = oldFilePath.substring(0, oldFilePath.lastIndexOf('/'));
-          }
-          
           // Construire le chemin complet vers l'ancien fichier
-          const fullOldPath = join(process.cwd(), 'public', oldFileFolderPath, oldFileName);
+          const fullOldPath = join(MEDIA_ROOT, oldFileFolderPath, oldFileName);
           
           // Vérifier si le fichier existe avant de le supprimer
           const fileExistsResult = await fileExists(fullOldPath);
@@ -100,25 +115,35 @@ export async function POST(request: NextRequest) {
           }
         }
       } catch (deleteError) {
-        // Simplement logguer l'erreur et continuer
         console.error('Erreur lors de la suppression de l\'ancien fichier:', deleteError);
       }
     }
     
     // Chemin complet du fichier
-    const filePath = join(publicFolderPath, fileName);
+    const filePath = join(storageFolderPath, fileName);
     
     // Convertir le fichier en buffer et l'écrire
     const arrayBuffer = await file.arrayBuffer();
     const buffer = new Uint8Array(arrayBuffer);
-    await writeFile(filePath, buffer);
     
-    // Retourner le chemin du fichier
-    const fileUrl = `/${basePath}/${fileName}`;
+    try {
+      await writeFile(filePath, buffer);
+      console.log(`Fichier écrit avec succès: ${filePath}`);
+    } catch (writeError) {
+      console.error('Erreur lors de l\'écriture du fichier:', writeError);
+      return NextResponse.json(
+        { error: `Impossible d'écrire le fichier: ${(writeError as Error).message}` },
+        { status: 500 }
+      );
+    }
+    
+    // Générer l'URL publique
+    const fileUrl = getPublicUrl(basePath, fileName);
     
     return NextResponse.json({ 
       success: true, 
-      fileUrl 
+      fileUrl,
+      storagePath: filePath
     });
   } catch (error: any) {
     console.error('Erreur lors du téléchargement du fichier:', error);

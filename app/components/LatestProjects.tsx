@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 
 import gsap from '../lib/gsap-config';
+import { getMediaUrl } from '../utils/mediaUrl';
 
 interface Project {
   id: string;
@@ -66,7 +67,7 @@ export default function LatestProjects({ projects }: LatestProjectsProps) {
             <Link href={project.link}>
               <div className="relative w-full h-full">
                 <Image 
-                  src={project.imageSrc} 
+                  src={getMediaUrl(project.imageSrc)} 
                   alt={project.title}
                   fill
                   sizes="(max-width: 768px) 100vw, 33vw"

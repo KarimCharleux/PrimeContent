@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRef } from 'react';
 
 import styles from './EventCard.module.scss';
+import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 // Variants pour les animations
 const fadeInUp = {
@@ -98,7 +99,7 @@ export default function EventCard({
           <div className={styles.cardShine}></div>
           <div className={styles.imageContainer}>
             <Image 
-              src={imageSrc} 
+              src={getMediaUrl(imageSrc)}
               alt={title} 
               className={styles.evenementImage}
               fill

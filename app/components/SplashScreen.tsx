@@ -4,6 +4,7 @@ import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 import { useImageStore } from '../store/imageStore';
+import { getMediaUrl } from '../utils/mediaUrl';
 
 interface SplashScreenProps {
     readonly onLoadingComplete: () => void;
@@ -58,7 +59,7 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                             resolve(img);
                         };
                         img.onerror = reject;
-                        img.src = `/home/gallery/${src}`;
+                        img.src = getMediaUrl(`/home/gallery/${src}`);
                     });
 
                 const loadedImages = await Promise.all(data.images.map(loadImage));

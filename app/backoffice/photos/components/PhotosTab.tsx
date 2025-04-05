@@ -15,6 +15,7 @@ import { useEffect, useState, useCallback } from 'react';
 
 import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
+import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 interface Photo {
     id?: string;
@@ -713,7 +714,7 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                             {previewImage ? (
                                                 <>
                                                     <Image
-                                                        src={previewImage}
+                                                        src={getMediaUrl(previewImage)}
                                                         alt="Prévisualisation"
                                                         fill
                                                         className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -822,7 +823,7 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                             <td className="px-6 py-4">
                                                 <div className="h-16 w-16 relative overflow-hidden rounded">
                                                     <Image
-                                                        src={photo.source}
+                                                        src={getMediaUrl(photo.source)}
                                                         alt={photo.title || 'Photo sans titre'}
                                                         fill
                                                         className="object-cover"

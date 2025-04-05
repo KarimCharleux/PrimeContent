@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import CustomerReviews, { Review } from '../../../components/CustomerReviews';
 import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
+import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 // Étendre l'interface Review pour inclure l'id pour l'administration
 interface AdminReview extends Review {
@@ -454,7 +455,7 @@ export default function HomeTabReviews() {
                                         {review.imageSrc && (
                                             <div className="w-12 h-12 rounded-full overflow-hidden relative">
                                                 <Image
-                                                    src={review.imageSrc}
+                                                    src={getMediaUrl(review.imageSrc)}
                                                     alt={review.name}
                                                     fill
                                                     className="object-cover"

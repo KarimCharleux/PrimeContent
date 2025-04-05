@@ -15,6 +15,7 @@ import { useEffect, useState, useCallback } from 'react';
 
 import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
+import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 interface Video {
     id?: string;
@@ -886,7 +887,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                                             <div className={`relative bg-gray-100 rounded-lg overflow-hidden ${getItemSizeClass(formData.format || 'paysage')}`}>
                                                 {formData.source ? (
                                                     <video
-                                                        src={formData.source}
+                                                        src={getMediaUrl(formData.source)}
                                                         className="w-full h-full object-cover"
                                                         controls
                                                         preload="metadata"
@@ -903,7 +904,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                                                 {previewThumbnail ? (
                                                     <>
                                                         <Image
-                                                            src={previewThumbnail}
+                                                            src={getMediaUrl(previewThumbnail)}
                                                             alt="Prévisualisation"
                                                             fill
                                                             className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1017,14 +1018,14 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                                                 <div className="h-16 w-24 relative overflow-hidden rounded">
                                                     {video.thumbnail ? (
                                                         <Image
-                                                            src={video.thumbnail}
+                                                            src={getMediaUrl(video.thumbnail)}
                                                             alt={video.title || 'Vidéo sans titre'}
                                                             fill
                                                             className="object-cover"
                                                         />
                                                     ) : (
                                                         <video
-                                                            src={video.source}
+                                                            src={getMediaUrl(video.source)}
                                                             className="w-full h-full object-cover"
                                                             preload="metadata"
                                                         />

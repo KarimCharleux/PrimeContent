@@ -8,6 +8,7 @@ import Header from '../components/Header';
 import PortfolioGrid from '../components/PortfolioGrid';
 import { mariagesPortfolioData, mariagesTestimonialsData } from '../data/mariagesData';
 import './mariages.scss';
+import { getMediaUrl } from '../utils/mediaUrl';
 
 // Variants pour les animations
 const fadeInUp = {
@@ -141,15 +142,15 @@ export default function MariagesPage() {
                         >
                             <div className="couple-images">
                                 <Image
-                                    src={testimonial.coupleImages.person1}
+                                    src={getMediaUrl(testimonial.coupleImages.person1)}
                                     alt={`Photo de ${testimonial.coupleName.split('&')[0]}`}
                                     width={80}
                                     height={80}
                                     className="object-cover rounded-full overflow-hidden h-20 w-20"
                                 />
-                                <Image src="/mariages/link.svg" alt="Link" width={116} height={78} className="h-20 w-28"/>
+                                <Image src={getMediaUrl('/mariages/link.svg')} alt="Link" width={116} height={78} className="h-20 w-28"/>
                                 <Image
-                                    src={testimonial.coupleImages.person2}
+                                    src={getMediaUrl(testimonial.coupleImages.person2)}
                                     alt={`Photo de ${testimonial.coupleName.split('&')[1]}`}
                                     width={80}
                                     height={80}

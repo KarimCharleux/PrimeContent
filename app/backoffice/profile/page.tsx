@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { useAuth } from '../hooks/useAuth';
 import { db } from '../lib/firebase-client';
+import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 // Formats d'image autorisés
 const ALLOWED_FORMATS = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -200,7 +201,7 @@ export default function ProfilePage() {
               <div className="relative w-32 h-32 rounded-full overflow-hidden mb-4 cursor-pointer" onClick={triggerFileInput}>
                 {photoURL ? (
                   <Image
-                    src={photoURL}
+                    src={getMediaUrl(photoURL)}
                     alt="Avatar"
                     fill
                     sizes="(max-width: 768px) 100vw, 128px"

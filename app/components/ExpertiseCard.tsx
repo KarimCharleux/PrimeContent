@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { ReactNode, useState } from 'react';
+import { getMediaUrl } from '../utils/mediaUrl';
 
 interface ExpertiseCardProps {
   readonly title: string;
@@ -49,7 +50,7 @@ export default function ExpertiseCard({
       >
         {!imageError && (
           <Image
-            src={backgroundImage}
+            src={getMediaUrl(backgroundImage)}
             alt={title}
             fill
             style={{ objectFit: 'cover' }}

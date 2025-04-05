@@ -5,13 +5,19 @@ import { join } from 'path';
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 
-// Fonction pour vérifier si un fichier existe
-async function fileExists(path: string): Promise<boolean> {
-  try {
-    await access(path, constants.F_OK);
-    return true;
-  } catch {
-    return false;
+// Définir le chemin racine pour les médias selon l'environnement
+const MEDIA_ROOT = process.env.NODE_ENV === 'production' 
+  ? '/home/aymo1441/PrimeContentMedia' 
+  : join(process.cwd(), 'public');
+
+// Fonction pour générer l'URL publique
+function getPublicUrl(basePath: string, fileName: string): string {
+  if (process.env.NODE_ENV === 'production') {
+    // URL absolue vers le sous-domaine média
+    return `https://media.primecontent.fr/${basePath}/${fileName}`;
+  } else {
+    // URL relative pour le développement
+    return `/${basePath}/${fileName}`;
   }
 }
 
@@ -32,12 +38,12 @@ export async function POST(request: NextRequest) {
     // Vérification des formats autorisés
     const allowedFormats = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
     
-    // Créer le chemin complet du dossier public
-    const publicFolderPath = join(process.cwd(), 'public', basePath);
+    // Créer le chemin complet du dossier
+    const storageFolderPath = join(MEDIA_ROOT, basePath);
     
     // Créer le dossier s'il n'existe pas
     try {
-      await mkdir(publicFolderPath, { recursive: true });
+      await mkdir(storageFolderPath, { recursive: true });
     } catch (error) {
       console.log('Le dossier existe déjà ou erreur lors de sa création');
     }
@@ -58,7 +64,7 @@ export async function POST(request: NextRequest) {
         const fileName = useUuid ? `${uuidv4()}.${file.name.split('.').pop()}` : file.name;
         
         // Chemin complet du fichier
-        const filePath = join(publicFolderPath, fileName);
+        const filePath = join(storageFolderPath, fileName);
         
         // Convertir le fichier en buffer et l'écrire
         const arrayBuffer = await file.arrayBuffer();
@@ -66,7 +72,7 @@ export async function POST(request: NextRequest) {
         await writeFile(filePath, buffer);
         
         // Ajouter l'URL du fichier à la liste
-        const fileUrl = `/${basePath}/${fileName}`;
+        const fileUrl = getPublicUrl(basePath, fileName);
         fileUrls.push(fileUrl);
       } catch (fileError) {
         errorFiles.push(file.name);

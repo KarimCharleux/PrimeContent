@@ -2,6 +2,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { getMediaUrl } from '../utils/mediaUrl';
 
 interface BrandLogoProps {
   readonly name: string;
@@ -17,7 +18,7 @@ export default function BrandLogo({ name, imageSrc, href = '#' }: BrandLogoProps
       {imageSrc && !imageError ? (
         <div className="relative w-fit h-fit transition-all duration-300 group-hover:scale-105">
           <Image
-            src={imageSrc}
+            src={getMediaUrl(imageSrc)}
             alt={name}
             width={500}
             height={260}

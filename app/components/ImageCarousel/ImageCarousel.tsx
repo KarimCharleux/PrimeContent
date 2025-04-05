@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 import styles from './ImageCarousel.module.scss';
+import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 interface MediaItem {
   src: string;
@@ -268,7 +269,7 @@ const ImageCarousel = ({
               <div className={styles['video-wrapper']}>
                 <video
                   ref={videoRef}
-                  src={currentItem.src}
+                  src={getMediaUrl(currentItem.src)}
                   className={styles['carousel-video']}
                   onClick={togglePlay}
                   onTimeUpdate={handleTimeUpdate}
@@ -346,7 +347,7 @@ const ImageCarousel = ({
               </div>
             ) : (
               <Image 
-                src={currentItem.src}
+                src={getMediaUrl(currentItem.src)}
                 alt={`Média ${currentIndex + 1}`}
                 className={styles['carousel-image']}
                 width={1200}
