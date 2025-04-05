@@ -8,16 +8,16 @@ export const useAnimationControl = () => {
     useEffect(() => {
         // Vérifier si l'animation a déjà été activée dans cette session
         const animationActivated = sessionStorage.getItem('headerAnimationActivated');
-        
+
         if (animationActivated === 'true') {
             // Si l'animation a déjà été activée dans cette session, l'activer immédiatement
             setShouldAnimate(true);
             return;
         }
-        
+
         // Vérifier si nous sommes sur la page d'accueil
         const isHomePage = typeof window !== 'undefined' && window.location.pathname === '/';
-        
+
         // Si nous ne sommes pas sur la page d'accueil, animer immédiatement
         if (!isHomePage) {
             setShouldAnimate(true);
@@ -25,7 +25,7 @@ export const useAnimationControl = () => {
             sessionStorage.setItem('headerAnimationActivated', 'true');
             return;
         }
-        
+
         // Sur la page d'accueil, vérifier le statut du splash screen
         const checkSplashScreen = () => {
             const splashScreenComplete = localStorage.getItem('splashScreenComplete');
@@ -46,4 +46,4 @@ export const useAnimationControl = () => {
     }, []);
 
     return shouldAnimate;
-}; 
+};

@@ -1,181 +1,181 @@
 /* Styles pour les composants d'événements */
 
 .toggleCheckbox {
-  @apply absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer;
+    @apply absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer;
 }
 
 .toggleCheckbox:checked {
-  @apply right-0;
-  border-color: #10b981;
+    @apply right-0;
+    border-color: #10b981;
 }
 
 .toggleLabel {
-  @apply block overflow-hidden h-6 rounded-full cursor-pointer;
-  background-color: #e5e7eb;
+    @apply block overflow-hidden h-6 rounded-full cursor-pointer;
+    background-color: #e5e7eb;
 }
 
 .toggleCheckbox:checked + .toggleLabel {
-  background-color: #10b981;
+    background-color: #10b981;
 }
 
 .eventCard {
-  @apply relative bg-white rounded-lg overflow-hidden shadow-md transition duration-300 h-full;
+    @apply relative bg-white rounded-lg overflow-hidden shadow-md transition duration-300 h-full;
 }
 
 .eventCard:hover {
-  @apply shadow-lg transform -translate-y-1;
+    @apply shadow-lg transform -translate-y-1;
 }
 
 .eventCardImage {
-  @apply relative w-full aspect-[4/3] bg-gray-200 overflow-hidden;
+    @apply relative w-full aspect-[4/3] bg-gray-200 overflow-hidden;
 }
 
 .eventCardContent {
-  @apply p-4;
+    @apply p-4;
 }
 
 .eventCardTitle {
-  @apply text-lg font-semibold mb-2 truncate;
+    @apply text-lg font-semibold mb-2 truncate;
 }
 
 .eventCardMeta {
-  @apply flex items-center text-sm text-gray-600 mb-1;
+    @apply flex items-center text-sm text-gray-600 mb-1;
 }
 
 .eventCardIcon {
-  @apply flex-shrink-0 w-4 h-4 mr-1;
+    @apply flex-shrink-0 w-4 h-4 mr-1;
 }
 
 .eventCardBadge {
-  @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-2;
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-2;
 }
 
 .badgeVisionner {
-  @apply bg-indigo-100 text-indigo-800;
+    @apply bg-indigo-100 text-indigo-800;
 }
 
 .badgeSelection {
-  @apply bg-pink-100 text-pink-800;
+    @apply bg-pink-100 text-pink-800;
 }
 
 .badgePaye {
-  @apply bg-amber-100 text-amber-800;
+    @apply bg-amber-100 text-amber-800;
 }
 
 .badgeNonPaye {
-  @apply bg-teal-100 text-teal-800;
+    @apply bg-teal-100 text-teal-800;
 }
 
 .imageGrid {
-  @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4;
+    @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4;
 }
 
 .imageItem {
-  @apply relative aspect-square bg-gray-100 rounded-lg overflow-hidden group;
+    @apply relative aspect-square bg-gray-100 rounded-lg overflow-hidden group;
 }
 
 .imageItemSelected {
-  @apply ring-2 ring-indigo-500;
+    @apply ring-2 ring-indigo-500;
 }
 
 .imageItemOverlay {
-  @apply absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200;
+    @apply absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200;
 }
 
 .imageItemCheckbox {
-  @apply absolute top-2 left-2 z-10;
+    @apply absolute top-2 left-2 z-10;
 }
 
 .imageItemBadge {
-  @apply absolute top-2 right-2 p-1.5 rounded-full cursor-pointer transition-colors z-10;
+    @apply absolute top-2 right-2 p-1.5 rounded-full cursor-pointer transition-colors z-10;
 }
 
 .imageItemBadgeSelected {
-  @apply bg-pink-500 text-white;
+    @apply bg-pink-500 text-white;
 }
 
 .imageItemBadgeUnselected {
-  @apply bg-gray-200 text-gray-600 hover:bg-gray-300;
+    @apply bg-gray-200 text-gray-600 hover:bg-gray-300;
 }
 
 .dropZone {
-  @apply border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors;
+    @apply border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors;
 }
 
 .dropZoneActive {
-  @apply border-indigo-500 bg-indigo-50;
+    @apply border-indigo-500 bg-indigo-50;
 }
 
 .dropZoneInactive {
-  @apply border-gray-300 hover:border-gray-400;
+    @apply border-gray-300 hover:border-gray-400;
 }
 
 .actionButton {
-  @apply px-4 py-2 rounded-md flex items-center transition-colors;
+    @apply px-4 py-2 rounded-md flex items-center transition-colors;
 }
 
 .actionButtonPrimary {
-  @apply bg-black text-white hover:bg-black/80;
+    @apply bg-black text-white hover:bg-black/80;
 }
 
 .actionButtonSecondary {
-  @apply bg-gray-200 text-gray-700 hover:bg-gray-300;
+    @apply bg-gray-200 text-gray-700 hover:bg-gray-300;
 }
 
 .actionButtonDanger {
-  @apply bg-red-600 text-white hover:bg-red-700;
+    @apply bg-red-600 text-white hover:bg-red-700;
 }
 
 .actionButtonSuccess {
-  @apply bg-green-600 text-white hover:bg-green-700;
+    @apply bg-green-600 text-white hover:bg-green-700;
 }
 
 .progressBar {
-  @apply w-full h-2 bg-gray-200 rounded-full mt-2 overflow-hidden;
+    @apply w-full h-2 bg-gray-200 rounded-full mt-2 overflow-hidden;
 }
 
 .progressBarFill {
-  @apply h-full bg-indigo-500 transition-all duration-300;
+    @apply h-full bg-indigo-500 transition-all duration-300;
 }
 
 .tabButton {
-  @apply py-4 px-1 border-b-2 font-medium text-sm transition-colors;
+    @apply py-4 px-1 border-b-2 font-medium text-sm transition-colors;
 }
 
 .tabButtonActive {
-  @apply border-black text-black;
+    @apply border-black text-black;
 }
 
 .tabButtonInactive {
-  @apply border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300;
+    @apply border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300;
 }
 
 /* Animation pour le chargement */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 .fadeIn {
-  animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn 0.3s ease-in-out;
 }
 
 /* Animation pour les cartes */
 @keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .slideUp {
-  animation: slideUp 0.4s ease-out;
-} 
+    animation: slideUp 0.4s ease-out;
+}

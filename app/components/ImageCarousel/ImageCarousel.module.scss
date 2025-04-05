@@ -2,307 +2,309 @@
 
 // Animation de pulsation pour donner une subtile respiration à l'interface
 @keyframes pulse {
-  0% {
-    opacity: 0.7;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0.9;
-    transform: scale(1.05);
-  }
+    0% {
+        opacity: 0.7;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0.9;
+        transform: scale(1.05);
+    }
 }
 
 // Animation de rotation pour éléments décoratifs
 @keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 // Animation d'entrée/sortie pour le modal
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    backdrop-filter: blur(0px);
-  }
-  to {
-    opacity: 1;
-    backdrop-filter: blur(8px);
-  }
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+    }
+    to {
+        opacity: 1;
+        backdrop-filter: blur(8px);
+    }
 }
 
 // Animation pour les boutons au hover
 @keyframes buttonHover {
-  0% {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-  100% {
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-  }
+    0% {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    100% {
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    }
 }
 
 // Styles pour le carrousel
 .carousel {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 // Conteneur d'image
 .carousel-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  
-  &::-webkit-scrollbar {
-    width: 0;
-    height: 0;
-    background: transparent;
-  }
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+
+    &::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        background: transparent;
+    }
 }
 
 // Style pour l'image
 .carousel-image {
-  max-width: 100%;
-  max-height: 90vh;
-  width: 100% !important;
-  height: auto !important;
-  object-fit: contain !important;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
+    max-width: 100%;
+    max-height: 90vh;
+    width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
 }
 
 // Style pour la vidéo
 .video-wrapper {
-  position: relative;
-  max-width: 100%;
-  max-height: 90vh;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  border-radius: 4px;
-  overflow: hidden;
-  background-color: #000;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+    max-width: 100%;
+    max-height: 90vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #000;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
 }
 
 .carousel-video {
-  max-width: 100%;
-  max-height: 85vh;
-  width: 100%;
-  object-fit: contain;
-  border-radius: 4px;
-  cursor: pointer;
+    max-width: 100%;
+    max-height: 85vh;
+    width: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 // Contrôles vidéo
 .video-controls {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0));
-  padding: 30px 16px 10px;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  opacity: 0;
-  transform: translateY(10px);
-  
-  .video-wrapper:hover & {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0));
+    padding: 30px 16px 10px;
+    transition:
+        opacity 0.3s ease,
+        transform 0.3s ease;
+    opacity: 0;
+    transform: translateY(10px);
+
+    .video-wrapper:hover & {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .progress-bar {
-  width: 100%;
-  height: 4px;
-  background-color: rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
-  margin-bottom: 10px;
-  position: relative;
-  cursor: pointer;
-  
-  &:hover {
-    height: 6px;
-  }
+    width: 100%;
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    margin-bottom: 10px;
+    position: relative;
+    cursor: pointer;
+
+    &:hover {
+        height: 6px;
+    }
 }
 
 .progress-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  background-color: #ffffff;
-  border-radius: 2px;
-  
-  &::after {
-    content: '';
     position: absolute;
-    right: -4px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+    top: 0;
+    left: 0;
+    height: 100%;
     background-color: #ffffff;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-  
-  .progress-bar:hover &::after {
-    opacity: 1;
-  }
+    border-radius: 2px;
+
+    &::after {
+        content: '';
+        position: absolute;
+        right: -4px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #ffffff;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .progress-bar:hover &::after {
+        opacity: 1;
+    }
 }
 
 .controls-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .control-button {
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    transform: scale(1.1);
-  }
-  
-  &:active {
-    transform: scale(0.95);
-  }
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        transform: scale(1.1);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
 }
 
 .time-display {
-  font-size: 14px;
-  font-family: monospace;
-  color: rgba(255, 255, 255, 0.8);
-  min-width: 100px;
+    font-size: 14px;
+    font-family: monospace;
+    color: rgba(255, 255, 255, 0.8);
+    min-width: 100px;
 }
 
 // Style pour le bouton de base
 .carousel-button {
-  background-color: rgba(30, 30, 30, 0.6);
-  color: white;
-  border: none;
-  border-radius: 9999px;
-  min-width: 2.5rem;
-  height: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 10;
-  padding: 0 1rem;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  
-  &:hover {
-    background-color: rgba(60, 60, 60, 0.8);
-    transform: scale(1.05);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
-  }
-  
-  // Pour les appareils tactiles
-  @media (hover: none) {
-    &:active {
-      transform: scale(0.95);
-      background-color: rgba(80, 80, 80, 0.9);
+    background-color: rgba(30, 30, 30, 0.6);
+    color: white;
+    border: none;
+    border-radius: 9999px;
+    min-width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+    padding: 0 1rem;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+
+    &:hover {
+        background-color: rgba(60, 60, 60, 0.8);
+        transform: scale(1.05);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
     }
-  }
+
+    // Pour les appareils tactiles
+    @media (hover: none) {
+        &:active {
+            transform: scale(0.95);
+            background-color: rgba(80, 80, 80, 0.9);
+        }
+    }
 }
 
 // Boutons de navigation
 .nav-button {
-  @extend .carousel-button;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 50px;
-  height: 50px;
-  padding: 0;
-  
-  &:hover {
-    transform: translateY(-50%) scale(1.05);
-  }
-  
-  &.prev {
-    left: 1rem;
-  }
-  
-  &.next {
-    right: 1rem;
-  }
-  
-  // Responsive pour mobile
-  @media (max-width: 768px) {
-    width: 40px;
-    height: 40px;
-  }
-  
-  // Pour les appareils tactiles
-  @media (hover: none) {
-    &:active {
-      transform: translateY(-50%) scale(0.95);
+    @extend .carousel-button;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    padding: 0;
+
+    &:hover {
+        transform: translateY(-50%) scale(1.05);
     }
-  }
+
+    &.prev {
+        left: 1rem;
+    }
+
+    &.next {
+        right: 1rem;
+    }
+
+    // Responsive pour mobile
+    @media (max-width: 768px) {
+        width: 40px;
+        height: 40px;
+    }
+
+    // Pour les appareils tactiles
+    @media (hover: none) {
+        &:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+    }
 }
 
 // Bouton de sélection
 .select-button {
-  @extend .carousel-button;
-  background-color: rgba(40, 40, 40, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(8px);
-  
-  &.selected {
-    background-color: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(180, 180, 180, 0.6);
-    color: black;
-  }
-  
-  .select-label {
-    margin-left: 0.5rem;
-    font-size: 0.875rem;
-    
-    @media (max-width: 768px) {
-      display: none;
+    @extend .carousel-button;
+    background-color: rgba(40, 40, 40, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(8px);
+
+    &.selected {
+        background-color: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(180, 180, 180, 0.6);
+        color: black;
     }
-  }
+
+    .select-label {
+        margin-left: 0.5rem;
+        font-size: 0.875rem;
+
+        @media (max-width: 768px) {
+            display: none;
+        }
+    }
 }
 
 // Compteur d'images
 .counter {
-  position: absolute;
-  bottom: 1rem;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  
-  .counter-badge {
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    padding: 0.5rem 1.5rem;
-    border-radius: 9999px;
-    font-size: 0.875rem;
-    color: white;
-  }
-} 
+    position: absolute;
+    bottom: 1rem;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+
+    .counter-badge {
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        padding: 0.5rem 1.5rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        color: white;
+    }
+}

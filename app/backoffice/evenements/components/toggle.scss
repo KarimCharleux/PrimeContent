@@ -2,61 +2,61 @@
 
 /* Masquer la checkbox par défaut */
 .toggle-checkbox {
-  height: 0;
-  width: 0;
-  visibility: hidden;
-  position: absolute;
+    height: 0;
+    width: 0;
+    visibility: hidden;
+    position: absolute;
 }
 
 /* Style de base pour le toggle */
 .toggle-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  width: 2.5rem;
-  height: 1.5rem;
-  background: #CCCCCC;
-  border-radius: 100px;
-  position: relative;
-  transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    width: 2.5rem;
+    height: 1.5rem;
+    background: #cccccc;
+    border-radius: 100px;
+    position: relative;
+    transition: background-color 0.2s;
 }
 
 /* Bouton du toggle */
 .toggle-label:after {
-  content: "";
-  position: absolute;
-  top: 0.1875rem;
-  left: 0.1875rem;
-  width: 1.125rem;
-  height: 1.125rem;
-  background: #fff;
-  border-radius: 50%;
-  transition: 0.3s;
-  box-shadow: 0 0 2px 0 rgba(10, 10, 10, 0.29);
+    content: '';
+    position: absolute;
+    top: 0.1875rem;
+    left: 0.1875rem;
+    width: 1.125rem;
+    height: 1.125rem;
+    background: #fff;
+    border-radius: 50%;
+    transition: 0.3s;
+    box-shadow: 0 0 2px 0 rgba(10, 10, 10, 0.29);
 }
 
 /* Quand la checkbox est cochée, changer la couleur du fond */
 .toggle-checkbox:checked + .toggle-label {
-  background: #22c55e; /* vert */
+    background: #22c55e; /* vert */
 }
 
 /* Quand la checkbox est cochée, déplacer le bouton vers la droite */
 .toggle-checkbox:checked + .toggle-label:after {
-  left: calc(100% - 0.1875rem);
-  transform: translateX(-100%);
+    left: calc(100% - 0.1875rem);
+    transform: translateX(-100%);
 }
 
 /* Animation de transition */
 .toggle-label:active:after {
-  width: 1.25rem;
+    width: 1.25rem;
 }
 
 /* Autres variantes de couleur */
 .toggle-checkbox:checked + .toggle-label.toggle-green {
-  background: #22c55e;
+    background: #22c55e;
 }
 
 .toggle-checkbox:checked + .toggle-label.toggle-yellow {
-  background: #eab308;
-} 
+    background: #eab308;
+}

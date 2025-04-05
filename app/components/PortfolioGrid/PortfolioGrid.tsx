@@ -5,10 +5,10 @@ import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 
 import gsap from '../../lib/gsap-config';
+import { getMediaUrl } from '../../utils/mediaUrl';
 import ImageCarousel from '../ImageCarousel/ImageCarousel';
 
 import styles from './PortfolioGrid.module.scss';
-import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 // Types pour les projets
 export interface Project {
@@ -30,13 +30,13 @@ interface PortfolioGridProps {
     selectionLabel?: string;
 }
 
-const PortfolioGrid: React.FC<PortfolioGridProps> = ({ 
-    projects, 
-    showFilter = true, 
+const PortfolioGrid: React.FC<PortfolioGridProps> = ({
+    projects,
+    showFilter = true,
     selectionEnabled = false,
     onSelectionChange,
     selectedItems: externalSelectedItems,
-    selectionLabel = "Sélectionner"
+    selectionLabel = 'Sélectionner',
 }) => {
     // État pour le filtre actif
     const [activeFilter, setActiveFilter] = useState('Tout');
@@ -154,7 +154,6 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                 // Mettre à jour les projets filtrés
                 setFilteredProjects(newFilteredProjects);
 
-
                 // Animation d'entrée après mise à jour
                 setTimeout(() => {
                     const portfolioItems = projectsContainerRef.current?.querySelectorAll(
@@ -228,9 +227,9 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
     };
 
     // Préparation des médias pour le carrousel (images et vidéos)
-    const carouselMedia = filteredProjects.map(project => ({
+    const carouselMedia = filteredProjects.map((project) => ({
         src: project.source,
-        isVideo: project.isVideo
+        isVideo: project.isVideo,
     }));
 
     return (
@@ -273,7 +272,9 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                 onClick={() => {
                                     if (!project.isVideo || activeVideoIndex !== index) {
                                         // Trouver l'index correct dans le tableau filtré
-                                        const mediaIndex = filteredProjects.findIndex(p => p.source === project.source);
+                                        const mediaIndex = filteredProjects.findIndex(
+                                            (p) => p.source === project.source,
+                                        );
                                         openCarousel(mediaIndex);
                                     }
                                 }}
@@ -367,23 +368,23 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
 
                                 {/* Checkbox de sélection (si la sélection est activée) */}
                                 {selectionEnabled && (
-                                    <div 
+                                    <div
                                         className={styles.selectionCheckbox}
                                         onClick={(e) => toggleSelection(project.source, e)}
                                     >
                                         {selectedItems.has(project.source) && (
-                                            <svg 
-                                                xmlns="http://www.w3.org/2000/svg" 
-                                                className="h-4 w-4 text-white" 
-                                                fill="none" 
-                                                viewBox="0 0 24 24" 
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                className="h-4 w-4 text-white"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
                                                 stroke="currentColor"
                                             >
-                                                <path 
-                                                    strokeLinecap="round" 
-                                                    strokeLinejoin="round" 
-                                                    strokeWidth={3} 
-                                                    d="M5 13l4 4L19 7" 
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={3}
+                                                    d="M5 13l4 4L19 7"
                                                 />
                                             </svg>
                                         )}

@@ -13,9 +13,9 @@ import {
 import Image from 'next/image';
 import { useEffect, useState, useCallback } from 'react';
 
+import { getMediaUrl } from '../../../utils/mediaUrl';
 import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
-import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 interface Project {
     id?: string;
@@ -209,7 +209,9 @@ export default function HomeTabProjects() {
                     format: formData.format,
                     order: formData.order,
                     isLatest: formData.isLatest,
-                    isVideo: formData.source ? formData.source.match(/\.(mp4|webm|ogg)$/i) !== null : false,
+                    isVideo: formData.source
+                        ? formData.source.match(/\.(mp4|webm|ogg)$/i) !== null
+                        : false,
                     category: formData.category || '',
                     thumbnail: formData.thumbnail || '',
                 });
@@ -218,7 +220,9 @@ export default function HomeTabProjects() {
                 const newProject = {
                     ...formData,
                     order: projects.length,
-                    isVideo: formData.source ? formData.source.match(/\.(mp4|webm|ogg)$/i) !== null : false,
+                    isVideo: formData.source
+                        ? formData.source.match(/\.(mp4|webm|ogg)$/i) !== null
+                        : false,
                 };
                 await addDoc(collection(db, 'projects'), newProject);
                 setStatusMessage({
@@ -267,7 +271,7 @@ export default function HomeTabProjects() {
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(false);
-        
+
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             await handleFileUpload(e.dataTransfer.files);
         }
@@ -276,58 +280,76 @@ export default function HomeTabProjects() {
     // Supprimer tous les projets
     const handleDeleteAllProjects = async () => {
         // Filtrer les projets selon l'onglet actif
-        const projectsToDelete = projects.filter(project => 
-            activeTab === 'latest' ? project.isLatest : !project.isLatest
+        const projectsToDelete = projects.filter((project) =>
+            activeTab === 'latest' ? project.isLatest : !project.isLatest,
         );
 
-        if (!confirm(`Êtes-vous sûr de vouloir supprimer toutes les réalisations de l'onglet actuel (${projectsToDelete.length} projets) ? Cette action est irréversible.`)) {
+        if (
+            !confirm(
+                `Êtes-vous sûr de vouloir supprimer toutes les réalisations de l'onglet actuel (${projectsToDelete.length} projets) ? Cette action est irréversible.`,
+            )
+        ) {
             return;
         }
 
         try {
             // Supprimer d'abord tous les médias
-            await Promise.all(projectsToDelete.map(async (project) => {
-                if (project.source) {
-                    const fileName = project.source.split('/').pop();
-                    const filePath = project.source.substring(1, project.source.lastIndexOf('/'));
-                    
-                    if (fileName) {
-                        try {
-                            const response = await fetch(`/api/delete?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`, {
-                                method: 'DELETE',
-                            });
-                            
-                            if (!response.ok) {
-                                console.error('Erreur lors de la suppression du média:', await response.text());
+            await Promise.all(
+                projectsToDelete.map(async (project) => {
+                    if (project.source) {
+                        const fileName = project.source.split('/').pop();
+                        const filePath = project.source.substring(
+                            1,
+                            project.source.lastIndexOf('/'),
+                        );
+
+                        if (fileName) {
+                            try {
+                                const response = await fetch(
+                                    `/api/delete?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`,
+                                    {
+                                        method: 'DELETE',
+                                    },
+                                );
+
+                                if (!response.ok) {
+                                    console.error(
+                                        'Erreur lors de la suppression du média:',
+                                        await response.text(),
+                                    );
+                                }
+                            } catch (mediaError) {
+                                console.error(
+                                    'Erreur lors de la suppression du média:',
+                                    mediaError,
+                                );
                             }
-                        } catch (mediaError) {
-                            console.error('Erreur lors de la suppression du média:', mediaError);
                         }
                     }
-                }
-            }));
+                }),
+            );
 
             // Ensuite supprimer les documents Firestore
-            await Promise.all(projectsToDelete.map(project => 
-                deleteDoc(doc(db, 'projects', project.id!))
-            ));
+            await Promise.all(
+                projectsToDelete.map((project) => deleteDoc(doc(db, 'projects', project.id!))),
+            );
 
             // Mettre à jour l'état local des projets
-            setProjects(prevProjects => 
-                prevProjects.filter(project => 
-                    activeTab === 'latest' ? !project.isLatest : project.isLatest
-                )
+            setProjects((prevProjects) =>
+                prevProjects.filter((project) =>
+                    activeTab === 'latest' ? !project.isLatest : project.isLatest,
+                ),
             );
 
             setStatusMessage({
                 type: 'success',
-                message: `Toutes les réalisations de l'onglet actuel (${projectsToDelete.length} projets) ont été supprimées avec succès`
+                message: `Toutes les réalisations de l'onglet actuel (${projectsToDelete.length} projets) ont été supprimées avec succès`,
             });
         } catch (error) {
             console.error('Erreur lors de la suppression des projets:', error);
             setStatusMessage({
                 type: 'error',
-                message: 'Erreur lors de la suppression des projets'
+                message: 'Erreur lors de la suppression des projets',
             });
         }
     };
@@ -355,7 +377,7 @@ export default function HomeTabProjects() {
 
         try {
             // Trouver le dernier ordre existant
-            const lastOrder = Math.max(...projects.map(p => p.order), -1);
+            const lastOrder = Math.max(...projects.map((p) => p.order), -1);
             let currentOrder = lastOrder + 1;
 
             for (let i = 0; i < files.length; i++) {
@@ -422,39 +444,39 @@ export default function HomeTabProjects() {
     // Gérer le téléchargement de la miniature
     const handleThumbnailUpload = async (files: FileList) => {
         if (!files || files.length === 0) return;
-        
+
         setUploading(true);
         setStatusMessage(null);
         setUploadProgress(0);
 
         try {
             const file = files[0];
-            
+
             // Créer un objet URL pour la prévisualisation locale
             const objectUrl = URL.createObjectURL(file);
-            
+
             // Créer un FormData pour l'upload
             const formData = new FormData();
             formData.append('file', file);
             formData.append('path', 'home/thumbnails');
             formData.append('useUuid', 'false');
-            
+
             // Faire une requête fetch à notre API locale
             const response = await fetch('/api/upload', {
                 method: 'POST',
                 body: formData,
             });
-            
+
             if (!response.ok) {
                 throw new Error('Erreur lors du téléchargement de la miniature');
             }
-            
+
             const data = await response.json();
-            
+
             // Mettre à jour le formData avec l'URL de la miniature
-            setFormData(prev => ({ ...prev, thumbnail: data.fileUrl }));
+            setFormData((prev) => ({ ...prev, thumbnail: data.fileUrl }));
             setUploadProgress(100);
-            
+
             setStatusMessage({
                 type: 'success',
                 message: 'Miniature téléchargée avec succès',
@@ -489,22 +511,28 @@ export default function HomeTabProjects() {
     const handleDelete = async (id: string) => {
         if (window.confirm('Êtes-vous sûr de vouloir supprimer ce projet ?')) {
             try {
-                const project = projects.find(p => p.id === id);
+                const project = projects.find((p) => p.id === id);
                 if (!project) return;
 
                 // Supprimer le média si une source est définie
                 if (project.source) {
                     const fileName = project.source.split('/').pop();
                     const filePath = project.source.substring(1, project.source.lastIndexOf('/'));
-                    
+
                     if (fileName) {
                         try {
-                            const response = await fetch(`/api/delete?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`, {
-                                method: 'DELETE',
-                            });
-                            
+                            const response = await fetch(
+                                `/api/delete?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`,
+                                {
+                                    method: 'DELETE',
+                                },
+                            );
+
                             if (!response.ok) {
-                                console.error('Erreur lors de la suppression du média:', await response.text());
+                                console.error(
+                                    'Erreur lors de la suppression du média:',
+                                    await response.text(),
+                                );
                             }
                         } catch (mediaError) {
                             console.error('Erreur lors de la suppression du média:', mediaError);
@@ -586,12 +614,17 @@ export default function HomeTabProjects() {
                         <p className="text-sm text-green-600 font-medium">Taille totale</p>
                         <p className="text-3xl font-bold">{formatSize(stats.totalSize)}</p>
                         <p className="text-sm text-gray-600 mt-1">
-                            {formatSize(stats.imagesSize)} images • {formatSize(stats.videosSize)} vidéos
+                            {formatSize(stats.imagesSize)} images • {formatSize(stats.videosSize)}{' '}
+                            vidéos
                         </p>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-lg">
-                        <p className="text-sm text-purple-600 font-medium">Temps de chargement moyen</p>
-                        <p className="text-3xl font-bold">{formatLoadTime(stats.averageLoadTime)}</p>
+                        <p className="text-sm text-purple-600 font-medium">
+                            Temps de chargement moyen
+                        </p>
+                        <p className="text-3xl font-bold">
+                            {formatLoadTime(stats.averageLoadTime)}
+                        </p>
                         <p className="text-xs text-gray-500">
                             Estimation basée sur une connexion moyenne en France (15 Mbps)
                         </p>
@@ -630,8 +663,19 @@ export default function HomeTabProjects() {
                                         onClick={() => handleDeleteAllProjects()}
                                         className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-5 w-5 mr-2"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                            />
                                         </svg>
                                         Tout supprimer
                                     </button>
@@ -641,8 +685,19 @@ export default function HomeTabProjects() {
                                 onClick={() => setShowForm(true)}
                                 className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 flex items-center"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-5 w-5 mr-2"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 4v16m8-8H4"
+                                    />
                                 </svg>
                                 Nouvelle réalisation
                             </button>
@@ -652,7 +707,9 @@ export default function HomeTabProjects() {
                     {statusMessage && (
                         <div
                             className={`p-4 mb-4 rounded-md ${
-                                statusMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                                statusMessage.type === 'success'
+                                    ? 'bg-green-50 text-green-700'
+                                    : 'bg-red-50 text-red-700'
                             }`}
                         >
                             {statusMessage.message}
@@ -662,7 +719,9 @@ export default function HomeTabProjects() {
                     {/* Zone de drop pour les médias */}
                     <div
                         className={`border-2 border-dashed p-8 mb-8 rounded-lg text-center ${
-                            isDragging ? 'border-primary bg-primary bg-opacity-10' : 'border-gray-300'
+                            isDragging
+                                ? 'border-primary bg-primary bg-opacity-10'
+                                : 'border-gray-300'
                         }`}
                         onDragEnter={handleDragEnter}
                         onDragLeave={handleDragLeave}
@@ -686,15 +745,28 @@ export default function HomeTabProjects() {
                             </div>
                         ) : (
                             <>
-                                <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <svg
+                                    className="mx-auto h-12 w-12 text-gray-400"
+                                    stroke="currentColor"
+                                    fill="none"
+                                    viewBox="0 0 48 48"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
                                 </svg>
                                 <p className="mt-2 text-gray-600">
                                     Glissez-déposez des médias ici ou{' '}
                                     <button
                                         type="button"
                                         className="text-primary hover:text-primary-dark font-medium"
-                                        onClick={() => document.getElementById('fileInput')?.click()}
+                                        onClick={() =>
+                                            document.getElementById('fileInput')?.click()
+                                        }
                                     >
                                         parcourez votre ordinateur
                                     </button>
@@ -708,7 +780,9 @@ export default function HomeTabProjects() {
                                     className="hidden"
                                     accept="image/*,video/*"
                                     multiple
-                                    onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                                    onChange={(e) =>
+                                        e.target.files && handleFileUpload(e.target.files)
+                                    }
                                 />
                             </>
                         )}
@@ -829,62 +903,77 @@ export default function HomeTabProjects() {
                                                     type="file"
                                                     className="hidden"
                                                     accept="image/*,video/*"
-                                                    onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                                                    onChange={(e) =>
+                                                        e.target.files &&
+                                                        handleFileUpload(e.target.files)
+                                                    }
                                                 />
                                             </label>
                                         </div>
                                     </div>
 
                                     {/* Champ pour la miniature (visible uniquement si le média est une vidéo) */}
-                                    {formData.source && formData.source.match(/\.(mp4|webm|ogg)$/i) && (
-                                        <div className="mb-4">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Miniature personnalisée (optionnel)
-                                            </label>
-                                            <div className="flex items-center space-x-2">
-                                                <input
-                                                    type="text"
-                                                    value={formData.thumbnail || ''}
-                                                    onChange={(e) =>
-                                                        setFormData({
-                                                            ...formData,
-                                                            thumbnail: e.target.value,
-                                                        })
-                                                    }
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                    placeholder="URL de la miniature"
-                                                />
-                                                <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
-                                                    Parcourir
-                                                    <input
-                                                        type="file"
-                                                        className="hidden"
-                                                        accept="image/*"
-                                                        onChange={(e) => e.target.files && handleThumbnailUpload(e.target.files)}
-                                                    />
+                                    {formData.source &&
+                                        formData.source.match(/\.(mp4|webm|ogg)$/i) && (
+                                            <div className="mb-4">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Miniature personnalisée (optionnel)
                                                 </label>
-                                            </div>
-                                            {formData.thumbnail && (
-                                                <div className="mt-2">
-                                                    <p className="text-sm text-gray-500 mb-1">Aperçu de la miniature :</p>
-                                                    <div className="w-32 h-24 relative overflow-hidden rounded">
-                                                        <Image
-                                                            src={getMediaUrl(formData.thumbnail)}
-                                                            alt="Aperçu de la miniature"
-                                                            fill
-                                                            className="object-cover"
+                                                <div className="flex items-center space-x-2">
+                                                    <input
+                                                        type="text"
+                                                        value={formData.thumbnail || ''}
+                                                        onChange={(e) =>
+                                                            setFormData({
+                                                                ...formData,
+                                                                thumbnail: e.target.value,
+                                                            })
+                                                        }
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                        placeholder="URL de la miniature"
+                                                    />
+                                                    <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
+                                                        Parcourir
+                                                        <input
+                                                            type="file"
+                                                            className="hidden"
+                                                            accept="image/*"
+                                                            onChange={(e) =>
+                                                                e.target.files &&
+                                                                handleThumbnailUpload(
+                                                                    e.target.files,
+                                                                )
+                                                            }
                                                         />
-                                                    </div>
+                                                    </label>
                                                 </div>
-                                            )}
-                                        </div>
-                                    )}
+                                                {formData.thumbnail && (
+                                                    <div className="mt-2">
+                                                        <p className="text-sm text-gray-500 mb-1">
+                                                            Aperçu de la miniature :
+                                                        </p>
+                                                        <div className="w-32 h-24 relative overflow-hidden rounded">
+                                                            <Image
+                                                                src={getMediaUrl(
+                                                                    formData.thumbnail,
+                                                                )}
+                                                                alt="Aperçu de la miniature"
+                                                                fill
+                                                                className="object-cover"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
 
                                     <div className="mt-4">
                                         <h4 className="text-sm font-medium text-gray-700 mb-2">
                                             Prévisualisation
                                         </h4>
-                                        <div className={`w-full max-w-[400px] mx-auto relative bg-gray-100 rounded-lg overflow-hidden group ${getItemSizeClass(formData.format || 'paysage')}`}>
+                                        <div
+                                            className={`w-full max-w-[400px] mx-auto relative bg-gray-100 rounded-lg overflow-hidden group ${getItemSizeClass(formData.format || 'paysage')}`}
+                                        >
                                             {previewImage ? (
                                                 <>
                                                     {previewImage.match(/\.(mp4|webm|ogg)$/i) ? (
@@ -1038,15 +1127,28 @@ export default function HomeTabProjects() {
                                                         <div className="h-10 w-10 relative overflow-hidden rounded">
                                                             {project.thumbnail ? (
                                                                 <Image
-                                                                    src={getMediaUrl(project.thumbnail)}
+                                                                    src={getMediaUrl(
+                                                                        project.thumbnail,
+                                                                    )}
                                                                     alt={`Miniature de ${project.title}`}
                                                                     fill
                                                                     className="object-cover"
                                                                 />
                                                             ) : (
                                                                 <div className="h-full w-full flex items-center justify-center bg-gray-200 text-gray-400">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                    <svg
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                        className="h-6 w-6"
+                                                                        fill="none"
+                                                                        viewBox="0 0 24 24"
+                                                                        stroke="currentColor"
+                                                                    >
+                                                                        <path
+                                                                            strokeLinecap="round"
+                                                                            strokeLinejoin="round"
+                                                                            strokeWidth={2}
+                                                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                                                        />
                                                                     </svg>
                                                                 </div>
                                                             )}

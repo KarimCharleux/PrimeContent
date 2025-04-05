@@ -13,7 +13,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     const [isLoading, setIsLoading] = useState(true);
     const pathname = usePathname();
     const isAdminPage = pathname?.startsWith('/backoffice');
-    
+
     // Si nous sommes sur une page admin, désactiver immédiatement le chargement
     useEffect(() => {
         if (isAdminPage) {
@@ -24,7 +24,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     // Initialisation de Google Tag Manager
     useEffect(() => {
         TagManager.initialize({
-            gtmId: 'GTM-55WMPSG8'
+            gtmId: 'GTM-55WMPSG8',
         });
     }, []);
 
@@ -43,10 +43,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 </Script>
             </head>
             <body className="font-sora">
-                {!isAdminPage && (
-                    <SplashScreen onLoadingComplete={() => setIsLoading(false)} />
-                )}
-                <div style={{ opacity: isLoading && !isAdminPage ? 0 : 1, transition: 'opacity 0.5s ease-in-out' }}>
+                {!isAdminPage && <SplashScreen onLoadingComplete={() => setIsLoading(false)} />}
+                <div
+                    style={{
+                        opacity: isLoading && !isAdminPage ? 0 : 1,
+                        transition: 'opacity 0.5s ease-in-out',
+                    }}
+                >
                     {children}
                 </div>
             </body>

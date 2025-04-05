@@ -1,50 +1,49 @@
 // Styles pour la page Photos
 .title-container {
-  text-align: center;
-  margin-bottom: 3rem;
-  position: relative;
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
 }
 
 .description {
-  max-width: 800px;
-  margin: 0 auto 2.5rem;
-  text-align: center;
-  font-size: 1.1rem;
-  line-height: 1.6;
-  opacity: 0;
-  transform: translateY(20px);
-  
-  &.animated {
-    opacity: 1;
-    transform: translateY(0);
-    transition: all 0.8s ease;
-    transition-delay: 0.3s;
-  }
-}
+    max-width: 800px;
+    margin: 0 auto 2.5rem;
+    text-align: center;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    opacity: 0;
+    transform: translateY(20px);
 
+    &.animated {
+        opacity: 1;
+        transform: translateY(0);
+        transition: all 0.8s ease;
+        transition-delay: 0.3s;
+    }
+}
 
 // Animation de chargement
 .loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-  
-  .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    border-left-color: #fff;
-    animation: spin 1s linear infinite;
-  }
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        border-left-color: #fff;
+        animation: spin 1s linear infinite;
+    }
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }

@@ -269,7 +269,11 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
         const eventToDelete = evenements.find((e) => e.id === id);
         if (!eventToDelete) return;
 
-        if (window.confirm('Êtes-vous sûr de vouloir supprimer cet événement ? Tous les médias associés seront également supprimés.')) {
+        if (
+            window.confirm(
+                'Êtes-vous sûr de vouloir supprimer cet événement ? Tous les médias associés seront également supprimés.',
+            )
+        ) {
             try {
                 setStatusMessage({
                     type: 'success',
@@ -286,24 +290,34 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
                                 // Extraire le nom du fichier de l'URL
                                 const fileName = image.path.split('/').pop();
                                 if (fileName) {
-                                    const response = await fetch(`/api/delete?path=evenements/${id}&name=${encodeURIComponent(fileName)}`, {
-                                        method: 'DELETE',
-                                    });
+                                    const response = await fetch(
+                                        `/api/delete?path=evenements/${id}&name=${encodeURIComponent(fileName)}`,
+                                        {
+                                            method: 'DELETE',
+                                        },
+                                    );
                                     if (!response.ok) {
-                                        console.warn(`Erreur lors de la suppression du fichier ${fileName}`);
+                                        console.warn(
+                                            `Erreur lors de la suppression du fichier ${fileName}`,
+                                        );
                                     }
                                 }
                             }
-                            
+
                             // Supprimer la miniature si elle existe
                             if (image.thumbnail) {
                                 const thumbnailName = image.thumbnail.split('/').pop();
                                 if (thumbnailName) {
-                                    const response = await fetch(`/api/delete?path=evenements/${id}/thumbnails&name=${encodeURIComponent(thumbnailName)}`, {
-                                        method: 'DELETE',
-                                    });
+                                    const response = await fetch(
+                                        `/api/delete?path=evenements/${id}/thumbnails&name=${encodeURIComponent(thumbnailName)}`,
+                                        {
+                                            method: 'DELETE',
+                                        },
+                                    );
                                     if (!response.ok) {
-                                        console.warn(`Erreur lors de la suppression de la miniature ${thumbnailName}`);
+                                        console.warn(
+                                            `Erreur lors de la suppression de la miniature ${thumbnailName}`,
+                                        );
                                     }
                                 }
                             }
@@ -318,11 +332,16 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
                     try {
                         const imageName = eventToDelete.imageSrc.split('/').pop();
                         if (imageName) {
-                            const response = await fetch(`/api/delete?path=evenements/covers&name=${encodeURIComponent(imageName)}`, {
-                                method: 'DELETE',
-                            });
+                            const response = await fetch(
+                                `/api/delete?path=evenements/covers&name=${encodeURIComponent(imageName)}`,
+                                {
+                                    method: 'DELETE',
+                                },
+                            );
                             if (!response.ok) {
-                                console.warn(`Erreur lors de la suppression de l'image principale ${imageName}`);
+                                console.warn(
+                                    `Erreur lors de la suppression de l'image principale ${imageName}`,
+                                );
                             }
                         }
                     } catch (err) {
@@ -400,7 +419,9 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
                         <p className="text-3xl font-bold">{stats.totalEvents}</p>
                     </div>
                     <div className="bg-orange-50 p-4 rounded-lg">
-                        <p className="text-sm text-orange-600 font-medium">Nombre total d&apos;images</p>
+                        <p className="text-sm text-orange-600 font-medium">
+                            Nombre total d&apos;images
+                        </p>
                         <p className="text-3xl font-bold">{stats.totalImages}</p>
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg">

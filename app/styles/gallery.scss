@@ -6,38 +6,46 @@ $content-z-index: 3;
 
 // Mixins
 @mixin absolute-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 }
 
 @mixin flex-center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 @mixin flex-column-center {
-  @include flex-center;
-  flex-direction: column;
+    @include flex-center;
+    flex-direction: column;
 }
 
 @mixin preserve-3d {
-  transform-style: preserve-3d;
-  will-change: transform;
+    transform-style: preserve-3d;
+    will-change: transform;
 }
 
 // Animations
 @keyframes slideLeft {
-  from { transform: translateX(0); }
-  to { transform: translateX(-100%); }
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-100%);
+    }
 }
 
 @keyframes slideRight {
-  from { transform: translateX(0); }
-  to { transform: translateX(100%); }
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(100%);
+    }
 }
 
 /********************************************* 
@@ -46,96 +54,92 @@ $content-z-index: 3;
 
 // Section principale
 .gallery-hero-section {
-  width: 100%;
-  height: 100vh;
-  @include flex-center;
-  position: relative;
-  perspective: 1000px; // Effet 3D
-  overflow: hidden;
+    width: 100%;
+    height: 100vh;
+    @include flex-center;
+    position: relative;
+    perspective: 1000px; // Effet 3D
+    overflow: hidden;
 }
 
 // Conteneur de la galerie
 .gallery-container {
-  @include absolute-fill;
-  @include flex-column-center;
-  z-index: 1;
-  transform-origin: right center;
-  @include preserve-3d;
-  background: var(--dark-bg);
-  backface-visibility: hidden;
-  opacity: 0;
-  transition: opacity 0.5s ease;
+    @include absolute-fill;
+    @include flex-column-center;
+    z-index: 1;
+    transform-origin: right center;
+    @include preserve-3d;
+    background: var(--dark-bg);
+    backface-visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.5s ease;
 }
 
 // Conteneur interne
 .gallery-inner {
-  @include absolute-fill;
-  @include flex-column-center;
-  z-index: 1;
-  @include preserve-3d;
+    @include absolute-fill;
+    @include flex-column-center;
+    z-index: 1;
+    @include preserve-3d;
 }
 
 // Rangées d'images
 .gallery-row {
-  width: 100%;
-  height: calc(100% / 5);
-  display: flex;
-  position: relative;
-  overflow: hidden;
+    width: 100%;
+    height: calc(100% / 5);
+    display: flex;
+    position: relative;
+    overflow: hidden;
 }
 
 // Boîtes d'images
 .gallery-image-box {
-  width: calc(100% / 11);
-  height: 100%;
-  padding: 0.5rem;
+    width: calc(100% / 11);
+    height: 100%;
+    padding: 0.5rem;
 }
 
 .gallery-image-inner {
-  width: 100%;
-  height: 100%;
-  border-radius: $gallery-border-radius;
-  overflow: hidden;
-  
-  > img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    transform: translate3d(0, 0, 0);
-  }
+    border-radius: $gallery-border-radius;
+    overflow: hidden;
+
+    > img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: translate3d(0, 0, 0);
+    }
 }
 
 // Canvas pour l'animation
 .gallery-slider-canvas,
 .gallery-slider-clone {
-  position: absolute;
-  top: 0;
-  left: 0;
-  will-change: transform;
+    position: absolute;
+    top: 0;
+    left: 0;
+    will-change: transform;
 }
 
 // Overlays
 .gallery-overlay {
-  @include absolute-fill;
-  
-  &-primary {
-    @extend .gallery-overlay;
-    background: linear-gradient(
-      to top,
-      rgba(0, 0, 0, 1) -2%,
-      rgba(0, 0, 0, 0) 50%,
-      rgba(0, 0, 0, 0.8) 100%
-    );
-    z-index: $overlay-z-index-base;
-  }
-  
-  &-secondary {
-    @extend .gallery-overlay;
-    background: linear-gradient(
-      115deg,
-      rgba(0, 0, 0, 1) 0%,
-      rgba(255, 255, 255, 0) 50%
-    );
-    z-index: $overlay-z-index-base + 1;
-  }
-} 
+    @include absolute-fill;
+
+    &-primary {
+        @extend .gallery-overlay;
+        background: linear-gradient(
+            to top,
+            rgba(0, 0, 0, 1) -2%,
+            rgba(0, 0, 0, 0) 50%,
+            rgba(0, 0, 0, 0.8) 100%
+        );
+        z-index: $overlay-z-index-base;
+    }
+
+    &-secondary {
+        @extend .gallery-overlay;
+        background: linear-gradient(115deg, rgba(0, 0, 0, 1) 0%, rgba(255, 255, 255, 0) 50%);
+        z-index: $overlay-z-index-base + 1;
+    }
+}

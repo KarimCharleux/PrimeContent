@@ -1,202 +1,218 @@
 .primary-button-container {
-  position: relative;
-  min-width: 200px;
-  width: auto;
-  height: 63px;
-  background: transparent;
-  border-radius: 10px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  margin: 0 auto;
-  transition: all 0.3s ease;
-  padding: 0 2px;
-
-  &:hover {
-    padding: 0;
-  }
-  
-  // Effet de bordure animée
-  .animated-border {
-    position: absolute;
-    width: 500px;
-    height: 500px;
-    border-radius: 10px;
-    background-image: conic-gradient(
-      transparent 0%,
-      rgb(244, 244, 244) 30%,
-      rgb(194, 194, 194) 40%,
-      rgb(170, 170, 170) 50%,
-      rgb(119, 119, 119) 60%,
-      rgb(80, 80, 80) 70%,
-      rgb(52, 52, 52) 80%,
-      rgb(0, 0, 0) 90%,
-      transparent 100%
-    );
-    animation: rotate-border 8s linear infinite;
-    z-index: 1;
-    opacity: 0.8;
-    transition: all 0.3s ease;
-  }
-  
-  // Fond animé
-  &::before {
-    content: '';
-    position: absolute;
-    width: 400px;
-    height: 400px;
-    background-image: radial-gradient(
-      circle,
-      rgba(40, 40, 40, 0.8) 0%,
-      rgba(30, 30, 30, 0.6) 20%,
-      rgba(20, 20, 20, 0.4) 40%,
-      rgba(10, 10, 10, 0.2) 60%,
-      rgba(0, 0, 0, 0) 80%
-    );
-    animation: rotate-background 12s linear infinite reverse;
-    z-index: 0;
-    opacity: 0.7;
-  }
-  
-  // Effet de lueur
-  &::after {
-    content: '';
-    position: absolute;
-    width: 350px;
-    height: 350px;
-    background-image: radial-gradient(
-      circle,
-      rgba(80, 80, 80, 0.5) 0%,
-      rgba(60, 60, 60, 0.3) 30%,
-      rgba(40, 40, 40, 0.1) 60%,
-      rgba(0, 0, 0, 0) 80%
-    );
-    animation: pulse 4s ease-in-out infinite alternate;
-    z-index: 0;
-  }
-  
-  // Contenu du bouton
-  .primary-button-content {
     position: relative;
+    min-width: 200px;
     width: auto;
-    min-width: 190px;
-    height: 60px;
-    background: rgba(0, 0, 0, 0.8);
-    color: rgb(255, 255, 255);
+    height: 63px;
+    background: transparent;
     border-radius: 10px;
     display: flex;
-    align-items: center;
     justify-content: center;
-    font-weight: 500;
-    z-index: 2;
+    align-items: center;
+    overflow: hidden;
+    margin: 0 auto;
     transition: all 0.3s ease;
-    padding: 0 2.5rem;
-    backdrop-filter: blur(5px);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-    
+    padding: 0 2px;
+
     &:hover {
-      background: rgba(10, 10, 10, 0.9);
-      transform: scale(0.98);
-      
-      .ml-2 {
-        transform: translateX(5px);
-      }
+        padding: 0;
     }
-    
-    span {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .ml-2 {
-      transition: transform 0.3s ease;
-      margin-left: 0.75rem;
-    }
-  }
-  
-  // Animations
-  @keyframes rotate-border {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  @keyframes rotate-background {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  @keyframes pulse {
-    0% { opacity: 0.5; transform: scale(1); }
-    100% { opacity: 0.7; transform: scale(1.05); }
-  }
-  
-  // Effets au survol
-  &:hover {
+
+    // Effet de bordure animée
     .animated-border {
-      animation-duration: 4s;
-      background-image: conic-gradient(
-        transparent 0%,
-        rgba(255, 255, 255, 0) 30%,
-        rgba(255, 255, 255, 0.2) 40%,
-        rgba(255, 255, 255, 0.5) 50%,
-        rgba(255, 255, 255, 0.9) 60%,
-        rgba(255, 255, 255, 0.5) 70%,
-        rgba(255, 255, 255, 0.2) 80%,
-        rgba(255, 255, 255, 0) 90%,
-        transparent 100%
-      );
-      opacity: 1;
+        position: absolute;
+        width: 500px;
+        height: 500px;
+        border-radius: 10px;
+        background-image: conic-gradient(
+            transparent 0%,
+            rgb(244, 244, 244) 30%,
+            rgb(194, 194, 194) 40%,
+            rgb(170, 170, 170) 50%,
+            rgb(119, 119, 119) 60%,
+            rgb(80, 80, 80) 70%,
+            rgb(52, 52, 52) 80%,
+            rgb(0, 0, 0) 90%,
+            transparent 100%
+        );
+        animation: rotate-border 8s linear infinite;
+        z-index: 1;
+        opacity: 0.8;
+        transition: all 0.3s ease;
     }
-    
+
+    // Fond animé
     &::before {
-      animation-duration: 6s;
-      opacity: 0.9;
+        content: '';
+        position: absolute;
+        width: 400px;
+        height: 400px;
+        background-image: radial-gradient(
+            circle,
+            rgba(40, 40, 40, 0.8) 0%,
+            rgba(30, 30, 30, 0.6) 20%,
+            rgba(20, 20, 20, 0.4) 40%,
+            rgba(10, 10, 10, 0.2) 60%,
+            rgba(0, 0, 0, 0) 80%
+        );
+        animation: rotate-background 12s linear infinite reverse;
+        z-index: 0;
+        opacity: 0.7;
     }
-    
+
+    // Effet de lueur
     &::after {
-      animation-duration: 2s;
+        content: '';
+        position: absolute;
+        width: 350px;
+        height: 350px;
+        background-image: radial-gradient(
+            circle,
+            rgba(80, 80, 80, 0.5) 0%,
+            rgba(60, 60, 60, 0.3) 30%,
+            rgba(40, 40, 40, 0.1) 60%,
+            rgba(0, 0, 0, 0) 80%
+        );
+        animation: pulse 4s ease-in-out infinite alternate;
+        z-index: 0;
     }
-  }
+
+    // Contenu du bouton
+    .primary-button-content {
+        position: relative;
+        width: auto;
+        min-width: 190px;
+        height: 60px;
+        background: rgba(0, 0, 0, 0.8);
+        color: rgb(255, 255, 255);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 500;
+        z-index: 2;
+        transition: all 0.3s ease;
+        padding: 0 2.5rem;
+        backdrop-filter: blur(5px);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+
+        &:hover {
+            background: rgba(10, 10, 10, 0.9);
+            transform: scale(0.98);
+
+            .ml-2 {
+                transform: translateX(5px);
+            }
+        }
+
+        span {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ml-2 {
+            transition: transform 0.3s ease;
+            margin-left: 0.75rem;
+        }
+    }
+
+    // Animations
+    @keyframes rotate-border {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes rotate-background {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes pulse {
+        0% {
+            opacity: 0.5;
+            transform: scale(1);
+        }
+        100% {
+            opacity: 0.7;
+            transform: scale(1.05);
+        }
+    }
+
+    // Effets au survol
+    &:hover {
+        .animated-border {
+            animation-duration: 4s;
+            background-image: conic-gradient(
+                transparent 0%,
+                rgba(255, 255, 255, 0) 30%,
+                rgba(255, 255, 255, 0.2) 40%,
+                rgba(255, 255, 255, 0.5) 50%,
+                rgba(255, 255, 255, 0.9) 60%,
+                rgba(255, 255, 255, 0.5) 70%,
+                rgba(255, 255, 255, 0.2) 80%,
+                rgba(255, 255, 255, 0) 90%,
+                transparent 100%
+            );
+            opacity: 1;
+        }
+
+        &::before {
+            animation-duration: 6s;
+            opacity: 0.9;
+        }
+
+        &::after {
+            animation-duration: 2s;
+        }
+    }
 }
 
 // Styles pour les boutons sur fond clair
-.bg-white, .bg-gray-100, .bg-gray-200 {
-  .primary-button-container {
-    .animated-border {
-      background-image: conic-gradient(
-        transparent 0%,
-        rgba(0, 0, 0, 0) 30%,
-        rgba(0, 0, 0, 0.05) 40%,
-        rgba(0, 0, 0, 0.1) 50%,
-        rgba(0, 0, 0, 0.2) 60%,
-        rgba(0, 0, 0, 0.1) 70%,
-        rgba(0, 0, 0, 0.05) 80%,
-        rgba(0, 0, 0, 0) 90%,
-        transparent 100%
-      );
+.bg-white,
+.bg-gray-100,
+.bg-gray-200 {
+    .primary-button-container {
+        .animated-border {
+            background-image: conic-gradient(
+                transparent 0%,
+                rgba(0, 0, 0, 0) 30%,
+                rgba(0, 0, 0, 0.05) 40%,
+                rgba(0, 0, 0, 0.1) 50%,
+                rgba(0, 0, 0, 0.2) 60%,
+                rgba(0, 0, 0, 0.1) 70%,
+                rgba(0, 0, 0, 0.05) 80%,
+                rgba(0, 0, 0, 0) 90%,
+                transparent 100%
+            );
+        }
+
+        &::before {
+            background-image: radial-gradient(
+                circle,
+                rgba(200, 200, 200, 0.8) 0%,
+                rgba(180, 180, 180, 0.6) 20%,
+                rgba(160, 160, 160, 0.4) 40%,
+                rgba(140, 140, 140, 0.2) 60%,
+                rgba(255, 255, 255, 0) 80%
+            );
+        }
+
+        &::after {
+            background-image: radial-gradient(
+                circle,
+                rgba(180, 180, 180, 0.5) 0%,
+                rgba(160, 160, 160, 0.3) 30%,
+                rgba(140, 140, 140, 0.1) 60%,
+                rgba(255, 255, 255, 0) 80%
+            );
+        }
     }
-    
-    &::before {
-      background-image: radial-gradient(
-        circle,
-        rgba(200, 200, 200, 0.8) 0%,
-        rgba(180, 180, 180, 0.6) 20%,
-        rgba(160, 160, 160, 0.4) 40%,
-        rgba(140, 140, 140, 0.2) 60%,
-        rgba(255, 255, 255, 0) 80%
-      );
-    }
-    
-    &::after {
-      background-image: radial-gradient(
-        circle,
-        rgba(180, 180, 180, 0.5) 0%,
-        rgba(160, 160, 160, 0.3) 30%,
-        rgba(140, 140, 140, 0.1) 60%,
-        rgba(255, 255, 255, 0) 80%
-      );
-    }
-  }
 }

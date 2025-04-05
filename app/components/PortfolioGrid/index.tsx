@@ -1,3 +1,3 @@
 'use client';
 
-export { default, type Project } from './PortfolioGrid'; 
+export { default, type Project } from './PortfolioGrid';

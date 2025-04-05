@@ -19,9 +19,9 @@ const fadeInUp = {
         transition: {
             duration: 0.6,
             delay: custom * 0.1,
-            ease: [0.25, 0.1, 0.25, 1]
-        }
-    })
+            ease: [0.25, 0.1, 0.25, 1],
+        },
+    }),
 };
 
 const staggerContainer = {
@@ -30,9 +30,9 @@ const staggerContainer = {
         opacity: 1,
         transition: {
             staggerChildren: 0.12,
-            delayChildren: 0.3
-        }
-    }
+            delayChildren: 0.3,
+        },
+    },
 };
 
 export default function MariagesPage() {
@@ -40,25 +40,25 @@ export default function MariagesPage() {
     const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
     // État pour le chargement
     const [isLoading, setIsLoading] = useState(true);
-    
+
     // Vérifier si le SplashScreen est terminé ou si on vient d'une autre page
     useEffect(() => {
         // Simuler un chargement
         setTimeout(() => {
             setIsLoading(false);
         }, 600);
-        
+
         // Vérifie si le splash screen est terminé via le localStorage
         const checkSplashScreen = () => {
             const splashScreenComplete = localStorage.getItem('splashScreenComplete');
-            
+
             // Si on vient du SplashScreen
             if (splashScreenComplete === 'true') {
                 setShouldStartAnimations(true);
                 localStorage.removeItem('splashScreenComplete');
                 // Réinitialiser la position de défilement à 0
                 window.scrollTo(0, 0);
-            } 
+            }
             // Si on vient d'une autre page (pas de SplashScreen)
             else if (splashScreenComplete !== 'waiting') {
                 // On active les animations après un petit délai pour laisser la page se charger
@@ -85,7 +85,7 @@ export default function MariagesPage() {
                     transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
                     className="title-container relative overflow-hidden"
                 >
-                    <motion.h1 
+                    <motion.h1
                         className="page-title underline-title"
                         initial={{ opacity: 0 }}
                         animate={shouldStartAnimations ? { opacity: 1 } : { opacity: 0 }}
@@ -94,15 +94,15 @@ export default function MariagesPage() {
                         MARIAGES
                     </motion.h1>
                 </motion.div>
-                
-                <motion.p 
+
+                <motion.p
                     initial={{ opacity: 0, y: 20 }}
                     animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                     transition={{ duration: 0.8, delay: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
                     className="max-w-3xl mx-auto text-base md:text-lg text-gray-200"
                 >
-                    Nous vous accompagnons dans votre grand jour pour capturer en photos chaque moment précieux et 
-                    créer des souvenirs intemporels ✨
+                    Nous vous accompagnons dans votre grand jour pour capturer en photos chaque
+                    moment précieux et créer des souvenirs intemporels ✨
                 </motion.p>
             </section>
 
@@ -116,7 +116,7 @@ export default function MariagesPage() {
                     ) : (
                         <motion.div
                             initial="hidden"
-                            animate={shouldStartAnimations ? "visible" : "hidden"}
+                            animate={shouldStartAnimations ? 'visible' : 'hidden'}
                             variants={fadeInUp}
                             className="portfolio-container"
                         >
@@ -127,10 +127,10 @@ export default function MariagesPage() {
             </section>
 
             <section className="testimonials-section">
-                <motion.div 
+                <motion.div
                     className="testimonials-grid"
                     initial="hidden"
-                    animate={shouldStartAnimations ? "visible" : "hidden"}
+                    animate={shouldStartAnimations ? 'visible' : 'hidden'}
                     variants={staggerContainer}
                 >
                     {mariagesTestimonialsData.map((testimonial, index) => (
@@ -148,7 +148,13 @@ export default function MariagesPage() {
                                     height={80}
                                     className="object-cover rounded-full overflow-hidden h-20 w-20"
                                 />
-                                <Image src={getMediaUrl('/mariages/link.svg')} alt="Link" width={116} height={78} className="h-20 w-28"/>
+                                <Image
+                                    src={getMediaUrl('/mariages/link.svg')}
+                                    alt="Link"
+                                    width={116}
+                                    height={78}
+                                    className="h-20 w-28"
+                                />
                                 <Image
                                     src={getMediaUrl(testimonial.coupleImages.person2)}
                                     alt={`Photo de ${testimonial.coupleName.split('&')[1]}`}
@@ -167,4 +173,4 @@ export default function MariagesPage() {
             <Footer />
         </main>
     );
-} 
+}

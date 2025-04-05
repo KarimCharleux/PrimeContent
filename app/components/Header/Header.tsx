@@ -10,7 +10,7 @@ export default function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
     const shouldAnimate = useAnimationControl();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    
+
     // Empêcher le défilement du body lorsque le menu mobile est ouvert
     useEffect(() => {
         if (mobileMenuOpen) {
@@ -40,16 +40,16 @@ export default function Header() {
     const headerVariants = {
         hidden: {
             y: -100,
-            opacity: 0
+            opacity: 0,
         },
         visible: {
             y: 0,
             opacity: 1,
             transition: {
                 duration: 0.2,
-                ease: "easeOut",
-            }
-        }
+                ease: 'easeOut',
+            },
+        },
     };
 
     const navItems = [
@@ -57,13 +57,11 @@ export default function Header() {
         { name: 'Vidéos', href: '/videos' },
         { name: 'Événements', href: '/evenements' },
         { name: 'Mariages', href: '/mariages' },
-        { name: 'Contact', href: '/contact' }
+        { name: 'Contact', href: '/contact' },
     ];
 
     // Items supplémentaires pour mobile uniquement
-    const mobileOnlyItems = [
-        { name: 'Accueil', href: '/' }
-    ];
+    const mobileOnlyItems = [{ name: 'Accueil', href: '/' }];
 
     // Tous les items pour l'affichage mobile
     const allMobileItems = [...mobileOnlyItems, ...navItems];
@@ -71,7 +69,7 @@ export default function Header() {
     return (
         <motion.header
             initial="hidden"
-            animate={shouldAnimate ? "visible" : "hidden"}
+            animate={shouldAnimate ? 'visible' : 'hidden'}
             variants={headerVariants}
             className={`fixed w-full z-50 transition-all duration-300 top-0 ${
                 isScrolled ? 'bg-black/80 backdrop-blur-md py-4' : 'bg-transparent py-6'
@@ -79,20 +77,23 @@ export default function Header() {
         >
             <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
                 <Link href="/" className="font-bold text-xl primecontent-title">
-                    <span className="text-white">Prime</span><span className="text-gray-400">content.</span>
+                    <span className="text-white">Prime</span>
+                    <span className="text-gray-400">content.</span>
                 </Link>
 
                 {/* Navigation Desktop */}
                 <nav className="hidden md:block">
                     <ul className="flex space-x-8">
-                        {navItems.map((item, index) => (  
+                        {navItems.map((item, index) => (
                             <motion.li
                                 key={item.name}
                                 initial={{ opacity: 0, y: -20 }}
-                                animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
+                                animate={
+                                    shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }
+                                }
                                 transition={{
                                     duration: 0.3,
-                                    delay: 0.3 + index * 0.1
+                                    delay: 0.3 + index * 0.1,
                                 }}
                             >
                                 <Link
@@ -130,7 +131,7 @@ export default function Header() {
             </div>
 
             {/* Menu Mobile */}
-            <div 
+            <div
                 className={`fixed inset-0 bg-black bg-opacity-95 z-50 transform transition-transform duration-300 h-screen md:hidden ${
                     mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
                 }`}
@@ -164,10 +165,12 @@ export default function Header() {
                             <motion.div
                                 key={item.name}
                                 initial={{ opacity: 0, x: -20 }}
-                                animate={mobileMenuOpen ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
+                                animate={
+                                    mobileMenuOpen ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }
+                                }
                                 transition={{
                                     duration: 0.3,
-                                    delay: 0.1 * index
+                                    delay: 0.1 * index,
                                 }}
                                 className="mb-8"
                             >
@@ -185,4 +188,4 @@ export default function Header() {
             </div>
         </motion.header>
     );
-} 
+}

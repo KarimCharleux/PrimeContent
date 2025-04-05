@@ -1,13 +1,22 @@
 'use client';
 
-import { addDoc, collection, deleteDoc, doc, getDocs, query, orderBy, updateDoc } from 'firebase/firestore';
+import {
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    getDocs,
+    query,
+    orderBy,
+    updateDoc,
+} from 'firebase/firestore';
 import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
 
 import CustomerReviews, { Review } from '../../../components/CustomerReviews';
+import { getMediaUrl } from '../../../utils/mediaUrl';
 import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
-import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 // Étendre l'interface Review pour inclure l'id pour l'administration
 interface AdminReview extends Review {
@@ -27,7 +36,10 @@ export default function HomeTabReviews() {
         imageSrc: '',
         order: 0,
     });
-    const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+    const [statusMessage, setStatusMessage] = useState<{
+        type: 'success' | 'error';
+        message: string;
+    } | null>(null);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -43,9 +55,9 @@ export default function HomeTabReviews() {
             const reviewsSnapshot = await getDocs(reviewsQuery);
 
             if (!reviewsSnapshot.empty) {
-                const fetchedReviews = reviewsSnapshot.docs.map(doc => ({
+                const fetchedReviews = reviewsSnapshot.docs.map((doc) => ({
                     id: doc.id,
-                    ...doc.data()
+                    ...doc.data(),
                 })) as AdminReview[];
                 setReviews(fetchedReviews);
             } else {
@@ -53,7 +65,10 @@ export default function HomeTabReviews() {
             }
         } catch (error) {
             console.error('Erreur lors de la récupération des témoignages:', error);
-            setStatusMessage({ type: 'error', message: 'Erreur lors de la récupération des témoignages' });
+            setStatusMessage({
+                type: 'error',
+                message: 'Erreur lors de la récupération des témoignages',
+            });
         } finally {
             setLoading(false);
         }
@@ -122,25 +137,31 @@ export default function HomeTabReviews() {
     };
 
     const handleDeleteAllReviews = async () => {
-        if (!confirm(`Êtes-vous sûr de vouloir supprimer tous les témoignages (${reviews.length} témoignages) ? Cette action est irréversible.`)) {
+        if (
+            !confirm(
+                `Êtes-vous sûr de vouloir supprimer tous les témoignages (${reviews.length} témoignages) ? Cette action est irréversible.`,
+            )
+        ) {
             return;
         }
 
         try {
-            await Promise.all(reviews.map(review => 
-                review.id ? deleteDoc(doc(db, 'reviews', review.id)) : Promise.resolve()
-            ));
+            await Promise.all(
+                reviews.map((review) =>
+                    review.id ? deleteDoc(doc(db, 'reviews', review.id)) : Promise.resolve(),
+                ),
+            );
 
             setReviews([]);
             setStatusMessage({
                 type: 'success',
-                message: `Tous les témoignages (${reviews.length}) ont été supprimés avec succès`
+                message: `Tous les témoignages (${reviews.length}) ont été supprimés avec succès`,
             });
         } catch (error) {
             console.error('Erreur lors de la suppression des témoignages:', error);
             setStatusMessage({
                 type: 'error',
-                message: 'Erreur lors de la suppression des témoignages'
+                message: 'Erreur lors de la suppression des témoignages',
             });
         }
     };
@@ -166,17 +187,17 @@ export default function HomeTabReviews() {
             });
 
             if (!response.ok) {
-                throw new Error('Erreur lors du téléchargement de l\'image');
+                throw new Error("Erreur lors du téléchargement de l'image");
             }
 
             const data = await response.json();
-            setFormData(prev => ({ ...prev, imageSrc: data.fileUrl }));
+            setFormData((prev) => ({ ...prev, imageSrc: data.fileUrl }));
             setUploadProgress(100);
         } catch (error) {
             console.error('Erreur lors du téléchargement:', error);
             setStatusMessage({
                 type: 'error',
-                message: 'Erreur lors du téléchargement de l\'image',
+                message: "Erreur lors du téléchargement de l'image",
             });
         } finally {
             setUploading(false);
@@ -237,8 +258,17 @@ export default function HomeTabReviews() {
                         onClick={() => setShowForm(true)}
                         className="flex items-center px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5 mr-2"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            <path
+                                fillRule="evenodd"
+                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                clipRule="evenodd"
+                            />
                         </svg>
                         Ajouter un témoignage
                     </button>
@@ -247,8 +277,17 @@ export default function HomeTabReviews() {
                             onClick={handleDeleteAllReviews}
                             className="flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5 mr-2"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                <path
+                                    fillRule="evenodd"
+                                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                    clipRule="evenodd"
+                                />
                             </svg>
                             Tout supprimer
                         </button>
@@ -375,7 +414,9 @@ export default function HomeTabReviews() {
                                         type="file"
                                         className="hidden"
                                         accept="image/*"
-                                        onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                                        onChange={(e) =>
+                                            e.target.files && handleFileUpload(e.target.files)
+                                        }
                                     />
                                 </label>
                             </div>
@@ -465,7 +506,9 @@ export default function HomeTabReviews() {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">{review.name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{review.role}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{review.company}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {review.company}
+                                    </td>
                                     <td className="px-6 py-4">
                                         <div className="max-w-xs truncate">{review.text}</div>
                                     </td>
@@ -479,7 +522,12 @@ export default function HomeTabReviews() {
                                                 }}
                                                 className="text-indigo-600 hover:text-indigo-900"
                                             >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    className="h-5 w-5"
+                                                    viewBox="0 0 20 20"
+                                                    fill="currentColor"
+                                                >
                                                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-12 12a2 2 0 01-2.828 0 2 2 0 010-2.828l12-12z" />
                                                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-12 12a2 2 0 01-2.828 0 2 2 0 010-2.828l12-12z" />
                                                 </svg>
@@ -488,8 +536,17 @@ export default function HomeTabReviews() {
                                                 onClick={() => handleDeleteReview(review.id!)}
                                                 className="text-red-600 hover:text-red-900"
                                             >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    className="h-5 w-5"
+                                                    viewBox="0 0 20 20"
+                                                    fill="currentColor"
+                                                >
+                                                    <path
+                                                        fillRule="evenodd"
+                                                        d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                                        clipRule="evenodd"
+                                                    />
                                                 </svg>
                                             </button>
                                         </div>
@@ -515,4 +572,4 @@ export default function HomeTabReviews() {
             )}
         </>
     );
-} 
+}

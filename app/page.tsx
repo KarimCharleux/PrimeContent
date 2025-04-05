@@ -103,7 +103,7 @@ export default function Page() {
 
     // État pour contrôler le démarrage des animations
     const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
-    
+
     // États pour stocker les données récupérées depuis Firestore
     const [expertises, setExpertises] = useState<Expertise[]>([]);
     const [brands, setBrands] = useState<Brand[]>([]);
@@ -205,34 +205,51 @@ export default function Page() {
             default:
                 // Si ce n'est pas un nom prédéfini, essayer de traiter comme du SVG brut
                 try {
-                    if (icon.includes("<svg")) {
+                    if (icon.includes('<svg')) {
                         // Vérifier si on est côté client (typeof window !== 'undefined')
                         if (typeof window !== 'undefined') {
                             // Créer un div temporaire pour parser le SVG
                             const tempDiv = document.createElement('div');
                             tempDiv.innerHTML = icon;
-                            
+
                             // Obtenir l'élément SVG
                             const svgElement = tempDiv.querySelector('svg');
-                            
+
                             if (svgElement) {
                                 // Ajouter les classes nécessaires
                                 svgElement.classList.add('h-5', 'w-5', 'md:h-7', 'md:w-7');
-                                
+
                                 // Retourner le HTML parsé du SVG
-                                return <div dangerouslySetInnerHTML={{ __html: svgElement.outerHTML }} />;
+                                return (
+                                    <div
+                                        dangerouslySetInnerHTML={{ __html: svgElement.outerHTML }}
+                                    />
+                                );
                             }
                         }
-                        
+
                         // Solution de secours pour le rendu côté serveur
-                        return <div dangerouslySetInnerHTML={{ __html: icon }} className="h-5 w-5 md:h-7 md:w-7" />;
+                        return (
+                            <div
+                                dangerouslySetInnerHTML={{ __html: icon }}
+                                className="h-5 w-5 md:h-7 md:w-7"
+                            />
+                        );
                     }
-                    
+
                     // Fallback - retourner le texte comme composant si tout échoue
-                    return <div className="h-5 w-5 md:h-7 md:w-7 text-black text-xs flex items-center justify-center">{icon.substring(0, 3)}</div>;
+                    return (
+                        <div className="h-5 w-5 md:h-7 md:w-7 text-black text-xs flex items-center justify-center">
+                            {icon.substring(0, 3)}
+                        </div>
+                    );
                 } catch (error) {
-                    console.error("Erreur de parsing SVG:", error);
-                    return <div className="h-5 w-5 md:h-7 md:w-7 text-black text-xs flex items-center justify-center">SVG</div>;
+                    console.error('Erreur de parsing SVG:', error);
+                    return (
+                        <div className="h-5 w-5 md:h-7 md:w-7 text-black text-xs flex items-center justify-center">
+                            SVG
+                        </div>
+                    );
                 }
         }
     };
@@ -242,65 +259,65 @@ export default function Page() {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                
+
                 // Récupérer les expertises
                 const expertisesCollection = collection(db, 'expertises');
                 const expertisesSnapshot = await getDocs(expertisesCollection);
 
                 if (!expertisesSnapshot.empty) {
-                    const fetchedExpertises = expertisesSnapshot.docs.map(doc => ({
+                    const fetchedExpertises = expertisesSnapshot.docs.map((doc) => ({
                         id: doc.id,
-                        ...doc.data()
+                        ...doc.data(),
                     })) as Expertise[];
                     setExpertises(fetchedExpertises);
                 } else {
-                    console.log("Aucune expertise trouvée dans Firestore");
+                    console.log('Aucune expertise trouvée dans Firestore');
                 }
-                
+
                 // Récupérer les marques
                 const brandsCollection = collection(db, 'brands');
                 const brandsSnapshot = await getDocs(brandsCollection);
 
                 if (!brandsSnapshot.empty) {
-                    const fetchedBrands = brandsSnapshot.docs.map(doc => ({
+                    const fetchedBrands = brandsSnapshot.docs.map((doc) => ({
                         id: doc.id,
-                        ...doc.data()
+                        ...doc.data(),
                     })) as Brand[];
                     setBrands(fetchedBrands);
                 } else {
-                    console.log("Aucune marque trouvée dans Firestore");
+                    console.log('Aucune marque trouvée dans Firestore');
                     setBrands([]);
                 }
-                
+
                 // Récupérer les clients
                 const clientsCollection = collection(db, 'clients');
                 const clientsSnapshot = await getDocs(clientsCollection);
 
                 if (!clientsSnapshot.empty) {
-                    const fetchedClients = clientsSnapshot.docs.map(doc => ({
+                    const fetchedClients = clientsSnapshot.docs.map((doc) => ({
                         id: doc.id,
-                        ...doc.data()
+                        ...doc.data(),
                     })) as Client[];
                     setClients(fetchedClients);
                 } else {
-                    console.log("Aucun client trouvé dans Firestore");
+                    console.log('Aucun client trouvé dans Firestore');
                     setClients([]);
                 }
-                
+
                 // Récupérer les chiffres clés
                 const keyFiguresCollection = collection(db, 'keyFigures');
                 const keyFiguresSnapshot = await getDocs(keyFiguresCollection);
 
                 if (!keyFiguresSnapshot.empty) {
-                    const fetchedKeyFigures = keyFiguresSnapshot.docs.map(doc => ({
+                    const fetchedKeyFigures = keyFiguresSnapshot.docs.map((doc) => ({
                         id: doc.id,
-                        ...doc.data()
+                        ...doc.data(),
                     })) as KeyFigure[];
                     // Trier par ordre
                     fetchedKeyFigures.sort((a, b) => a.order - b.order);
                     setKeyFigures(fetchedKeyFigures);
                 } else {
-                    console.log("Aucun chiffre clé trouvé dans Firestore");
+                    console.log('Aucun chiffre clé trouvé dans Firestore');
                     setKeyFigures([]);
                 }
 
@@ -310,13 +327,13 @@ export default function Page() {
                 const projectsSnapshot = await getDocs(projectsQuery);
 
                 if (!projectsSnapshot.empty) {
-                    const fetchedProjects = projectsSnapshot.docs.map(doc => ({
+                    const fetchedProjects = projectsSnapshot.docs.map((doc) => ({
                         id: doc.id,
-                        ...doc.data()
+                        ...doc.data(),
                     })) as PortfolioProject[];
                     setProjects(fetchedProjects);
                 } else {
-                    console.log("Aucun projet trouvé dans Firestore");
+                    console.log('Aucun projet trouvé dans Firestore');
                     setProjects([]);
                 }
 
@@ -326,19 +343,19 @@ export default function Page() {
                 const reviewsSnapshot = await getDocs(reviewsQuery);
 
                 if (!reviewsSnapshot.empty) {
-                    const fetchedReviews = reviewsSnapshot.docs.map(doc => ({
+                    const fetchedReviews = reviewsSnapshot.docs.map((doc) => ({
                         id: doc.id,
-                        ...doc.data()
+                        ...doc.data(),
                     })) as Review[];
                     setReviews(fetchedReviews);
                 } else {
-                    console.log("Aucun témoignage trouvé dans Firestore");
+                    console.log('Aucun témoignage trouvé dans Firestore');
                     setReviews([]);
                 }
-                
+
                 setLoading(false);
             } catch (error) {
-                console.error("Erreur lors de la récupération des données:", error);
+                console.error('Erreur lors de la récupération des données:', error);
                 setLoading(false);
             }
         };
@@ -350,7 +367,7 @@ export default function Page() {
         // Vérifie si le splash screen est terminé via le localStorage
         const checkSplashScreen = () => {
             const splashScreenComplete = localStorage.getItem('splashScreenComplete');
-            
+
             // Si on vient du SplashScreen
             if (splashScreenComplete === 'true') {
                 setShouldStartAnimations(true);
@@ -383,12 +400,12 @@ export default function Page() {
 
         // Réinitialise les états initiaux - assurons-nous qu'ils sont visibles si shouldStartAnimations est vrai
         if (words.length > 0) {
-            words.forEach(word => {
+            words.forEach((word) => {
                 gsap.set(word, {
                     yPercent: 100,
                     opacity: 0,
                     filter: 'blur(10px)',
-                    visibility: 'visible'
+                    visibility: 'visible',
                 });
             });
 
@@ -401,9 +418,9 @@ export default function Page() {
                         opacity: 1,
                         filter: 'blur(0px)',
                         duration: 1,
-                        visibility: 'visible'
+                        visibility: 'visible',
                     },
-                    index * 0.2
+                    index * 0.2,
                 );
             });
         }
@@ -413,20 +430,20 @@ export default function Page() {
                 yPercent: 100,
                 opacity: 0,
                 filter: 'blur(10px)',
-                visibility: 'visible'
+                visibility: 'visible',
             });
 
             // Animation du texte du hero
             tl.to(
                 heroTextRef.current,
-                { 
+                {
                     yPercent: 0,
                     opacity: 1,
                     filter: 'blur(0px)',
                     duration: 1,
-                    visibility: 'visible'
+                    visibility: 'visible',
                 },
-                '-=0.4'
+                '-=0.4',
             );
         }
 
@@ -437,25 +454,22 @@ export default function Page() {
                     gsap.set(service, {
                         y: 50,
                         opacity: 0,
-                        scale: 0.9
+                        scale: 0.9,
                     });
-                    
-                    gsap.to(
-                        service,
-                        {
-                            y: 0,
-                            opacity: 1,
-                            scale: 1,
-                            duration: 0.8,
-                            delay: index * 0.15,
-                            ease: "power2.out",
-                            scrollTrigger: {
-                                trigger: service,
-                                start: 'top 85%',
-                                toggleActions: 'play none none none',
-                            },
+
+                    gsap.to(service, {
+                        y: 0,
+                        opacity: 1,
+                        scale: 1,
+                        duration: 0.8,
+                        delay: index * 0.15,
+                        ease: 'power2.out',
+                        scrollTrigger: {
+                            trigger: service,
+                            start: 'top 85%',
+                            toggleActions: 'play none none none',
                         },
-                    );
+                    });
                 }
             });
         }
@@ -467,25 +481,22 @@ export default function Page() {
                     gsap.set(client, {
                         y: 30,
                         opacity: 0,
-                        scale: 0.95
+                        scale: 0.95,
                     });
-                    
-                    gsap.to(
-                        client,
-                        {
-                            y: 0,
-                            opacity: 1,
-                            scale: 1,
-                            duration: 0.7,
-                            delay: 0.05 + (index % 6) * 0.1, // Grouper les animations par lignes de 6 max
-                            ease: "power2.out",
-                            scrollTrigger: {
-                                trigger: client,
-                                start: 'top 85%',
-                                toggleActions: 'play none none none',
-                            },
+
+                    gsap.to(client, {
+                        y: 0,
+                        opacity: 1,
+                        scale: 1,
+                        duration: 0.7,
+                        delay: 0.05 + (index % 6) * 0.1, // Grouper les animations par lignes de 6 max
+                        ease: 'power2.out',
+                        scrollTrigger: {
+                            trigger: client,
+                            start: 'top 85%',
+                            toggleActions: 'play none none none',
                         },
-                    );
+                    });
                 }
             });
         }
@@ -498,26 +509,23 @@ export default function Page() {
                         scale: 0.8,
                         opacity: 0,
                     });
-                    
-                    gsap.to(
-                        brand,
-                        {
-                            scale: 1,
-                            opacity: 1,
-                            duration: 0.5,
-                            delay: 0.1 + index * 0.1,
-                            ease: "back.out(1.5)",
-                            scrollTrigger: {
-                                trigger: brand,
-                                start: 'top 85%',
-                                toggleActions: 'play none none none',
-                            },
+
+                    gsap.to(brand, {
+                        scale: 1,
+                        opacity: 1,
+                        duration: 0.5,
+                        delay: 0.1 + index * 0.1,
+                        ease: 'back.out(1.5)',
+                        scrollTrigger: {
+                            trigger: brand,
+                            start: 'top 85%',
+                            toggleActions: 'play none none none',
                         },
-                    );
+                    });
                 }
             });
         }
-        
+
         // Animation des logos des marques sur mobile
         if (mobileBrandRefs.current.length > 0) {
             mobileBrandRefs.current.forEach((brand, index) => {
@@ -526,22 +534,19 @@ export default function Page() {
                         scale: 0.8,
                         opacity: 0,
                     });
-                    
-                    gsap.to(
-                        brand,
-                        {
-                            scale: 1,
-                            opacity: 1,
-                            duration: 0.5,
-                            delay: 0.1 + index * 0.08,
-                            ease: "back.out(1.5)",
-                            scrollTrigger: {
-                                trigger: brand,
-                                start: 'top 85%',
-                                toggleActions: 'play none none none',
-                            },
+
+                    gsap.to(brand, {
+                        scale: 1,
+                        opacity: 1,
+                        duration: 0.5,
+                        delay: 0.1 + index * 0.08,
+                        ease: 'back.out(1.5)',
+                        scrollTrigger: {
+                            trigger: brand,
+                            start: 'top 85%',
+                            toggleActions: 'play none none none',
                         },
-                    );
+                    });
                 }
             });
         }
@@ -578,12 +583,42 @@ export default function Page() {
                         ref={heroTitleRef}
                         className="text-4xl md:text-6xl font-bold mb-6 max-w-4xl"
                     >
-                        <span className="hero-word" style={{ display: 'inline-block', transform: 'translateY(0px)' }}>OÙ</span>{' '}
-                        <span className="hero-word" style={{ display: 'inline-block', transform: 'translateY(0px)' }}>LA</span>{' '}
-                        <span className="hero-word" style={{ display: 'inline-block', transform: 'translateY(0px)' }}>CRÉATIVITÉ</span>{' '}
-                        <span className="hero-word" style={{ display: 'inline-block', transform: 'translateY(0px)' }}>RENCONTRE</span>{' '}
-                        <span className="hero-word" style={{ display: 'inline-block', transform: 'translateY(0px)' }}>LA</span>{' '}
-                        <span className="hero-word" style={{ display: 'inline-block', transform: 'translateY(0px)' }}>STRATÉGIE</span>
+                        <span
+                            className="hero-word"
+                            style={{ display: 'inline-block', transform: 'translateY(0px)' }}
+                        >
+                            OÙ
+                        </span>{' '}
+                        <span
+                            className="hero-word"
+                            style={{ display: 'inline-block', transform: 'translateY(0px)' }}
+                        >
+                            LA
+                        </span>{' '}
+                        <span
+                            className="hero-word"
+                            style={{ display: 'inline-block', transform: 'translateY(0px)' }}
+                        >
+                            CRÉATIVITÉ
+                        </span>{' '}
+                        <span
+                            className="hero-word"
+                            style={{ display: 'inline-block', transform: 'translateY(0px)' }}
+                        >
+                            RENCONTRE
+                        </span>{' '}
+                        <span
+                            className="hero-word"
+                            style={{ display: 'inline-block', transform: 'translateY(0px)' }}
+                        >
+                            LA
+                        </span>{' '}
+                        <span
+                            className="hero-word"
+                            style={{ display: 'inline-block', transform: 'translateY(0px)' }}
+                        >
+                            STRATÉGIE
+                        </span>
                     </h1>
                     <p
                         ref={heroTextRef}
@@ -592,10 +627,10 @@ export default function Page() {
                         Chaque image devient une œuvre d&apos;art. Nos vidéos, photos et créations
                         graphiques racontent des histoires qui valorisent votre entreprise.
                     </p>
-                    <PrimaryButton 
-                        text="Contactez-nous" 
-                        href="/contact" 
-                        animateOnMount={true} 
+                    <PrimaryButton
+                        text="Contactez-nous"
+                        href="/contact"
+                        animateOnMount={true}
                         delay={1.2} // Délai augmenté pour s'assurer que le bouton apparaît après les autres éléments
                     />
                 </div>
@@ -619,9 +654,9 @@ export default function Page() {
                         className="flex flex-wrap justify-center gap-3 md:gap-4 lg:gap-5"
                     >
                         {expertises.map((expertise, index) => (
-                            <div 
+                            <div
                                 key={expertise.id || index}
-                                ref={(el) => addServiceRef(el, index)} 
+                                ref={(el) => addServiceRef(el, index)}
                                 className={`w-[47%] sm:w-[22%] md:w-[22%] lg:w-[18%] min-w-[150px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
                             >
                                 <ExpertiseCard
@@ -656,14 +691,30 @@ export default function Page() {
                             {/* Marques à gauche - visible uniquement sur desktop */}
                             <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
                                 {brands.slice(0, 4).map((brand, index) => (
-                                    <div key={brand.id || brand.name} className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addBrandRef(el, index)}>
-                                        <BrandLogo name={brand.name} imageSrc={brand.imageSrc} href={brand.href} />
+                                    <div
+                                        key={brand.id || brand.name}
+                                        className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                        ref={(el) => addBrandRef(el, index)}
+                                    >
+                                        <BrandLogo
+                                            name={brand.name}
+                                            imageSrc={brand.imageSrc}
+                                            href={brand.href}
+                                        />
                                     </div>
                                 ))}
                                 <div className="aspect-square"></div>
                                 {brands.slice(4, 5).map((brand, index) => (
-                                    <div key={brand.id || brand.name} className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addBrandRef(el, index + 4)}>
-                                        <BrandLogo name={brand.name} imageSrc={brand.imageSrc} href={brand.href} />
+                                    <div
+                                        key={brand.id || brand.name}
+                                        className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                        ref={(el) => addBrandRef(el, index + 4)}
+                                    >
+                                        <BrandLogo
+                                            name={brand.name}
+                                            imageSrc={brand.imageSrc}
+                                            href={brand.href}
+                                        />
                                     </div>
                                 ))}
                             </div>
@@ -671,8 +722,16 @@ export default function Page() {
                             {/* Marques en haut - visible uniquement sur mobile */}
                             <div className="flex flex-wrap justify-center gap-4 mb-8 2xl:hidden">
                                 {brands.slice(0, 5).map((brand, index) => (
-                                    <div key={brand.id || brand.name} className={`aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4 ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addMobileBrandRef(el, index)}>
-                                        <BrandLogo name={brand.name} imageSrc={brand.imageSrc} href={brand.href} />
+                                    <div
+                                        key={brand.id || brand.name}
+                                        className={`aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4 ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                        ref={(el) => addMobileBrandRef(el, index)}
+                                    >
+                                        <BrandLogo
+                                            name={brand.name}
+                                            imageSrc={brand.imageSrc}
+                                            href={brand.href}
+                                        />
                                     </div>
                                 ))}
                             </div>
@@ -716,22 +775,22 @@ export default function Page() {
                                     ))}
                                 </div>
                             </div>
-                    
+
                             {/* Profils des clients au centre sur mobile */}
                             <div className="flex flex-wrap justify-center gap-4 mb-8 2xl:hidden">
                                 {clients.map((client, index) => (
-                                    <div 
-                                        key={client.id || `${client.name}-${index}`} 
+                                    <div
+                                        key={client.id || `${client.name}-${index}`}
                                         className={`h-[150px] md:h-[250px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
                                         ref={(el) => addClientRef(el, index + clients.length)}
                                     >
-                                        <ClientProfile 
-                                            name={client.name} 
-                                            domain={client.domain} 
-                                            imageSrc={client.imageSrc} 
-                                            imageBackground={client.imageBackground} 
+                                        <ClientProfile
+                                            name={client.name}
+                                            domain={client.domain}
+                                            imageSrc={client.imageSrc}
+                                            imageBackground={client.imageBackground}
                                             href={client.href}
-                                            className="h-full" 
+                                            className="h-full"
                                         />
                                     </div>
                                 ))}
@@ -740,8 +799,16 @@ export default function Page() {
                             {/* Marques à droite - visible uniquement sur desktop */}
                             <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
                                 {brands.slice(5, 10).map((brand, index) => (
-                                    <div key={brand.id || brand.name} className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addBrandRef(el, index + 5)}>
-                                        <BrandLogo name={brand.name} imageSrc={brand.imageSrc} href={brand.href} />
+                                    <div
+                                        key={brand.id || brand.name}
+                                        className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                        ref={(el) => addBrandRef(el, index + 5)}
+                                    >
+                                        <BrandLogo
+                                            name={brand.name}
+                                            imageSrc={brand.imageSrc}
+                                            href={brand.href}
+                                        />
                                     </div>
                                 ))}
                             </div>
@@ -749,8 +816,16 @@ export default function Page() {
                             {/* Marques en bas - visible uniquement sur mobile */}
                             <div className="flex flex-wrap justify-center gap-4 mt-8 2xl:hidden">
                                 {brands.slice(5).map((brand, index) => (
-                                    <div key={brand.id || brand.name} className={`aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4 ${!shouldStartAnimations ? 'opacity-0' : ''}`} ref={(el) => addMobileBrandRef(el, index + 5)}>
-                                        <BrandLogo name={brand.name} imageSrc={brand.imageSrc} href={brand.href} />
+                                    <div
+                                        key={brand.id || brand.name}
+                                        className={`aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4 ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                        ref={(el) => addMobileBrandRef(el, index + 5)}
+                                    >
+                                        <BrandLogo
+                                            name={brand.name}
+                                            imageSrc={brand.imageSrc}
+                                            href={brand.href}
+                                        />
                                     </div>
                                 ))}
                             </div>
@@ -758,11 +833,12 @@ export default function Page() {
                     )}
 
                     <div className="mt-16 mx-auto w-fit">
-                        <PrimaryButton 
-                        text="Explorez plus" 
-                        href="/portfolio" 
-                        animateOnMount={true}
-                        delay={0.5}/>
+                        <PrimaryButton
+                            text="Explorez plus"
+                            href="/portfolio"
+                            animateOnMount={true}
+                            delay={0.5}
+                        />
                     </div>
                 </div>
             </section>
@@ -784,19 +860,17 @@ export default function Page() {
                                 </div>
                             ) : (
                                 <div className="flex flex-row flex-wrap justify-center gap-8 stats-grid">
-                                    
                                     {keyFigures.map((figure, index) => (
-                                        <AnimatedStat 
+                                        <AnimatedStat
                                             key={figure.id || index}
-                                            value={figure.value} 
-                                            description={figure.description} 
+                                            value={figure.value}
+                                            description={figure.description}
                                             prefix={figure.prefix}
                                             suffix={figure.suffix}
-                                                isPercentage={figure.isPercentage}
-                                                delay={index * 0.2}
-                                            />
-                                        )
-                                    )}
+                                            isPercentage={figure.isPercentage}
+                                            delay={index * 0.2}
+                                        />
+                                    ))}
                                 </div>
                             )}
                         </div>
@@ -817,9 +891,9 @@ export default function Page() {
                             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
                         </div>
                     ) : (
-                        <PortfolioGrid 
-                            projects={projects.filter(p => !p.isLatest)} 
-                            showFilter={true} 
+                        <PortfolioGrid
+                            projects={projects.filter((p) => !p.isLatest)}
+                            showFilter={true}
                         />
                     )}
                 </div>
@@ -838,13 +912,15 @@ export default function Page() {
                             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
                         </div>
                     ) : (
-                        <LatestProjects 
-                            projects={projects.filter(p => p.isLatest).map(p => ({
-                                id: p.id || crypto.randomUUID(),
-                                title: p.title,
-                                imageSrc: p.source,
-                                link: p.link || `/portfolio/${p.id}`
-                            }))} 
+                        <LatestProjects
+                            projects={projects
+                                .filter((p) => p.isLatest)
+                                .map((p) => ({
+                                    id: p.id || crypto.randomUUID(),
+                                    title: p.title,
+                                    imageSrc: p.source,
+                                    link: p.link || `/portfolio/${p.id}`,
+                                }))}
                         />
                     )}
                 </div>

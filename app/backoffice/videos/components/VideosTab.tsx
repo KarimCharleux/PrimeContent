@@ -13,9 +13,9 @@ import {
 import Image from 'next/image';
 import { useEffect, useState, useCallback } from 'react';
 
+import { getMediaUrl } from '../../../utils/mediaUrl';
 import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
-import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 interface Video {
     id?: string;
@@ -70,9 +70,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
     const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
 
     // Extraire les catégories uniques des vidéos
-    const categories = Array.from(new Set(videos.map((video) => video.category))).filter(
-        Boolean,
-    );
+    const categories = Array.from(new Set(videos.map((video) => video.category))).filter(Boolean);
 
     // Fonction pour formater la durée en minutes:secondes
     const formatDuration = (seconds: number): string => {
@@ -111,7 +109,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
 
             try {
                 // Estimation du temps de chargement (basé sur une connexion moyenne de 15 Mbps)
-                const loadTime = ((video.size || 0) * 8) / (15 * 1024 * 1024) * 1000;
+                const loadTime = (((video.size || 0) * 8) / (15 * 1024 * 1024)) * 1000;
                 totalLoadTime += loadTime;
             } catch (error) {
                 console.error(`Erreur lors de l'analyse de ${video.source}:`, error);
@@ -145,19 +143,19 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         const file = e.target.files?.[0];
         if (file) {
             setVideoFile(file);
-            
+
             // Extraire la durée de la vidéo
             const duration = await extractVideoDuration(file);
-            
+
             // Détecter le format
             const format = await detectFormat(file);
-            
-            setFormData(prev => ({ 
-                ...prev, 
+
+            setFormData((prev) => ({
+                ...prev,
                 source: URL.createObjectURL(file),
                 duration,
                 format,
-                size: file.size
+                size: file.size,
             }));
         }
     };
@@ -166,7 +164,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         const file = e.target.files?.[0];
         if (file) {
             setThumbnailFile(file);
-            setFormData(prev => ({ ...prev, thumbnail: URL.createObjectURL(file) }));
+            setFormData((prev) => ({ ...prev, thumbnail: URL.createObjectURL(file) }));
             setPreviewThumbnail(URL.createObjectURL(file));
         }
     };
@@ -315,7 +313,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(false);
-        
+
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             await handleFileUpload(e.dataTransfer.files);
         }
@@ -335,9 +333,12 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
             const fileName = extractFileName(path);
             if (!fileName) return;
 
-            const response = await fetch(`/api/delete?path=videos&name=${encodeURIComponent(fileName)}`, {
-                method: 'DELETE',
-            });
+            const response = await fetch(
+                `/api/delete?path=videos&name=${encodeURIComponent(fileName)}`,
+                {
+                    method: 'DELETE',
+                },
+            );
 
             if (!response.ok) {
                 throw new Error('Erreur lors de la suppression du fichier');
@@ -349,21 +350,25 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
 
     // Supprimer toutes les vidéos
     const handleDeleteAllVideos = async () => {
-        if (!confirm(`Êtes-vous sûr de vouloir supprimer toutes les vidéos (${videos.length} vidéos) ? Cette action est irréversible.`)) {
+        if (
+            !confirm(
+                `Êtes-vous sûr de vouloir supprimer toutes les vidéos (${videos.length} vidéos) ? Cette action est irréversible.`,
+            )
+        ) {
             return;
         }
 
         try {
             // Supprimer tous les fichiers vidéo
-            await Promise.all(videos.map(video => deleteFile(video.source)));
+            await Promise.all(videos.map((video) => deleteFile(video.source)));
 
             // Supprimer tous les fichiers miniatures
-            await Promise.all(videos.map(video => video.thumbnail && deleteFile(video.thumbnail)));
+            await Promise.all(
+                videos.map((video) => video.thumbnail && deleteFile(video.thumbnail)),
+            );
 
             // Ensuite supprimer les documents Firestore
-            await Promise.all(videos.map(video => 
-                deleteDoc(doc(db, 'videos', video.id!))
-            ));
+            await Promise.all(videos.map((video) => deleteDoc(doc(db, 'videos', video.id!))));
 
             setVideos([]);
 
@@ -371,13 +376,13 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
 
             setStatusMessage({
                 type: 'success',
-                message: `Toutes les vidéos (${videos.length}) ont été supprimées avec succès`
+                message: `Toutes les vidéos (${videos.length}) ont été supprimées avec succès`,
             });
         } catch (error) {
             console.error('Erreur lors de la suppression des vidéos:', error);
             setStatusMessage({
                 type: 'error',
-                message: 'Erreur lors de la suppression des vidéos'
+                message: 'Erreur lors de la suppression des vidéos',
             });
         }
     };
@@ -387,12 +392,12 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         return new Promise((resolve) => {
             const video = document.createElement('video');
             video.preload = 'metadata';
-            
+
             video.onloadedmetadata = () => {
                 URL.revokeObjectURL(video.src);
                 resolve(video.duration);
             };
-            
+
             video.src = URL.createObjectURL(file);
         });
     };
@@ -403,23 +408,23 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
             const video = document.createElement('video');
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            
+
             video.onloadeddata = () => {
                 // Chercher le milieu de la vidéo pour la miniature
                 video.currentTime = video.duration / 2;
             };
-            
+
             video.onseeked = () => {
                 // Une fois positionné, capturer l'image
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-                
+
                 const thumbnail = canvas.toDataURL('image/jpeg', 0.7);
                 URL.revokeObjectURL(video.src);
                 resolve(thumbnail);
             };
-            
+
             video.src = URL.createObjectURL(file);
         });
     };
@@ -429,12 +434,12 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         return new Promise((resolve) => {
             const video = document.createElement('video');
             video.preload = 'metadata';
-            
+
             video.onloadedmetadata = () => {
                 URL.revokeObjectURL(video.src);
                 resolve(video.videoWidth < video.videoHeight ? 'portrait' : 'paysage');
             };
-            
+
             video.src = URL.createObjectURL(file);
         });
     };
@@ -442,28 +447,28 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
     // Gérer l'upload des fichiers
     const handleFileUpload = async (files: FileList) => {
         // Filtrer les fichiers pour n'accepter que les vidéos
-        const videoFiles = Array.from(files).filter(file => file.type.startsWith('video/'));
-        
+        const videoFiles = Array.from(files).filter((file) => file.type.startsWith('video/'));
+
         if (videoFiles.length === 0) {
             setStatusMessage({
                 type: 'error',
-                message: 'Veuillez sélectionner uniquement des fichiers vidéo'
+                message: 'Veuillez sélectionner uniquement des fichiers vidéo',
             });
             return;
         }
-        
+
         setUploading(true);
         setStatusMessage(null);
         setUploadProgress(0);
 
         try {
             // Trouver le dernier ordre existant
-            const lastOrder = Math.max(...videos.map(v => v.order), -1);
+            const lastOrder = Math.max(...videos.map((v) => v.order), -1);
             let currentOrder = lastOrder + 1;
 
             for (let i = 0; i < videoFiles.length; i++) {
                 const file = videoFiles[i];
-                
+
                 // Extraire la durée de la vidéo
                 const duration = await extractVideoDuration(file);
 
@@ -530,7 +535,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         setFormData(video);
         setPreviewThumbnail(video.thumbnail);
         setShowForm(true);
-        
+
         // Faire défiler la page jusqu'au formulaire
         setTimeout(() => {
             const formElement = document.querySelector('form');
@@ -541,7 +546,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
     };
 
     const handleDelete = async (id: string) => {
-        const video = videos.find(v => v.id === id);
+        const video = videos.find((v) => v.id === id);
         if (!video) return;
 
         if (window.confirm('Êtes-vous sûr de vouloir supprimer cette vidéo ?')) {
@@ -557,12 +562,12 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                 // Supprimer le document Firestore
                 await deleteDoc(doc(db, 'videos', id));
                 setStatusMessage({ type: 'success', message: 'Vidéo supprimée avec succès' });
-                
+
                 // Fermer le formulaire si la vidéo supprimée était en cours d'édition
                 if (editingVideo?.id === id) {
                     resetForm();
                 }
-                
+
                 fetchVideos();
             } catch (error) {
                 console.error('Erreur lors de la suppression de la vidéo:', error);
@@ -624,8 +629,12 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                         <p className="text-3xl font-bold">{formatDuration(stats.totalDuration)}</p>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-lg">
-                        <p className="text-sm text-purple-600 font-medium">Temps de chargement moyen</p>
-                        <p className="text-3xl font-bold">{formatLoadTime(stats.averageLoadTime)}</p>
+                        <p className="text-sm text-purple-600 font-medium">
+                            Temps de chargement moyen
+                        </p>
+                        <p className="text-3xl font-bold">
+                            {formatLoadTime(stats.averageLoadTime)}
+                        </p>
                         <p className="text-xs text-gray-500">
                             Estimation basée sur une connexion moyenne en France (15 Mbps)
                         </p>
@@ -643,8 +652,19 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                                         onClick={() => handleDeleteAllVideos()}
                                         className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-5 w-5 mr-2"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                            />
                                         </svg>
                                         Tout supprimer
                                     </button>
@@ -654,8 +674,19 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                                 onClick={() => setShowForm(true)}
                                 className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 flex items-center"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-5 w-5 mr-2"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 4v16m8-8H4"
+                                    />
                                 </svg>
                                 Nouvelle vidéo
                             </button>
@@ -665,7 +696,9 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                     {statusMessage && (
                         <div
                             className={`p-4 mb-4 rounded-md ${
-                                statusMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                                statusMessage.type === 'success'
+                                    ? 'bg-green-50 text-green-700'
+                                    : 'bg-red-50 text-red-700'
                             }`}
                         >
                             {statusMessage.message}
@@ -675,7 +708,9 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                     {/* Zone de drop pour les vidéos */}
                     <div
                         className={`border-2 border-dashed p-8 mb-8 rounded-lg text-center ${
-                            isDragging ? 'border-primary bg-primary bg-opacity-10' : 'border-gray-300'
+                            isDragging
+                                ? 'border-primary bg-primary bg-opacity-10'
+                                : 'border-gray-300'
                         }`}
                         onDragEnter={handleDragEnter}
                         onDragLeave={handleDragLeave}
@@ -699,15 +734,28 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                             </div>
                         ) : (
                             <>
-                                <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <svg
+                                    className="mx-auto h-12 w-12 text-gray-400"
+                                    stroke="currentColor"
+                                    fill="none"
+                                    viewBox="0 0 48 48"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
                                 </svg>
                                 <p className="mt-2 text-gray-600">
                                     Glissez-déposez des vidéos ici ou{' '}
                                     <button
                                         type="button"
                                         className="text-primary hover:text-primary-dark font-medium"
-                                        onClick={() => document.getElementById('fileInput')?.click()}
+                                        onClick={() =>
+                                            document.getElementById('fileInput')?.click()
+                                        }
                                     >
                                         parcourez votre ordinateur
                                     </button>
@@ -721,7 +769,9 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                                     className="hidden"
                                     accept="video/*"
                                     multiple
-                                    onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                                    onChange={(e) =>
+                                        e.target.files && handleFileUpload(e.target.files)
+                                    }
                                 />
                             </>
                         )}
@@ -804,7 +854,9 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                                             onChange={(e) =>
                                                 setFormData({
                                                     ...formData,
-                                                    format: e.target.value as 'portrait' | 'paysage',
+                                                    format: e.target.value as
+                                                        | 'portrait'
+                                                        | 'paysage',
                                                 })
                                             }
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -884,7 +936,9 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                                         </h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {/* Vidéo */}
-                                            <div className={`relative bg-gray-100 rounded-lg overflow-hidden ${getItemSizeClass(formData.format || 'paysage')}`}>
+                                            <div
+                                                className={`relative bg-gray-100 rounded-lg overflow-hidden ${getItemSizeClass(formData.format || 'paysage')}`}
+                                            >
                                                 {formData.source ? (
                                                     <video
                                                         src={getMediaUrl(formData.source)}
@@ -900,7 +954,9 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                                             </div>
 
                                             {/* Miniature */}
-                                            <div className={`relative bg-gray-100 rounded-lg overflow-hidden group ${getItemSizeClass(formData.format || 'paysage')}`}>
+                                            <div
+                                                className={`relative bg-gray-100 rounded-lg overflow-hidden group ${getItemSizeClass(formData.format || 'paysage')}`}
+                                            >
                                                 {previewThumbnail ? (
                                                     <>
                                                         <Image
@@ -1004,10 +1060,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                                                                 video.order + 1,
                                                             )
                                                         }
-                                                        disabled={
-                                                            video.order ===
-                                                            videos.length - 1
-                                                        }
+                                                        disabled={video.order === videos.length - 1}
                                                         className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
                                                     >
                                                         ↓
@@ -1036,7 +1089,11 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                {video.title || <span className="text-gray-400 italic">Sans titre</span>}
+                                                {video.title || (
+                                                    <span className="text-gray-400 italic">
+                                                        Sans titre
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {video.category}
@@ -1071,4 +1128,4 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
             </div>
         </>
     );
-} 
+}

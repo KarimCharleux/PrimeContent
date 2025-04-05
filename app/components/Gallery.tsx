@@ -7,8 +7,8 @@ export default function Gallery() {
     // Référence pour le conteneur de la galerie
     const galleryContainerRef = useRef<HTMLDivElement>(null);
     const mainSliderRequestFrameAnimationRef = useRef<number | null>(null);
-    const preloadedImages = useImageStore(state => state.preloadedImages);
-    
+    const preloadedImages = useImageStore((state) => state.preloadedImages);
+
     // Variable pour stocker l'animation
     let mainSliderRequestFrameAnimation: number | null = null;
 
@@ -70,12 +70,10 @@ export default function Gallery() {
 
         function createMainImagesGallery(allImages: HTMLImageElement[], rowsNumber: number) {
             const galleryInner = document.querySelector('.gallery-inner');
-            if (!galleryInner || !galleryInner.children.length)
-                return;
+            if (!galleryInner || !galleryInner.children.length) return;
 
             // On calcule la nouvelle width des images
-            let parentContainerHeight =
-                galleryInner.children[0].getBoundingClientRect().height;
+            let parentContainerHeight = galleryInner.children[0].getBoundingClientRect().height;
             for (let i = 0; i < allImages.length; i++) {
                 let targetwidth = resizeImageBox(allImages[i], parentContainerHeight);
                 allImages[i].setAttribute('data-targetwidth', targetwidth.toString());
@@ -203,7 +201,10 @@ export default function Gallery() {
             // Supprimer les rangées qui ne contiennent pas d'images
             const updatedGalleryRows = document.querySelectorAll('.gallery-row');
             updatedGalleryRows.forEach((container, index) => {
-                if (index >= structuredContainerArray.length || structuredContainerArray[index].images.length === 0) {
+                if (
+                    index >= structuredContainerArray.length ||
+                    structuredContainerArray[index].images.length === 0
+                ) {
                     container.remove();
                 }
             });
@@ -212,7 +213,7 @@ export default function Gallery() {
             const remainingRows = document.querySelectorAll('.gallery-row');
             if (remainingRows.length > 0) {
                 const newHeight = `${window.innerHeight / remainingRows.length}px`;
-                remainingRows.forEach(row => {
+                remainingRows.forEach((row) => {
                     (row as HTMLElement).style.height = newHeight;
                 });
             }
@@ -220,7 +221,7 @@ export default function Gallery() {
             // Redimensionner les canvas et dessiner les images
             structuredContainerArray.forEach((container, index) => {
                 if (container.images.length === 0) return;
-                
+
                 const finalGalleryRows = document.querySelectorAll('.gallery-row');
                 if (index >= finalGalleryRows.length) return;
 
@@ -331,7 +332,8 @@ export default function Gallery() {
                 (sliderClone as any).transX = newCloneTransX;
             });
 
-            mainSliderRequestFrameAnimationRef.current = requestAnimationFrame(mainSlidingAnimation);
+            mainSliderRequestFrameAnimationRef.current =
+                requestAnimationFrame(mainSlidingAnimation);
         }
 
         // Initialiser la galerie si les images sont disponibles
@@ -356,4 +358,4 @@ export default function Gallery() {
             <div className="gallery-overlay-secondary"></div>
         </div>
     );
-} 
+}

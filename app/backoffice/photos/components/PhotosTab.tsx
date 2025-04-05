@@ -13,9 +13,9 @@ import {
 import Image from 'next/image';
 import { useEffect, useState, useCallback } from 'react';
 
+import { getMediaUrl } from '../../../utils/mediaUrl';
 import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
-import { getMediaUrl } from '@/app/utils/mediaUrl';
 
 interface Photo {
     id?: string;
@@ -63,9 +63,7 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
     });
 
     // Extraire les catégories uniques des photos
-    const categories = Array.from(new Set(photos.map((photo) => photo.category))).filter(
-        Boolean,
-    );
+    const categories = Array.from(new Set(photos.map((photo) => photo.category))).filter(Boolean);
 
     // Fonction pour formater la taille en ko, Mo ou Go
     const formatSize = (bytes: number): string => {
@@ -230,7 +228,7 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(false);
-        
+
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             await handleFileUpload(e.dataTransfer.files);
         }
@@ -238,37 +236,50 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
 
     // Supprimer toutes les photos
     const handleDeleteAllPhotos = async () => {
-        if (!confirm(`Êtes-vous sûr de vouloir supprimer toutes les photos (${photos.length} photos) ? Cette action est irréversible.`)) {
+        if (
+            !confirm(
+                `Êtes-vous sûr de vouloir supprimer toutes les photos (${photos.length} photos) ? Cette action est irréversible.`,
+            )
+        ) {
             return;
         }
 
         try {
             // Supprimer d'abord tous les médias
-            await Promise.all(photos.map(async (photo) => {
-                if (photo.source) {
-                    const fileName = photo.source.split('/').pop();
-                    const filePath = photo.source.substring(1, photo.source.lastIndexOf('/'));
-                    
-                    if (fileName) {
-                        try {
-                            const response = await fetch(`/api/delete?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`, {
-                                method: 'DELETE',
-                            });
-                            
-                            if (!response.ok) {
-                                console.error('Erreur lors de la suppression du média:', await response.text());
+            await Promise.all(
+                photos.map(async (photo) => {
+                    if (photo.source) {
+                        const fileName = photo.source.split('/').pop();
+                        const filePath = photo.source.substring(1, photo.source.lastIndexOf('/'));
+
+                        if (fileName) {
+                            try {
+                                const response = await fetch(
+                                    `/api/delete?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`,
+                                    {
+                                        method: 'DELETE',
+                                    },
+                                );
+
+                                if (!response.ok) {
+                                    console.error(
+                                        'Erreur lors de la suppression du média:',
+                                        await response.text(),
+                                    );
+                                }
+                            } catch (mediaError) {
+                                console.error(
+                                    'Erreur lors de la suppression du média:',
+                                    mediaError,
+                                );
                             }
-                        } catch (mediaError) {
-                            console.error('Erreur lors de la suppression du média:', mediaError);
                         }
                     }
-                }
-            }));
+                }),
+            );
 
             // Ensuite supprimer les documents Firestore
-            await Promise.all(photos.map(photo => 
-                deleteDoc(doc(db, 'photos', photo.id!))
-            ));
+            await Promise.all(photos.map((photo) => deleteDoc(doc(db, 'photos', photo.id!))));
 
             // Fermer le form
             resetForm();
@@ -276,13 +287,13 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
             setPhotos([]);
             setStatusMessage({
                 type: 'success',
-                message: `Toutes les photos (${photos.length}) ont été supprimées avec succès`
+                message: `Toutes les photos (${photos.length}) ont été supprimées avec succès`,
             });
         } catch (error) {
             console.error('Erreur lors de la suppression des photos:', error);
             setStatusMessage({
                 type: 'error',
-                message: 'Erreur lors de la suppression des photos'
+                message: 'Erreur lors de la suppression des photos',
             });
         }
     };
@@ -301,23 +312,23 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
     // Gérer l'upload des fichiers
     const handleFileUpload = async (files: FileList) => {
         // Filtrer les fichiers pour n'accepter que les images
-        const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-        
+        const imageFiles = Array.from(files).filter((file) => file.type.startsWith('image/'));
+
         if (imageFiles.length === 0) {
             setStatusMessage({
                 type: 'error',
-                message: 'Veuillez sélectionner uniquement des fichiers image'
+                message: 'Veuillez sélectionner uniquement des fichiers image',
             });
             return;
         }
-        
+
         setUploading(true);
         setStatusMessage(null);
         setUploadProgress(0);
 
         try {
             // Trouver le dernier ordre existant
-            const lastOrder = Math.max(...photos.map(p => p.order), -1);
+            const lastOrder = Math.max(...photos.map((p) => p.order), -1);
             let currentOrder = lastOrder + 1;
 
             for (let i = 0; i < imageFiles.length; i++) {
@@ -398,22 +409,28 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
     const handleDelete = async (id: string) => {
         if (window.confirm('Êtes-vous sûr de vouloir supprimer cette photo ?')) {
             try {
-                const photo = photos.find(p => p.id === id);
+                const photo = photos.find((p) => p.id === id);
                 if (!photo) return;
 
                 // Supprimer le média si une source est définie
                 if (photo.source) {
                     const fileName = photo.source.split('/').pop();
                     const filePath = photo.source.substring(1, photo.source.lastIndexOf('/'));
-                    
+
                     if (fileName) {
                         try {
-                            const response = await fetch(`/api/delete?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`, {
-                                method: 'DELETE',
-                            });
-                            
+                            const response = await fetch(
+                                `/api/delete?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`,
+                                {
+                                    method: 'DELETE',
+                                },
+                            );
+
                             if (!response.ok) {
-                                console.error('Erreur lors de la suppression du média:', await response.text());
+                                console.error(
+                                    'Erreur lors de la suppression du média:',
+                                    await response.text(),
+                                );
                             }
                         } catch (mediaError) {
                             console.error('Erreur lors de la suppression du média:', mediaError);
@@ -481,8 +498,12 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                         <p className="text-3xl font-bold">{formatSize(stats.totalSize)}</p>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-lg">
-                        <p className="text-sm text-purple-600 font-medium">Temps de chargement moyen</p>
-                        <p className="text-3xl font-bold">{formatLoadTime(stats.averageLoadTime)}</p>
+                        <p className="text-sm text-purple-600 font-medium">
+                            Temps de chargement moyen
+                        </p>
+                        <p className="text-3xl font-bold">
+                            {formatLoadTime(stats.averageLoadTime)}
+                        </p>
                         <p className="text-xs text-gray-500">
                             Estimation basée sur une connexion moyenne en France (15 Mbps)
                         </p>
@@ -500,8 +521,19 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                         onClick={() => handleDeleteAllPhotos()}
                                         className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-5 w-5 mr-2"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                            />
                                         </svg>
                                         Tout supprimer
                                     </button>
@@ -511,8 +543,19 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                 onClick={() => setShowForm(true)}
                                 className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 flex items-center"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-5 w-5 mr-2"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 4v16m8-8H4"
+                                    />
                                 </svg>
                                 Nouvelle photo
                             </button>
@@ -522,7 +565,9 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                     {statusMessage && (
                         <div
                             className={`p-4 mb-4 rounded-md ${
-                                statusMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                                statusMessage.type === 'success'
+                                    ? 'bg-green-50 text-green-700'
+                                    : 'bg-red-50 text-red-700'
                             }`}
                         >
                             {statusMessage.message}
@@ -532,7 +577,9 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                     {/* Zone de drop pour les photos */}
                     <div
                         className={`border-2 border-dashed p-8 mb-8 rounded-lg text-center ${
-                            isDragging ? 'border-primary bg-primary bg-opacity-10' : 'border-gray-300'
+                            isDragging
+                                ? 'border-primary bg-primary bg-opacity-10'
+                                : 'border-gray-300'
                         }`}
                         onDragEnter={handleDragEnter}
                         onDragLeave={handleDragLeave}
@@ -556,15 +603,28 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                             </div>
                         ) : (
                             <>
-                                <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <svg
+                                    className="mx-auto h-12 w-12 text-gray-400"
+                                    stroke="currentColor"
+                                    fill="none"
+                                    viewBox="0 0 48 48"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
                                 </svg>
                                 <p className="mt-2 text-gray-600">
                                     Glissez-déposez des photos ici ou{' '}
                                     <button
                                         type="button"
                                         className="text-primary hover:text-primary-dark font-medium"
-                                        onClick={() => document.getElementById('fileInput')?.click()}
+                                        onClick={() =>
+                                            document.getElementById('fileInput')?.click()
+                                        }
                                     >
                                         parcourez votre ordinateur
                                     </button>
@@ -578,7 +638,9 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                     className="hidden"
                                     accept="image/*"
                                     multiple
-                                    onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                                    onChange={(e) =>
+                                        e.target.files && handleFileUpload(e.target.files)
+                                    }
                                 />
                             </>
                         )}
@@ -700,7 +762,10 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                                     type="file"
                                                     className="hidden"
                                                     accept="image/*"
-                                                    onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                                                    onChange={(e) =>
+                                                        e.target.files &&
+                                                        handleFileUpload(e.target.files)
+                                                    }
                                                 />
                                             </label>
                                         </div>
@@ -710,7 +775,9 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                         <h4 className="text-sm font-medium text-gray-700 mb-2">
                                             Prévisualisation
                                         </h4>
-                                        <div className={`w-full max-w-[400px] mx-auto relative bg-gray-100 rounded-lg overflow-hidden group ${getItemSizeClass(formData.format || 'portrait')}`}>
+                                        <div
+                                            className={`w-full max-w-[400px] mx-auto relative bg-gray-100 rounded-lg overflow-hidden group ${getItemSizeClass(formData.format || 'portrait')}`}
+                                        >
                                             {previewImage ? (
                                                 <>
                                                     <Image
@@ -810,10 +877,7 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                                                 photo.order + 1,
                                                             )
                                                         }
-                                                        disabled={
-                                                            photo.order ===
-                                                            photos.length - 1
-                                                        }
+                                                        disabled={photo.order === photos.length - 1}
                                                         className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
                                                     >
                                                         ↓
@@ -831,7 +895,11 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                {photo.title || <span className="text-gray-400 italic">Sans titre</span>}
+                                                {photo.title || (
+                                                    <span className="text-gray-400 italic">
+                                                        Sans titre
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {photo.category}
@@ -863,4 +931,4 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
             </div>
         </>
     );
-} 
+}

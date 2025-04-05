@@ -1,234 +1,233 @@
-
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
 }
 
 .contact-content {
-  display: flex;
-  gap: 40px;
-  
-  @media (max-width: 992px) {
-    flex-direction: column;
-  }
+    display: flex;
+    gap: 40px;
+
+    @media (max-width: 992px) {
+        flex-direction: column;
+    }
 }
 
 // Colonne d'informations de contact
 .contact-info-column {
-  flex: 1;
-  background-color: #111;
-  border-radius: 12px;
-  padding: 40px;
-  display: flex;
-  flex-direction: column;
-  
-  @media (max-width: 768px) {
-    padding: 30px;
-  }
+    flex: 1;
+    background-color: #111;
+    border-radius: 12px;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+
+    @media (max-width: 768px) {
+        padding: 30px;
+    }
 }
 
 .info-title {
-  font-size: 1.8rem;
-  font-weight: 600;
-  margin-bottom: 10px;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
 }
 
 .info-subtitle {
-  font-size: 1rem;
-  color: #aaa;
-  margin-bottom: 40px;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+    font-size: 1rem;
+    color: #aaa;
+    margin-bottom: 40px;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
 .contact-details {
-  margin-bottom: 40px;
+    margin-bottom: 40px;
 }
 
 .contact-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 25px;
-  
-  &:last-child {
-    margin-bottom: 0;
-  }
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
 }
 
 .icon-container {
-  width: 40px;
-  height: 40px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 15px;
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
 }
 
 .contact-icon {
-  width: 20px;
-  height: 20px;
-  color: #fff;
+    width: 20px;
+    height: 20px;
+    color: #fff;
 }
 
 .contact-link {
-  color: #fff;
-  text-decoration: none;
-  font-size: 1rem;
-  transition: color 0.3s ease;
-  
-  &:hover {
-    color: #ccc;
-  }
+    color: #fff;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: color 0.3s ease;
+
+    &:hover {
+        color: #ccc;
+    }
 }
 
 .calendly-section {
-  margin-top: auto;
+    margin-top: auto;
 }
 
 .calendly-button {
-  display: flex;
-  align-items: center;
-  color: #fff;
-  text-decoration: none;
-  padding: 15px 30px;
-  border-radius: 8px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  background-color: rgba(0, 0, 0, 0.3);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-    border-color: rgba(255, 255, 255, 0.6);
-  }
+    display: flex;
+    align-items: center;
+    color: #fff;
+    text-decoration: none;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background-color: rgba(0, 0, 0, 0.3);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        border-color: rgba(255, 255, 255, 0.6);
+    }
 }
 
 .calendly-icon {
-  margin-right: 12px;
-  display: flex;
-  align-items: center;
-  
-  svg {
-    transition: transform 0.3s ease;
-  }
-  
-  .calendly-button:hover & svg {
-    transform: rotate(15deg);
-  }
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+
+    svg {
+        transition: transform 0.3s ease;
+    }
+
+    .calendly-button:hover & svg {
+        transform: rotate(15deg);
+    }
 }
 
 // Colonne du formulaire
 .contact-form-column {
-  flex: 1.5;
-  background-color: #111;
-  border-radius: 12px;
-  padding: 40px;
-  
-  @media (max-width: 768px) {
-    padding: 30px;
-  }
+    flex: 1.5;
+    background-color: #111;
+    border-radius: 12px;
+    padding: 40px;
+
+    @media (max-width: 768px) {
+        padding: 30px;
+    }
 }
 
 .form-title {
-  font-size: 1.8rem;
-  font-weight: 600;
-  margin-bottom: 10px;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 10px;
 }
 
 .form-subtitle {
-  font-size: 1rem;
-  color: #aaa;
-  margin-bottom: 30px;
-  line-height: 1.5;
+    font-size: 1rem;
+    color: #aaa;
+    margin-bottom: 30px;
+    line-height: 1.5;
 }
 
 .contact-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .form-row {
-  display: flex;
-  gap: 20px;
-  
-  @media (max-width: 576px) {
-    flex-direction: column;
-  }
+    display: flex;
+    gap: 20px;
+
+    @media (max-width: 576px) {
+        flex-direction: column;
+    }
 }
 
 .form-group {
-  flex: 1;
+    flex: 1;
 }
 
 .form-input,
 .form-textarea {
-  width: 100%;
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 15px;
-  color: #fff;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
-  
-  &:focus {
-    outline: none;
-    border-color: rgba(255, 255, 255, 0.3);
-  }
-  
-  &::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-  }
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+    color: #fff;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+
+    &:focus {
+        outline: none;
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    &::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
 }
 
 .form-textarea {
-  resize: vertical;
-  min-height: 120px;
+    resize: vertical;
+    min-height: 120px;
 }
 
 .submit-button {
-  background-color: #fff;
-  color: #000;
-  border-radius: 8px;
-  padding: 15px 30px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  align-self: flex-end;
-  margin-top: 10px;
-  border: 3px solid #666666e0;
-  width: 100%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  
-  &:hover {
-    background-color: #f0f0f0;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+    background-color: #fff;
+    color: #000;
+    border-radius: 8px;
+    padding: 15px 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-end;
+    margin-top: 10px;
+    border: 3px solid #666666e0;
+    width: 100%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 
-    .arrow-icon {
-      transform: translateX(5px);
+    &:hover {
+        background-color: #f0f0f0;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+
+        .arrow-icon {
+            transform: translateX(5px);
+        }
     }
-  }
-  
-  @media (max-width: 576px) {
-    align-self: stretch;
-  }
+
+    @media (max-width: 576px) {
+        align-self: stretch;
+    }
 }
 
 .arrow-icon {
-  margin-left: 10px;
-  font-size: 1.2rem;
-  transition: transform 0.3s ease;
-} 
+    margin-left: 10px;
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
