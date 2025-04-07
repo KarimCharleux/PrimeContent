@@ -327,7 +327,7 @@ export default function ContactInfoForm({ initialInfo, onSave, onCancel }: Conta
                         htmlFor="texteBienvenue"
                         className="block text-sm font-medium text-gray-700 mb-1"
                     >
-                        Titre d'accueil
+                        Titre d&apos;accueil
                     </label>
                     <input
                         type="text"
