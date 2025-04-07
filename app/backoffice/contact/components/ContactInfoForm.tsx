@@ -5,9 +5,9 @@ import { useEffect, useState } from 'react';
 import { ContactInfo } from '../../models/contactTypes';
 
 interface ContactInfoFormProps {
-    initialInfo?: ContactInfo;
-    onSave: (info: ContactInfo) => Promise<void>;
-    onCancel?: () => void;
+    readonly initialInfo?: ContactInfo;
+    readonly onSave: (info: ContactInfo) => Promise<void>;
+    readonly onCancel?: () => void;
 }
 
 export default function ContactInfoForm({ initialInfo, onSave, onCancel }: ContactInfoFormProps) {

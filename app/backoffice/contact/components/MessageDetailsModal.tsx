@@ -7,10 +7,10 @@ import { useState } from 'react';
 import { ContactMessage, MessageStatus } from '../../models/contactTypes';
 
 interface MessageDetailsModalProps {
-    message: ContactMessage;
-    onClose: () => void;
-    onStatusChange: (messageId: string, newStatus: MessageStatus) => void;
-    onNotesChange: (messageId: string, notes: string) => void;
+    readonly message: ContactMessage;
+    readonly onClose: () => void;
+    readonly onStatusChange: (messageId: string, newStatus: MessageStatus) => void;
+    readonly onNotesChange: (messageId: string, notes: string) => void;
 }
 
 export default function MessageDetailsModal({

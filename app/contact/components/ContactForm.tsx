@@ -4,15 +4,15 @@ import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 
-import { ContactMessage, MessageStatus } from '@/app/backoffice/models/contactTypes';
-
-import { db } from '@/firebase/firebaseConfig';
+import { db } from '@/app/backoffice/lib/firebase-client';
+import { ContactMessage } from '@/app/backoffice/models/contactTypes';
 
 export default function ContactForm() {
     const [formData, setFormData] = useState({
-        name: '',
+        nom: '',
+        prenom: '',
         email: '',
-        subject: '',
+        telephone: '',
         message: '',
     });
 
@@ -33,23 +33,25 @@ export default function ContactForm() {
         try {
             // Create contact message object
             const contactMessage: ContactMessage = {
-                name: formData.name,
+                nom: formData.nom,
+                prenom: formData.prenom,
                 email: formData.email,
-                subject: formData.subject,
+                telephone: formData.telephone,
                 message: formData.message,
                 createdAt: Timestamp.now(),
-                status: MessageStatus.NEW,
+                status: 'nouveau',
                 notes: '',
             };
 
             // Add to Firestore
-            await addDoc(collection(db, 'contactMessages'), contactMessage);
+            await addDoc(collection(db, 'contacts'), contactMessage);
 
             // Reset the form
             setFormData({
-                name: '',
+                nom: '',
+                prenom: '',
                 email: '',
-                subject: '',
+                telephone: '',
                 message: '',
             });
 
@@ -129,47 +131,67 @@ export default function ContactForm() {
                         </div>
                     )}
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
-                        <input
-                            type="text"
-                            name="name"
-                            required
-                            value={formData.name}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-black focus:border-black"
-                            placeholder="Votre nom"
-                        />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Nom
+                            </label>
+                            <input
+                                type="text"
+                                name="nom"
+                                required
+                                value={formData.nom}
+                                onChange={handleChange}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-black focus:border-black"
+                                placeholder="Votre nom"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Prénom
+                            </label>
+                            <input
+                                type="text"
+                                name="prenom"
+                                required
+                                value={formData.prenom}
+                                onChange={handleChange}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-black focus:border-black"
+                                placeholder="Votre prénom"
+                            />
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Email
-                        </label>
-                        <input
-                            type="email"
-                            name="email"
-                            required
-                            value={formData.email}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-black focus:border-black"
-                            placeholder="votre@email.com"
-                        />
-                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Email
+                            </label>
+                            <input
+                                type="email"
+                                name="email"
+                                required
+                                value={formData.email}
+                                onChange={handleChange}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-black focus:border-black"
+                                placeholder="votre@email.com"
+                            />
+                        </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Sujet
-                        </label>
-                        <input
-                            type="text"
-                            name="subject"
-                            required
-                            value={formData.subject}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-black focus:border-black"
-                            placeholder="Sujet de votre message"
-                        />
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Téléphone
+                            </label>
+                            <input
+                                type="tel"
+                                name="telephone"
+                                value={formData.telephone}
+                                onChange={handleChange}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-black focus:border-black"
+                                placeholder="Votre numéro de téléphone"
+                            />
+                        </div>
                     </div>
 
                     <div>

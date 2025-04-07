@@ -7,10 +7,10 @@ import { useState } from 'react';
 import { ContactMessage, MessageStatus } from '../../models/contactTypes';
 
 interface ContactListProps {
-    messages: ContactMessage[];
-    onViewMessage: (message: ContactMessage) => void;
-    onStatusChange: (messageId: string, newStatus: MessageStatus) => void;
-    onDelete: (messageId: string) => void;
+    readonly messages: ContactMessage[];
+    readonly onViewMessage: (message: ContactMessage) => void;
+    readonly onStatusChange: (messageId: string, newStatus: MessageStatus) => void;
+    readonly onDelete: (messageId: string) => void;
 }
 
 export default function ContactList({

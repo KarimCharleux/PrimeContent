@@ -52,14 +52,18 @@ export default function ContactPage() {
             const messagesCollection = collection(db, 'contacts');
 
             // Construire la requête avec les filtres
-            let messagesQuery = query(messagesCollection, orderBy('createdAt', 'desc'));
+            let messagesQuery;
 
             if (filter.status) {
+                // Si un statut est spécifié, on filtre par ce statut
                 messagesQuery = query(
                     messagesCollection,
                     where('status', '==', filter.status),
                     orderBy('createdAt', 'desc'),
                 );
+            } else {
+                // Sinon, on récupère tous les messages triés par date
+                messagesQuery = query(messagesCollection, orderBy('createdAt', 'desc'));
             }
 
             const messagesSnapshot = await getDocs(messagesQuery);
@@ -88,12 +92,25 @@ export default function ContactPage() {
 
                 setMessages(filteredMessages);
 
-                // Calculer les statistiques
+                // Calculer les statistiques - toujours basées sur tous les messages
+                // Pour cela, on fait une requête supplémentaire si on a un filtre
+                let allMessages = fetchedMessages;
+
+                if (filter.status) {
+                    // On récupère tous les messages pour calculer les statistiques complètes
+                    const allMessagesQuery = query(messagesCollection);
+                    const allMessagesSnapshot = await getDocs(allMessagesQuery);
+                    allMessages = allMessagesSnapshot.docs.map((doc) => ({
+                        id: doc.id,
+                        ...doc.data(),
+                    })) as ContactMessage[];
+                }
+
                 const statsData: ContactStats = {
-                    totalMessages: fetchedMessages.length,
-                    nouveauxMessages: fetchedMessages.filter((m) => m.status === 'nouveau').length,
-                    messagesRepondus: fetchedMessages.filter((m) => m.status === 'répondu').length,
-                    messagesArchives: fetchedMessages.filter((m) => m.status === 'archivé').length,
+                    totalMessages: allMessages.length,
+                    nouveauxMessages: allMessages.filter((m) => m.status === 'nouveau').length,
+                    messagesRepondus: allMessages.filter((m) => m.status === 'répondu').length,
+                    messagesArchives: allMessages.filter((m) => m.status === 'archivé').length,
                 };
 
                 setStats(statsData);
@@ -133,7 +150,6 @@ export default function ContactPage() {
                         linkedin: '',
                         tiktok: '',
                     },
-                    heuresOuverture: '',
                     calendlyUrl: 'https://calendly.com',
                     texteBienvenue: "Boostez Votre Présence Aujourd'hui !",
                     texteFormulaire:
@@ -247,7 +263,6 @@ export default function ContactPage() {
         try {
             await setDoc(doc(db, 'configuration', 'contact'), info);
             setContactInfo(info);
-            alert('Les informations de contact ont été enregistrées avec succès.');
         } catch (error) {
             console.error("Erreur lors de l'enregistrement des informations de contact:", error);
             throw error;
@@ -351,6 +366,16 @@ export default function ContactPage() {
                             Nouveaux
                         </button>
                         <button
+                            onClick={() => applyFilter({ status: 'lu' })}
+                            className={`px-3 py-1 rounded-md ${
+                                filter.status === 'lu'
+                                    ? 'bg-blue-500 text-white'
+                                    : 'bg-gray-200 hover:bg-gray-300'
+                            }`}
+                        >
+                            Lus
+                        </button>
+                        <button
                             onClick={() => applyFilter({ status: 'répondu' })}
                             className={`px-3 py-1 rounded-md ${
                                 filter.status === 'répondu'
@@ -371,6 +396,27 @@ export default function ContactPage() {
                             Archivés
                         </button>
                     </div>
+                    {(filter.status || filter.searchTerm) && (
+                        <button
+                            onClick={() => setFilter({})}
+                            className="px-3 py-1 rounded-md bg-red-100 text-red-700 hover:bg-red-200 flex items-center"
+                        >
+                            <svg
+                                className="h-4 w-4 mr-1"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                />
+                            </svg>
+                            Effacer les filtres
+                        </button>
+                    )}
                 </div>
             )}
 
