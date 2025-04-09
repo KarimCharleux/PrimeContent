@@ -18,7 +18,6 @@ import gsap from './lib/gsap-config';
 // Firestore
 
 // Importation des styles
-import './styles/gallery.scss';
 import './styles/home.scss';
 
 // Interface pour les données d'expertise

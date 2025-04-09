@@ -58,7 +58,7 @@ $content-z-index: 3;
     height: 100vh;
     @include flex-center;
     position: relative;
-    perspective: 1000px; // Effet 3D
+    perspective: 1000px;
     overflow: hidden;
 }
 
@@ -71,8 +71,6 @@ $content-z-index: 3;
     @include preserve-3d;
     background: var(--dark-bg);
     backface-visibility: hidden;
-    opacity: 0;
-    transition: opacity 0.5s ease;
 }
 
 // Conteneur interne
