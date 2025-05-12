@@ -1,12 +1,11 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import Marquee from 'react-fast-marquee';
 
 import { useImageStore } from '../../store/imageStore';
 
 import styles from './gallery.module.scss';
-
 export default function Gallery() {
     const preloadedImages = useImageStore((state) => state.preloadedImages);
     const galleryContainerRef = useRef<HTMLDivElement>(null);
@@ -36,58 +35,45 @@ export default function Gallery() {
         const imageMargin = currentIsPortrait ? 5 : 10;
         const rowHeight = window.innerHeight / rowCount - imageMargin / 2;
 
-        // Distribuer les images dans les lignes
-        const distributedRows: HTMLImageElement[][] = [];
-        for (let i = 0; i < rowCount; i++) {
-            distributedRows.push([]);
-        }
+        // Calculer combien d'images nous pouvons afficher par ligne pour couvrir 2 écrans
+        const avgImageWidth =
+            preloadedImages.reduce((sum, img) => {
+                if (!img || !img.naturalWidth || !img.naturalHeight) return sum;
+                return sum + rowHeight * (img.naturalWidth / img.naturalHeight);
+            }, 0) / preloadedImages.length;
 
-        // Distribuer les images en s'assurant que chaque ligne a suffisamment de contenu
+        // Nombre d'images nécessaires pour couvrir 2 écrans de largeur
+        const targetWidth = window.innerWidth * 2;
+        const imagesPerRow = Math.max(10, Math.ceil(targetWidth / (avgImageWidth + imageMargin)));
+
+        // Distribuer les images uniformément dans chaque ligne
+        const distributedRows: HTMLImageElement[][] = [];
+
         for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-            // Vérifier que nous avons des images à distribuer
-            if (preloadedImages.length === 0) {
-                console.error("Pas d'images à distribuer");
+            // Mélanger les images pour chaque ligne
+            const shuffledImages = [...preloadedImages].sort(() => 0.5 - Math.random());
+
+            // Filtrer les images valides
+            const validImages = shuffledImages.filter(
+                (img) => img && img.naturalWidth && img.naturalHeight,
+            );
+
+            if (validImages.length === 0) {
+                console.error("Pas d'images valides disponibles");
                 continue;
             }
 
-            const shuffledImages = [...preloadedImages].sort(() => 0.5 - Math.random());
-            let currentRowWidth = 0;
-            const targetRowWidth = window.innerWidth * 2; // Assez d'images pour couvrir 2 écrans
+            // Créer une ligne avec exactement le même nombre d'images
+            const row: HTMLImageElement[] = [];
 
-            // Ajouter des images jusqu'à ce que la largeur cible soit atteinte
-            for (let i = 0; i < shuffledImages.length; i++) {
-                const img = shuffledImages[i];
-                if (!img || !img.naturalWidth) {
-                    console.warn('Image invalide détectée', img);
-                    continue;
-                }
-
-                const imgRatio = img.naturalWidth / img.naturalHeight;
-                const imgWidth = rowHeight * imgRatio;
-
-                distributedRows[rowIndex].push(img);
-                currentRowWidth += imgWidth + imageMargin;
-
-                if (currentRowWidth >= targetRowWidth) break;
+            // Remplir la ligne avec le nombre requis d'images
+            for (let i = 0; i < imagesPerRow; i++) {
+                // Utiliser le modulo pour répéter les images si nécessaire
+                const imgIndex = i % validImages.length;
+                row.push(validImages[imgIndex]);
             }
 
-            // Répéter les images si nécessaire pour atteindre la largeur cible
-            if (currentRowWidth < targetRowWidth && distributedRows[rowIndex].length > 0) {
-                const rowImages = [...distributedRows[rowIndex]];
-                while (currentRowWidth < targetRowWidth) {
-                    for (const img of rowImages) {
-                        if (!img || !img.naturalWidth) continue;
-
-                        const imgRatio = img.naturalWidth / img.naturalHeight;
-                        const imgWidth = rowHeight * imgRatio;
-
-                        distributedRows[rowIndex].push(img);
-                        currentRowWidth += imgWidth + imageMargin;
-
-                        if (currentRowWidth >= targetRowWidth) break;
-                    }
-                }
-            }
+            distributedRows.push(row);
         }
 
         // Filtrer les rangées vides
@@ -213,27 +199,39 @@ export default function Gallery() {
 
         return (
             <div
+                className={styles['image-container']}
                 key={`${index}-${img.src}`}
-                className={styles['gallery-image-container']}
                 style={{
                     margin: `0 ${galleryConfig.imageMargin / 2}px`,
-                    height: `${galleryConfig.imageHeight}px`,
-                    width: `${imgWidth}px`,
                 }}
             >
-                <img
+                <Image
                     src={img.src}
                     alt=""
+                    width={img.naturalWidth}
+                    height={img.naturalHeight}
                     className={styles['gallery-image']}
                     style={{
-                        width: '100%',
-                        height: '100%',
+                        height: `${galleryConfig.imageHeight}px`,
+                        width: `${imgWidth}px`,
                         objectFit: 'cover',
                         borderRadius: '7px',
                     }}
                 />
             </div>
         );
+    };
+
+    // Déterminer la direction et la vitesse de défilement pour chaque ligne
+    const getScrollContainerClass = (rowIndex: number) => {
+        // Alterner les directions
+        const direction = rowIndex % 2 === 0 ? 'left' : 'right';
+
+        // Varier les vitesses pour un effet plus naturel
+        // Utiliser l'index de ligne pour déterminer la vitesse (1, 2, ou 3)
+        const speedClass = `speed-${(rowIndex % 3) + 1}`;
+
+        return `${styles['scroll-container']} ${styles[direction]} ${styles[speedClass]}`;
     };
 
     return (
@@ -256,25 +254,24 @@ export default function Gallery() {
                                     margin: `${galleryConfig.imageMargin / 4}px 0`,
                                 }}
                             >
-                                <Marquee
-                                    direction={rowIndex % 2 === 0 ? 'left' : 'right'}
-                                    speed={5 + rowIndex}
-                                    gradient={false}
-                                    pauseOnHover={false}
+                                {/* Conteneur de défilement avec animation CSS */}
+                                <div
+                                    className={getScrollContainerClass(rowIndex)}
+                                    style={{
+                                        display: 'flex',
+                                        width: 'fit-content', // Assure que le conteneur s'adapte au contenu
+                                    }}
                                 >
+                                    {/* Double les images pour créer un défilement continu */}
                                     {row.map((img, imgIndex) => renderImageInRow(img, imgIndex))}
-                                </Marquee>
+                                    {row.map((img, imgIndex) =>
+                                        renderImageInRow(img, imgIndex + row.length),
+                                    )}
+                                </div>
                             </div>
                         ))
                     ) : (
-                        <div
-                            className={styles['gallery-loading']}
-                            style={{ color: 'white', opacity: 0.5 }}
-                        >
-                            {preloadedImages && preloadedImages.length > 0
-                                ? 'Chargement de la galerie...'
-                                : 'En attente des images...'}
-                        </div>
+                        <div></div>
                     )}
                 </div>
             </div>

@@ -29,22 +29,22 @@ $content-z-index: 3;
     will-change: transform;
 }
 
-// Animations
-@keyframes slideLeft {
-    from {
+// Animations pour le défilement
+@keyframes scrollLeft {
+    0% {
         transform: translateX(0);
     }
-    to {
-        transform: translateX(-100%);
+    100% {
+        transform: translateX(calc(-50% - 1px));
     }
 }
 
-@keyframes slideRight {
-    from {
-        transform: translateX(0);
+@keyframes scrollRight {
+    0% {
+        transform: translateX(calc(-50% - 1px));
     }
-    to {
-        transform: translateX(100%);
+    100% {
+        transform: translateX(0);
     }
 }
 
@@ -71,6 +71,7 @@ $content-z-index: 3;
     @include preserve-3d;
     background: var(--dark-bg);
     backface-visibility: hidden;
+    transition: opacity 0.5s ease;
 }
 
 // Conteneur interne
@@ -84,40 +85,60 @@ $content-z-index: 3;
 // Rangées d'images
 .gallery-row {
     width: 100%;
-    height: calc(100% / 5);
-    display: flex;
     position: relative;
     overflow: hidden;
+    display: flex;
+    align-items: center;
 }
 
-// Boîtes d'images
-.gallery-image-box {
-    width: calc(100% / 11);
-    height: 100%;
-    padding: 0.5rem;
-}
+// Conteneur de défilement
+.scroll-container {
+    display: flex;
+    align-items: center;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-fill-mode: forwards;
+    will-change: transform;
 
-.gallery-image-inner {
-    width: 100%;
-    height: 100%;
-    border-radius: $gallery-border-radius;
-    overflow: hidden;
+    &.left {
+        animation-name: scrollLeft;
+    }
 
-    > img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transform: translate3d(0, 0, 0);
+    &.right {
+        animation-name: scrollRight;
+    }
+
+    // Vitesses différentes - ajustées pour être plus cohérentes
+    &.speed-1 {
+        animation-duration: 120s; // Plus lent
+    }
+
+    &.speed-2 {
+        animation-duration: 90s; // Moyen
+    }
+
+    &.speed-3 {
+        animation-duration: 60s; // Plus rapide
     }
 }
 
-// Canvas pour l'animation
-.gallery-slider-canvas,
-.gallery-slider-clone {
-    position: absolute;
-    top: 0;
-    left: 0;
-    will-change: transform;
+// Image dans la galerie
+.gallery-image {
+    object-fit: cover;
+    border-radius: $gallery-border-radius;
+    height: 100%;
+    transition: transform 0.3s ease;
+
+    &:hover {
+        transform: scale(1.05);
+    }
+}
+
+// Conteneur d'image
+.image-container {
+    height: 100%;
+    flex-shrink: 0;
+    display: flex;
 }
 
 // Overlays
@@ -139,5 +160,29 @@ $content-z-index: 3;
         @extend .gallery-overlay;
         background: linear-gradient(115deg, rgba(0, 0, 0, 1) 0%, rgba(255, 255, 255, 0) 50%);
         z-index: $overlay-z-index-base + 1;
+    }
+}
+
+// Animation en pause au survol
+@media (hover: hover) {
+    .gallery-row:hover .scroll-container {
+        animation-play-state: paused;
+    }
+}
+
+// Optimisations pour les appareils mobiles
+@media (max-width: 768px) {
+    .scroll-container {
+        &.speed-1 {
+            animation-duration: 100s;
+        }
+
+        &.speed-2 {
+            animation-duration: 80s;
+        }
+
+        &.speed-3 {
+            animation-duration: 60s;
+        }
     }
 }
