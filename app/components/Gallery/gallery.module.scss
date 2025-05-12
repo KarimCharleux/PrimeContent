@@ -86,7 +86,7 @@ $content-z-index: 3;
 .gallery-row {
     width: 100%;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     display: flex;
     align-items: center;
 }
@@ -128,10 +128,6 @@ $content-z-index: 3;
     border-radius: $gallery-border-radius;
     height: 100%;
     transition: transform 0.3s ease;
-
-    &:hover {
-        transform: scale(1.05);
-    }
 }
 
 // Conteneur d'image
@@ -160,13 +156,6 @@ $content-z-index: 3;
         @extend .gallery-overlay;
         background: linear-gradient(115deg, rgba(0, 0, 0, 1) 0%, rgba(255, 255, 255, 0) 50%);
         z-index: $overlay-z-index-base + 1;
-    }
-}
-
-// Animation en pause au survol
-@media (hover: hover) {
-    .gallery-row:hover .scroll-container {
-        animation-play-state: paused;
     }
 }
 

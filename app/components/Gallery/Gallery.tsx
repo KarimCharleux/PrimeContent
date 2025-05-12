@@ -250,8 +250,7 @@ export default function Gallery() {
                                 style={{
                                     height: `${galleryConfig.imageHeight}px`,
                                     width: '100%',
-                                    overflow: 'hidden',
-                                    margin: `${galleryConfig.imageMargin / 4}px 0`,
+                                    margin: `${galleryConfig.imageMargin / 2}px 0`,
                                 }}
                             >
                                 {/* Conteneur de défilement avec animation CSS */}
