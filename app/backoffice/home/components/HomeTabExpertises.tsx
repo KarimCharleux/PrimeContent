@@ -17,6 +17,7 @@ interface Expertise {
     backgroundImage: string;
     href: string;
     icon: string;
+    order?: number;
 }
 
 export default function HomeTabExpertises() {
@@ -57,7 +58,35 @@ export default function HomeTabExpertises() {
                         id: doc.id,
                         ...doc.data(),
                     })) as Expertise[];
-                    setExpertises(fetchedExpertises);
+
+                    // Vérifier si les expertises ont déjà un ordre défini
+                    const hasOrderProperty = fetchedExpertises.some(
+                        (exp) => exp.order !== undefined,
+                    );
+
+                    if (!hasOrderProperty) {
+                        // Initialiser les ordres si pas définis
+                        const expertisesWithOrder = fetchedExpertises.map((exp, index) => ({
+                            ...exp,
+                            order: index,
+                        }));
+                        setExpertises(expertisesWithOrder);
+
+                        // Mettre à jour dans Firestore
+                        for (const expertise of expertisesWithOrder) {
+                            if (expertise.id) {
+                                await updateDoc(doc(db, 'expertises', expertise.id), {
+                                    order: expertise.order,
+                                });
+                            }
+                        }
+                    } else {
+                        // Trier par ordre si déjà défini
+                        const sortedExpertises = [...fetchedExpertises].sort(
+                            (a, b) => (a.order || 0) - (b.order || 0),
+                        );
+                        setExpertises(sortedExpertises);
+                    }
                 }
             } catch (error) {
                 console.error('Erreur lors du chargement des expertises:', error);
@@ -215,6 +244,75 @@ export default function HomeTabExpertises() {
         }
     };
 
+    // Fonction pour gérer le changement d'ordre d'une expertise
+    const handleReorder = async (expertiseId: string | undefined, direction: 'up' | 'down') => {
+        if (!expertiseId) return;
+
+        try {
+            // Trier les expertises par ordre
+            const sortedExpertises = [...expertises].sort(
+                (a, b) => (a.order || 0) - (b.order || 0),
+            );
+
+            // Trouver l'index actuel de l'expertise
+            const currentIndex = sortedExpertises.findIndex((exp) => exp.id === expertiseId);
+            if (currentIndex === -1) return;
+
+            // Déterminer le nouvel index en fonction de la direction
+            const newIndex =
+                direction === 'up'
+                    ? Math.max(0, currentIndex - 1)
+                    : Math.min(sortedExpertises.length - 1, currentIndex + 1);
+
+            // Si l'index ne change pas (déjà en haut ou en bas), ne rien faire
+            if (newIndex === currentIndex) return;
+
+            // Échanger les ordres entre les deux expertises
+            const targetExpertise = sortedExpertises[newIndex];
+            const currentExpertise = sortedExpertises[currentIndex];
+
+            const currentOrder = currentExpertise.order || 0;
+            const targetOrder = targetExpertise.order || 0;
+
+            // Mettre à jour les ordres
+            const updatedExpertises = sortedExpertises.map((exp) => {
+                if (exp.id === expertiseId) {
+                    return { ...exp, order: targetOrder };
+                } else if (exp.id === targetExpertise.id) {
+                    return { ...exp, order: currentOrder };
+                }
+                return exp;
+            });
+
+            // Mettre à jour l'état local
+            setExpertises(updatedExpertises);
+
+            // Mettre à jour Firestore
+            if (currentExpertise.id) {
+                await updateDoc(doc(db, 'expertises', currentExpertise.id), {
+                    order: targetOrder,
+                });
+            }
+
+            if (targetExpertise.id) {
+                await updateDoc(doc(db, 'expertises', targetExpertise.id), {
+                    order: currentOrder,
+                });
+            }
+
+            setStatusMessage({
+                type: 'success',
+                message: 'Ordre modifié avec succès',
+            });
+        } catch (error) {
+            console.error('Erreur lors de la réorganisation:', error);
+            setStatusMessage({
+                type: 'error',
+                message: 'Erreur lors de la réorganisation des expertises',
+            });
+        }
+    };
+
     const onSubmit = async (data: Expertise) => {
         setSaving(true);
         try {
@@ -225,12 +323,15 @@ export default function HomeTabExpertises() {
                     description: data.description,
                     backgroundImage: data.backgroundImage,
                     href: data.href,
-                    icon: data.icon, // Stocke la chaîne brute, pas le ReactNode
+                    icon: data.icon,
+                    order: editingExpertise.order || 0, // Conserver l'ordre existant
                 });
 
                 setExpertises((prevExpertises) =>
                     prevExpertises.map((exp) =>
-                        exp.id === editingExpertise.id ? { ...data, id: exp.id } : exp,
+                        exp.id === editingExpertise.id
+                            ? { ...data, id: exp.id, order: exp.order }
+                            : exp,
                     ),
                 );
                 setStatusMessage({ type: 'success', message: 'Expertise mise à jour avec succès' });
@@ -239,15 +340,25 @@ export default function HomeTabExpertises() {
                 setPreviewImage(null);
             } else {
                 // Ajout d'une nouvelle expertise
+                // Trouver l'ordre le plus élevé et ajouter 1
+                const maxOrder =
+                    expertises.length > 0
+                        ? Math.max(...expertises.map((exp) => exp.order || 0)) + 1
+                        : 0;
+
                 const docRef = await addDoc(collection(db, 'expertises'), {
                     title: data.title,
                     description: data.description,
                     backgroundImage: data.backgroundImage,
                     href: data.href,
-                    icon: data.icon, // Stocke la chaîne brute, pas le ReactNode
+                    icon: data.icon,
+                    order: maxOrder, // Assigner le nouvel ordre
                 });
 
-                setExpertises((prevExpertises) => [...prevExpertises, { ...data, id: docRef.id }]);
+                setExpertises((prevExpertises) => [
+                    ...prevExpertises,
+                    { ...data, id: docRef.id, order: maxOrder },
+                ]);
                 setStatusMessage({
                     type: 'success',
                     message: 'Nouvelle expertise ajoutée avec succès',
@@ -697,6 +808,9 @@ export default function HomeTabExpertises() {
                                         <thead className="bg-gray-50">
                                             <tr>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Ordre
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Titre
                                                 </th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -711,50 +825,123 @@ export default function HomeTabExpertises() {
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {expertises.map((expertise) => (
-                                                <tr key={expertise.id}>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        {expertise.title}
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="max-w-xs truncate">
-                                                            {expertise.description}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="h-10 w-10 relative overflow-hidden rounded">
-                                                            <Image
-                                                                src={getMediaUrl(
-                                                                    expertise.backgroundImage,
-                                                                )}
-                                                                alt={expertise.title}
-                                                                fill
-                                                                className="object-cover"
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleEditExpertise(expertise)
-                                                            }
-                                                            className="text-indigo-600 hover:text-indigo-900"
-                                                        >
-                                                            Modifier
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleDeleteExpertise(expertise)
-                                                            }
-                                                            className="text-red-600 hover:text-red-900"
-                                                        >
-                                                            Supprimer
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            {expertises
+                                                .sort((a, b) => (a.order || 0) - (b.order || 0)) // Trier par ordre
+                                                .map((expertise) => (
+                                                    <tr key={expertise.id}>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="flex flex-col items-center">
+                                                                <button
+                                                                    onClick={() =>
+                                                                        handleReorder(
+                                                                            expertise.id,
+                                                                            'up',
+                                                                        )
+                                                                    }
+                                                                    disabled={expertise.order === 0}
+                                                                    className={`text-gray-500 hover:text-gray-700 mb-1 ${
+                                                                        expertise.order === 0
+                                                                            ? 'opacity-30 cursor-not-allowed'
+                                                                            : ''
+                                                                    }`}
+                                                                >
+                                                                    <svg
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                        className="h-5 w-5"
+                                                                        fill="none"
+                                                                        viewBox="0 0 24 24"
+                                                                        stroke="currentColor"
+                                                                    >
+                                                                        <path
+                                                                            strokeLinecap="round"
+                                                                            strokeLinejoin="round"
+                                                                            strokeWidth={2}
+                                                                            d="M5 15l7-7 7 7"
+                                                                        />
+                                                                    </svg>
+                                                                </button>
+                                                                <span className="text-sm font-medium">
+                                                                    {expertise.order !== undefined
+                                                                        ? expertise.order
+                                                                        : '?'}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() =>
+                                                                        handleReorder(
+                                                                            expertise.id,
+                                                                            'down',
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        expertise.order ===
+                                                                        expertises.length - 1
+                                                                    }
+                                                                    className={`text-gray-500 hover:text-gray-700 mt-1 ${
+                                                                        expertise.order ===
+                                                                        expertises.length - 1
+                                                                            ? 'opacity-30 cursor-not-allowed'
+                                                                            : ''
+                                                                    }`}
+                                                                >
+                                                                    <svg
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                        className="h-5 w-5"
+                                                                        fill="none"
+                                                                        viewBox="0 0 24 24"
+                                                                        stroke="currentColor"
+                                                                    >
+                                                                        <path
+                                                                            strokeLinecap="round"
+                                                                            strokeLinejoin="round"
+                                                                            strokeWidth={2}
+                                                                            d="M19 9l-7 7-7-7"
+                                                                        />
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            {expertise.title}
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="max-w-xs truncate">
+                                                                {expertise.description}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="h-10 w-10 relative overflow-hidden rounded">
+                                                                <Image
+                                                                    src={getMediaUrl(
+                                                                        expertise.backgroundImage,
+                                                                    )}
+                                                                    alt={expertise.title}
+                                                                    fill
+                                                                    className="object-cover"
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap space-x-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handleEditExpertise(expertise)
+                                                                }
+                                                                className="text-indigo-600 hover:text-indigo-900"
+                                                            >
+                                                                Modifier
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handleDeleteExpertise(expertise)
+                                                                }
+                                                                className="text-red-600 hover:text-red-900"
+                                                            >
+                                                                Supprimer
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
                                         </tbody>
                                     </table>
                                 </div>

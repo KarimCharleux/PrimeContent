@@ -261,7 +261,8 @@ export default function Page() {
 
                 // Récupérer les expertises
                 const expertisesCollection = collection(db, 'expertises');
-                const expertisesSnapshot = await getDocs(expertisesCollection);
+                const expertisesQuery = query(expertisesCollection, orderBy('order', 'asc'));
+                const expertisesSnapshot = await getDocs(expertisesQuery);
 
                 if (!expertisesSnapshot.empty) {
                     const fetchedExpertises = expertisesSnapshot.docs.map((doc) => ({
