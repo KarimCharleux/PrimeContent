@@ -94,7 +94,7 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
 
         for (const photo of photos) {
             try {
-                const response = await fetch(photo.source, { method: 'HEAD' });
+                const response = await fetch(getMediaUrl(photo.source), { method: 'HEAD' });
                 const contentLength = response.headers.get('content-length');
 
                 if (contentLength) {
