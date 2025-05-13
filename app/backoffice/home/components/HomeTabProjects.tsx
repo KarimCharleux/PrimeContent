@@ -983,12 +983,23 @@ export default function HomeTabProjects() {
                                                             className="w-full h-full object-cover"
                                                         />
                                                     ) : (
-                                                        <Image
-                                                            src={getMediaUrl(previewImage)}
-                                                            alt="Prévisualisation"
-                                                            fill
-                                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                                        />
+                                                        <>
+                                                            {previewImage.startsWith('blob:') ? (
+                                                                <Image
+                                                                    src={previewImage}
+                                                                    alt="Prévisualisation"
+                                                                    fill
+                                                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                                />
+                                                            ) : (
+                                                                <Image
+                                                                    src={getMediaUrl(previewImage)}
+                                                                    alt="Prévisualisation"
+                                                                    fill
+                                                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                                />
+                                                            )}
+                                                        </>
                                                     )}
                                                     {formData.category && (
                                                         <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
