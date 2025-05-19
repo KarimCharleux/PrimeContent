@@ -86,7 +86,6 @@ interface Review {
 export default function Page() {
     // Références pour les éléments à animer
     const heroTitleRef = useRef<HTMLHeadingElement>(null);
-    const heroTextRef = useRef<HTMLParagraphElement>(null);
 
     // Références pour les services
     const servicesRef = useRef<HTMLDivElement>(null);
@@ -425,28 +424,6 @@ export default function Page() {
             });
         }
 
-        if (heroTextRef.current) {
-            gsap.set(heroTextRef.current, {
-                yPercent: 100,
-                opacity: 0,
-                filter: 'blur(10px)',
-                visibility: 'visible',
-            });
-
-            // Animation du texte du hero
-            tl.to(
-                heroTextRef.current,
-                {
-                    yPercent: 0,
-                    opacity: 1,
-                    filter: 'blur(0px)',
-                    duration: 1,
-                    visibility: 'visible',
-                },
-                '-=0.4',
-            );
-        }
-
         // Animation des services au scroll
         if (serviceRefs.current.length > 0) {
             serviceRefs.current.forEach((service, index) => {
@@ -620,13 +597,6 @@ export default function Page() {
                             STRATÉGIE
                         </span>
                     </h1>
-                    <p
-                        ref={heroTextRef}
-                        className="text-lg md:text-xl max-w-2xl mb-16 text-gray-300 opacity-0"
-                    >
-                        Chaque image devient une œuvre d&apos;art. Nos vidéos, photos et créations
-                        graphiques racontent des histoires qui valorisent votre entreprise.
-                    </p>
                     <PrimaryButton
                         text="Contactez-nous"
                         href="/contact"
@@ -643,10 +613,6 @@ export default function Page() {
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
                             NOS EXPERTISES
                         </h2>
-                        <p className="text-gray-400 max-w-2xl mx-auto text-sm md:text-base">
-                            Nous combinons créativité et stratégie pour donner vie à vos projets.
-                            Découvrez nos services spécialisés pour valoriser votre marque.
-                        </p>
                     </div>
 
                     <div
