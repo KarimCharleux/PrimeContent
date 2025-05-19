@@ -120,6 +120,8 @@ export default function Footer({ hideCTA = false }: FooterProps) {
                                 ref={(el) => addSocialRef(el, 0)}
                                 className="flex items-center gap-2"
                                 aria-label="Instagram"
+                                target="_blank"
+                                rel="noopener noreferrer"
                             >
                                 <span className={styles['social-icon']}>
                                     <svg
@@ -140,6 +142,8 @@ export default function Footer({ hideCTA = false }: FooterProps) {
                                 ref={(el) => addSocialRef(el, 0)}
                                 className="flex items-center gap-2"
                                 aria-label="Instagram"
+                                target="_blank"
+                                rel="noopener noreferrer"
                             >
                                 <span className={styles['social-icon']}>
                                     <svg
@@ -157,7 +161,12 @@ export default function Footer({ hideCTA = false }: FooterProps) {
                 </div>
 
                 <div className={styles['contact-info']}>
-                    <a href="mailto:contact@primecontent.fr" className={styles['contact-email']}>
+                    <a
+                        href="mailto:contact@primecontent.fr"
+                        className={styles['contact-email']}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
                         <span className={styles['contact-icon']}>
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -172,7 +181,12 @@ export default function Footer({ hideCTA = false }: FooterProps) {
                         </span>
                         contact@primecontent.fr
                     </a>
-                    <a href="tel:+33649095795" className={styles['contact-phone']}>
+                    <a
+                        href="tel:+33649095795"
+                        className={styles['contact-phone']}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
                         <span className={styles['contact-icon']}>
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
