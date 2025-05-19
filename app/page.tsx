@@ -607,7 +607,7 @@ export default function Page() {
             </section>
 
             {/* Section Expertises */}
-            <section className="py-12 md:py-24 bg-gradient-to-b from-[#010305] to-gray-900 expertise-section">
+            <section className="py-12 md:py-16 bg-gradient-to-b from-[#010305] to-gray-900 expertise-section">
                 <div className="mx-auto px-4">
                     <div className="text-center mb-8 md:mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
@@ -623,7 +623,7 @@ export default function Page() {
                             <div
                                 key={expertise.id || index}
                                 ref={(el) => addServiceRef(el, index)}
-                                className={`w-[47%] sm:w-[22%] md:w-[22%] lg:w-[18%] min-w-[150px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                className={`w-[31%] sm:w-[22%] md:w-[22%] lg:w-[18%] min-w-[100px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
                             >
                                 <ExpertiseCard
                                     title={expertise.title}
@@ -640,7 +640,7 @@ export default function Page() {
             </section>
 
             {/* Section Ils nous ont fait confiance */}
-            <section className="py-24 bg-gradient-to-b from-gray-900 to-black trust-section">
+            <section className="py-16 bg-gradient-to-b from-gray-900 to-black trust-section">
                 <div className="mx-auto px-7">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
@@ -649,7 +649,7 @@ export default function Page() {
                     </div>
 
                     {loading ? (
-                        <div className="flex justify-center items-center py-20">
+                        <div className="flex justify-center items-center py-16">
                             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
                         </div>
                     ) : (
@@ -812,7 +812,7 @@ export default function Page() {
             {keyFigures.length > 0 && (
                 <>
                     {/* Section PRIMECONTENT EN CHIFFRES */}
-                    <section className="py-24 bg-black stats-section">
+                    <section className="py-16 bg-black stats-section">
                         <div className="mx-auto px-4">
                             <div className="text-center mb-16">
                                 <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
@@ -821,7 +821,7 @@ export default function Page() {
                             </div>
 
                             {loading ? (
-                                <div className="flex justify-center items-center py-20">
+                                <div className="flex justify-center items-center py-">
                                     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
                                 </div>
                             ) : (
@@ -845,7 +845,7 @@ export default function Page() {
             )}
 
             {/* Section NOS RÉALISATIONS */}
-            <section className="py-24 bg-gradient-to-b from-black via-gray-900 to-black">
+            <section className="py-16 bg-gradient-to-b from-black via-gray-900 to-black">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
@@ -853,7 +853,7 @@ export default function Page() {
                         </h2>
                     </div>
                     {loading ? (
-                        <div className="flex justify-center items-center py-20">
+                        <div className="flex justify-center items-center py-16">
                             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
                         </div>
                     ) : (
@@ -866,7 +866,7 @@ export default function Page() {
             </section>
 
             {/* Section NOS DERNIÈRES RÉALISATIONS */}
-            <section className="py-24 bg-black latest-projects-section">
+            <section className="py-16 bg-black latest-projects-section">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
@@ -874,7 +874,7 @@ export default function Page() {
                         </h2>
                     </div>
                     {loading ? (
-                        <div className="flex justify-center items-center py-20">
+                        <div className="flex justify-center items-center py-16">
                             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
                         </div>
                     ) : (
@@ -894,14 +894,14 @@ export default function Page() {
 
             {/* Section CE QUE NOS CLIENTS DISENT DE NOUS */}
             {reviews.length > 0 && (
-                <section className="py-24 bg-gradient-to-b from-black via-gray-900 to-black reviews-section">
+                <section className="py-16 bg-gradient-to-b from-black via-gray-900 to-black reviews-section">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
                             CE QUE NOS CLIENTS DISENT DE NOUS
                         </h2>
                     </div>
                     {loading ? (
-                        <div className="flex justify-center items-center py-20">
+                        <div className="flex justify-center items-center py-16">
                             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
                         </div>
                     ) : (

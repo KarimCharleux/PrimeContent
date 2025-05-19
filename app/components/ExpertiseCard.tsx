@@ -68,14 +68,14 @@ export default function ExpertiseCard({
             <div className="absolute inset-0 z-0 bg-gradient-to-tr from-white/0 via-blue-400/0 to-white/0 group-hover:via-blue-400/10 transition-all duration-700 blur-xl"></div>
 
             {/* Contenu de la carte */}
-            <div className="relative z-10 h-full flex flex-col justify-end p-4 md:p-6 xl:p-8">
+            <div className="relative z-10 h-full flex flex-col justify-end p-3 md:p-6 xl:p-8">
                 {/* Contenu principal (icône et titre) */}
                 <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-3 md:space-y-0 mb-3">
                     <div className="w-10 h-10 md:w-[48px] md:h-[48px] md:min-w-[48px] md:min-h-[48px] bg-gradient-to-br from-white to-blue-100 rounded-lg flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg group-hover:shadow-blue-500/30">
                         {icon}
                     </div>
-                    <div className="w-full md:max-w-[calc(100%-60px)]">
-                        <h3 className="text-base lg:text-lg xl:text-xl font-bold transition-colors duration-300 line-clamp-2 overflow-hidden text-white group-hover:text-blue-100">
+                    <div className="w-full md:max-w-[calc(100%-60px)] h-[2.5rem] md:h-[3rem] xl:h-[3.5rem] flex items-start">
+                        <h3 className="text-sm md:text-lg xl:text-xl font-bold transition-colors duration-300 line-clamp-2 overflow-hidden text-white group-hover:text-blue-100">
                             {title}
                         </h3>
                     </div>
@@ -86,7 +86,7 @@ export default function ExpertiseCard({
                     className="overflow-hidden transition-all duration-700 ease-in-out max-h-0 group-hover:max-h-[200px] opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0"
                     style={{ transitionDelay: '0.1s' }}
                 >
-                    <p className="text-gray-300 text-base md:text-lg leading-relaxed mb-4 group-hover:text-blue-50">
+                    <p className="text-gray-300 text-xs md:text-lg leading-relaxed mb-4 group-hover:text-blue-50">
                         {description}
                     </p>
 
