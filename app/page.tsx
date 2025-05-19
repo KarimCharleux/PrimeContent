@@ -607,7 +607,7 @@ export default function Page() {
             </section>
 
             {/* Section Expertises */}
-            <section className="py-12 md:py-24 bg-gradient-to-b from-black to-gray-900 expertise-section">
+            <section className="py-12 md:py-24 bg-gradient-to-b from-[#010305] to-gray-900 expertise-section">
                 <div className="mx-auto px-4">
                     <div className="text-center mb-8 md:mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
