@@ -78,7 +78,7 @@ export default function MariagesPage() {
     return (
         <main className="global-main-page">
             <Header />
-            <section className="hero-section text-center px-4 py-12">
+            <section className="hero-section text-center py-16">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
@@ -99,15 +99,12 @@ export default function MariagesPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                     transition={{ duration: 0.8, delay: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-                    className="max-w-3xl mx-auto text-base md:text-lg text-gray-200"
+                    className="max-w-3xl mx-auto page-subtitle text-gray-200"
                 >
-                    Nous vous accompagnons dans votre grand jour pour capturer en photos chaque
-                    moment précieux et créer des souvenirs intemporels ✨
+                    Immortalisez votre grand jour avec des photos inoubliables ✨
                 </motion.p>
-            </section>
 
-            {/* Section Portfolio avec PortfolioGrid */}
-            <section className="px-4 py-8">
+                {/* Section Portfolio avec PortfolioGrid */}
                 <div className="container mx-auto">
                     {isLoading ? (
                         <div className="loading-container">

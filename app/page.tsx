@@ -36,6 +36,7 @@ interface Brand {
     name: string;
     imageSrc: string;
     href: string;
+    order?: number;
 }
 
 // Interface pour les clients
@@ -46,6 +47,7 @@ interface Client {
     imageSrc: string;
     imageBackground: string;
     href: string;
+    order?: number;
 }
 
 // Interface pour les chiffres clés
@@ -110,6 +112,11 @@ export default function Page() {
     const [projects, setProjects] = useState<PortfolioProject[]>([]);
     const [loading, setLoading] = useState(true);
     const [reviews, setReviews] = useState<Review[]>([]);
+
+    // Calculer la division des marques en deux groupes
+    const halfBrandsCount = Math.ceil(brands.length / 2);
+    const firstHalfBrands = brands.slice(0, halfBrandsCount);
+    const secondHalfBrands = brands.slice(halfBrandsCount);
 
     // Fonction pour obtenir l'icône à partir du nom
     const getIconFromName = (icon: string): React.ReactNode => {
@@ -275,7 +282,8 @@ export default function Page() {
 
                 // Récupérer les marques
                 const brandsCollection = collection(db, 'brands');
-                const brandsSnapshot = await getDocs(brandsCollection);
+                const brandsQuery = query(brandsCollection, orderBy('order', 'asc'));
+                const brandsSnapshot = await getDocs(brandsQuery);
 
                 if (!brandsSnapshot.empty) {
                     const fetchedBrands = brandsSnapshot.docs.map((doc) => ({
@@ -290,7 +298,8 @@ export default function Page() {
 
                 // Récupérer les clients
                 const clientsCollection = collection(db, 'clients');
-                const clientsSnapshot = await getDocs(clientsCollection);
+                const clientsQuery = query(clientsCollection, orderBy('order', 'asc'));
+                const clientsSnapshot = await getDocs(clientsQuery);
 
                 if (!clientsSnapshot.empty) {
                     const fetchedClients = clientsSnapshot.docs.map((doc) => ({
@@ -654,53 +663,47 @@ export default function Page() {
                         </div>
                     ) : (
                         <div className="flex flex-col 2xl:flex-row 2xl:items-center 2xl:justify-center gap-4 2xl:gap-6">
-                            {/* Marques à gauche - visible uniquement sur desktop */}
-                            <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
-                                {brands.slice(0, 4).map((brand, index) => (
-                                    <div
-                                        key={brand.id || brand.name}
-                                        className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`}
-                                        ref={(el) => addBrandRef(el, index)}
-                                    >
-                                        <BrandLogo
-                                            name={brand.name}
-                                            imageSrc={brand.imageSrc}
-                                            href={brand.href}
-                                        />
-                                    </div>
-                                ))}
-                                <div className="aspect-square"></div>
-                                {brands.slice(4, 5).map((brand, index) => (
-                                    <div
-                                        key={brand.id || brand.name}
-                                        className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`}
-                                        ref={(el) => addBrandRef(el, index + 4)}
-                                    >
-                                        <BrandLogo
-                                            name={brand.name}
-                                            imageSrc={brand.imageSrc}
-                                            href={brand.href}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
+                            {/* Première moitié des marques à gauche - visible uniquement sur desktop */}
+                            {firstHalfBrands.length > 0 && (
+                                <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
+                                    {firstHalfBrands.map((brand, index) => (
+                                        <div
+                                            key={brand.id || brand.name}
+                                            className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                            ref={(el) => addBrandRef(el, index)}
+                                        >
+                                            <BrandLogo
+                                                name={brand.name}
+                                                imageSrc={brand.imageSrc}
+                                                href={brand.href}
+                                            />
+                                        </div>
+                                    ))}
+                                    {/* Ajouter des cellules vides si nécessaire pour maintenir la grille */}
+                                    {firstHalfBrands.length % 2 !== 0 && (
+                                        <div className="aspect-square"></div>
+                                    )}
+                                </div>
+                            )}
 
-                            {/* Marques en haut - visible uniquement sur mobile */}
-                            <div className="flex flex-wrap justify-center gap-4 mb-8 2xl:hidden">
-                                {brands.slice(0, 5).map((brand, index) => (
-                                    <div
-                                        key={brand.id || brand.name}
-                                        className={`aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4 ${!shouldStartAnimations ? 'opacity-0' : ''}`}
-                                        ref={(el) => addMobileBrandRef(el, index)}
-                                    >
-                                        <BrandLogo
-                                            name={brand.name}
-                                            imageSrc={brand.imageSrc}
-                                            href={brand.href}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
+                            {/* Première moitié des marques en haut - visible uniquement sur mobile */}
+                            {firstHalfBrands.length > 0 && (
+                                <div className="flex flex-wrap justify-center gap-4 2xl:hidden max-sm:grid max-sm:grid-cols-3 max-sm:gap-2">
+                                    {firstHalfBrands.map((brand, index) => (
+                                        <div
+                                            key={brand.id || brand.name}
+                                            className={`aspect-square w-1/7 max-lg:w-[15%] max-md:w-1/5 max-sm:w-full ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                            ref={(el) => addMobileBrandRef(el, index)}
+                                        >
+                                            <BrandLogo
+                                                name={brand.name}
+                                                imageSrc={brand.imageSrc}
+                                                href={brand.href}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
 
                             {/* Profils des clients au centre sur desktop */}
                             <div className="hidden 2xl:flex flex-col items-center w-full 2xl:max-w-4xl">
@@ -709,7 +712,7 @@ export default function Page() {
                                         <div
                                             key={client.id || `${client.name}-${index}`}
                                             ref={(el) => addClientRef(el, index)}
-                                            className={`h-[200px] md:h-[250px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                            className={`h-[250px] md:h-[300px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
                                         >
                                             <ClientProfile
                                                 name={client.name}
@@ -722,12 +725,12 @@ export default function Page() {
                                         </div>
                                     ))}
                                 </div>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                                <div className="grid grid-cols-4 md:grid-cols-5 gap-4 md:gap-6">
                                     {clients.slice(4).map((client, index) => (
                                         <div
                                             key={client.id || `${client.name}-${index + 4}`}
                                             ref={(el) => addClientRef(el, index + 4)}
-                                            className={`h-[200px] md:h-[250px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                            className={`h-[250px] md:h-[300px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
                                         >
                                             <ClientProfile
                                                 name={client.name}
@@ -743,11 +746,11 @@ export default function Page() {
                             </div>
 
                             {/* Profils des clients au centre sur mobile */}
-                            <div className="flex flex-wrap justify-center gap-4 mb-8 2xl:hidden">
+                            <div className="flex flex-wrap justify-center gap-4 2xl:hidden max-sm:grid max-sm:grid-cols-3 max-sm:gap-2">
                                 {clients.map((client, index) => (
                                     <div
                                         key={client.id || `${client.name}-${index}`}
-                                        className={`h-[150px] md:h-[250px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                        className={`h-[180px] md:h-[300px] max-sm:w-full ${!shouldStartAnimations ? 'opacity-0' : ''}`}
                                         ref={(el) => addClientRef(el, index + clients.length)}
                                     >
                                         <ClientProfile
@@ -762,39 +765,54 @@ export default function Page() {
                                 ))}
                             </div>
 
-                            {/* Marques à droite - visible uniquement sur desktop */}
-                            <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
-                                {brands.slice(5, 10).map((brand, index) => (
-                                    <div
-                                        key={brand.id || brand.name}
-                                        className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`}
-                                        ref={(el) => addBrandRef(el, index + 5)}
-                                    >
-                                        <BrandLogo
-                                            name={brand.name}
-                                            imageSrc={brand.imageSrc}
-                                            href={brand.href}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
+                            {/* Deuxième moitié des marques à droite - visible uniquement sur desktop */}
+                            {secondHalfBrands.length > 0 && (
+                                <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
+                                    {secondHalfBrands.map((brand, index) => (
+                                        <div
+                                            key={brand.id || brand.name}
+                                            className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                            ref={(el) =>
+                                                addBrandRef(el, index + firstHalfBrands.length)
+                                            }
+                                        >
+                                            <BrandLogo
+                                                name={brand.name}
+                                                imageSrc={brand.imageSrc}
+                                                href={brand.href}
+                                            />
+                                        </div>
+                                    ))}
+                                    {/* Ajouter des cellules vides si nécessaire pour maintenir la grille */}
+                                    {secondHalfBrands.length % 2 !== 0 && (
+                                        <div className="aspect-square"></div>
+                                    )}
+                                </div>
+                            )}
 
-                            {/* Marques en bas - visible uniquement sur mobile */}
-                            <div className="flex flex-wrap justify-center gap-4 mt-8 2xl:hidden">
-                                {brands.slice(5).map((brand, index) => (
-                                    <div
-                                        key={brand.id || brand.name}
-                                        className={`aspect-square w-1/6 max-md:w-1/5 max-sm:w-1/4 ${!shouldStartAnimations ? 'opacity-0' : ''}`}
-                                        ref={(el) => addMobileBrandRef(el, index + 5)}
-                                    >
-                                        <BrandLogo
-                                            name={brand.name}
-                                            imageSrc={brand.imageSrc}
-                                            href={brand.href}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
+                            {/* Deuxième moitié des marques en bas - visible uniquement sur mobile */}
+                            {secondHalfBrands.length > 0 && (
+                                <div className="flex flex-wrap justify-center gap-4 2xl:hidden max-sm:grid max-sm:grid-cols-3 max-sm:gap-2">
+                                    {secondHalfBrands.map((brand, index) => (
+                                        <div
+                                            key={brand.id || brand.name}
+                                            className={`aspect-square w-1/7 max-lg:w-[15%] max-md:w-1/5 max-sm:w-full ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                            ref={(el) =>
+                                                addMobileBrandRef(
+                                                    el,
+                                                    index + firstHalfBrands.length,
+                                                )
+                                            }
+                                        >
+                                            <BrandLogo
+                                                name={brand.name}
+                                                imageSrc={brand.imageSrc}
+                                                href={brand.href}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 

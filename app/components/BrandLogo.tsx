@@ -15,7 +15,7 @@ export default function BrandLogo({ name, imageSrc, href = '#' }: BrandLogoProps
     const [imageError, setImageError] = useState(false);
 
     const content = (
-        <div className="p-4 rounded-lg w-full h-full w-full flex items-center justify-center relative overflow-hidden group transition-all duration-300 border border-white/10 hover:border-white/30">
+        <div className="p-1 lg:p-2 rounded-lg w-full h-full flex items-center justify-center relative overflow-hidden group transition-all duration-300 border border-white/10 hover:border-white/30">
             {imageSrc && !imageError ? (
                 <div className="relative w-fit h-fit transition-all duration-300 group-hover:scale-105">
                     <Image

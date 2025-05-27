@@ -3,6 +3,7 @@
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import React, { useState, useEffect } from 'react';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { useForm } from 'react-hook-form';
 
 import { getMediaUrl } from '../../../utils/mediaUrl';
@@ -14,6 +15,7 @@ interface Brand {
     name: string;
     imageSrc: string;
     href: string;
+    order?: number;
 }
 
 interface Client {
@@ -23,6 +25,7 @@ interface Client {
     imageSrc: string;
     imageBackground: string;
     href: string;
+    order?: number;
 }
 
 export default function HomeTabClients() {
@@ -32,6 +35,7 @@ export default function HomeTabClients() {
     const [savingBrand, setSavingBrand] = useState(false);
     const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
     const [previewBrandImage, setPreviewBrandImage] = useState<string | null>(null);
+    const [updatingBrandOrder, setUpdatingBrandOrder] = useState(false);
 
     // États pour les clients
     const [clients, setClients] = useState<Client[]>([]);
@@ -40,6 +44,7 @@ export default function HomeTabClients() {
     const [editingClient, setEditingClient] = useState<Client | null>(null);
     const [previewClientImage, setPreviewClientImage] = useState<string | null>(null);
     const [previewClientBgImage, setPreviewClientBgImage] = useState<string | null>(null);
+    const [updatingClientOrder, setUpdatingClientOrder] = useState(false);
 
     // État général
     const [activeTab, setActiveTab] = useState<'brands' | 'clients'>('brands');
@@ -84,7 +89,35 @@ export default function HomeTabClients() {
                         id: doc.id,
                         ...doc.data(),
                     })) as Brand[];
-                    setBrands(fetchedBrands);
+
+                    // Vérifier si les marques ont déjà un ordre défini
+                    const hasOrderProperty = fetchedBrands.some(
+                        (brand) => brand.order !== undefined,
+                    );
+
+                    if (!hasOrderProperty) {
+                        // Initialiser les ordres si pas définis
+                        const brandsWithOrder = fetchedBrands.map((brand, index) => ({
+                            ...brand,
+                            order: index,
+                        }));
+                        setBrands(brandsWithOrder);
+
+                        // Mettre à jour dans Firestore
+                        for (const brand of brandsWithOrder) {
+                            if (brand.id) {
+                                await updateDoc(doc(db, 'brands', brand.id), {
+                                    order: brand.order,
+                                });
+                            }
+                        }
+                    } else {
+                        // Trier par ordre si déjà défini
+                        const sortedBrands = [...fetchedBrands].sort(
+                            (a, b) => (a.order || 0) - (b.order || 0),
+                        );
+                        setBrands(sortedBrands);
+                    }
                 } else {
                     setBrands([]);
                 }
@@ -100,7 +133,35 @@ export default function HomeTabClients() {
                         id: doc.id,
                         ...doc.data(),
                     })) as Client[];
-                    setClients(fetchedClients);
+
+                    // Vérifier si les clients ont déjà un ordre défini
+                    const hasOrderProperty = fetchedClients.some(
+                        (client) => client.order !== undefined,
+                    );
+
+                    if (!hasOrderProperty) {
+                        // Initialiser les ordres si pas définis
+                        const clientsWithOrder = fetchedClients.map((client, index) => ({
+                            ...client,
+                            order: index,
+                        }));
+                        setClients(clientsWithOrder);
+
+                        // Mettre à jour dans Firestore
+                        for (const client of clientsWithOrder) {
+                            if (client.id) {
+                                await updateDoc(doc(db, 'clients', client.id), {
+                                    order: client.order,
+                                });
+                            }
+                        }
+                    } else {
+                        // Trier par ordre si déjà défini
+                        const sortedClients = [...fetchedClients].sort(
+                            (a, b) => (a.order || 0) - (b.order || 0),
+                        );
+                        setClients(sortedClients);
+                    }
                 } else {
                     setClients([]);
                 }
@@ -117,6 +178,38 @@ export default function HomeTabClients() {
 
         fetchData();
     }, []);
+
+    // Fonction pour supprimer un fichier média
+    const deleteMediaFile = async (fileUrl: string) => {
+        if (!fileUrl) return;
+
+        try {
+            const fileName = fileUrl.split('/').pop();
+            const filePath = fileUrl.substring(1, fileUrl.lastIndexOf('/'));
+
+            if (fileName) {
+                const response = await fetch(
+                    `/api/delete?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`,
+                    {
+                        method: 'DELETE',
+                    },
+                );
+
+                if (!response.ok) {
+                    console.error(
+                        'Erreur lors de la suppression du fichier:',
+                        await response.text(),
+                    );
+                    return false;
+                }
+                return true;
+            }
+        } catch (error) {
+            console.error('Erreur lors de la suppression du fichier:', error);
+            return false;
+        }
+        return false;
+    };
 
     // Fonction pour gérer l'upload d'image pour les marques
     const handleBrandImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,6 +239,16 @@ export default function HomeTabClients() {
             }
 
             const data = await response.json();
+
+            // Si on est en train de modifier une marque existante et qu'elle a déjà une image
+            if (
+                editingBrand?.id &&
+                editingBrand.imageSrc &&
+                editingBrand.imageSrc !== data.fileUrl
+            ) {
+                // Supprimer l'ancienne image
+                await deleteMediaFile(editingBrand.imageSrc);
+            }
 
             // Mettre à jour le formulaire avec l'URL
             setValueBrand('imageSrc', data.fileUrl, {
@@ -192,6 +295,16 @@ export default function HomeTabClients() {
             }
 
             const data = await response.json();
+
+            // Si on est en train de modifier un client existant et qu'il a déjà une image
+            if (
+                editingClient?.id &&
+                editingClient.imageSrc &&
+                editingClient.imageSrc !== data.fileUrl
+            ) {
+                // Supprimer l'ancienne image
+                await deleteMediaFile(editingClient.imageSrc);
+            }
 
             // Mettre à jour le formulaire avec l'URL
             setValueClient('imageSrc', data.fileUrl, {
@@ -242,6 +355,16 @@ export default function HomeTabClients() {
 
             const data = await response.json();
 
+            // Si on est en train de modifier un client existant et qu'il a déjà une image d'arrière-plan
+            if (
+                editingClient?.id &&
+                editingClient.imageBackground &&
+                editingClient.imageBackground !== data.fileUrl
+            ) {
+                // Supprimer l'ancienne image
+                await deleteMediaFile(editingClient.imageBackground);
+            }
+
             // Mettre à jour le formulaire avec l'URL
             setValueClient('imageBackground', data.fileUrl, {
                 shouldDirty: true,
@@ -262,6 +385,73 @@ export default function HomeTabClients() {
         }
     };
 
+    // Fonction pour gérer le changement d'ordre d'une marque
+    const handleReorderBrand = async (brandId: string | undefined, direction: 'up' | 'down') => {
+        if (!brandId) return;
+
+        try {
+            // Trier les marques par ordre
+            const sortedBrands = [...brands].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+            // Trouver l'index actuel de la marque
+            const currentIndex = sortedBrands.findIndex((brand) => brand.id === brandId);
+            if (currentIndex === -1) return;
+
+            // Déterminer le nouvel index en fonction de la direction
+            const newIndex =
+                direction === 'up'
+                    ? Math.max(0, currentIndex - 1)
+                    : Math.min(sortedBrands.length - 1, currentIndex + 1);
+
+            // Si l'index ne change pas (déjà en haut ou en bas), ne rien faire
+            if (newIndex === currentIndex) return;
+
+            // Échanger les ordres entre les deux marques
+            const targetBrand = sortedBrands[newIndex];
+            const currentBrand = sortedBrands[currentIndex];
+
+            const currentOrder = currentBrand.order || 0;
+            const targetOrder = targetBrand.order || 0;
+
+            // Mettre à jour les ordres
+            const updatedBrands = sortedBrands.map((brand) => {
+                if (brand.id === brandId) {
+                    return { ...brand, order: targetOrder };
+                } else if (brand.id === targetBrand.id) {
+                    return { ...brand, order: currentOrder };
+                }
+                return brand;
+            });
+
+            // Mettre à jour l'état local
+            setBrands(updatedBrands);
+
+            // Mettre à jour Firestore
+            if (currentBrand.id) {
+                await updateDoc(doc(db, 'brands', currentBrand.id), {
+                    order: targetOrder,
+                });
+            }
+
+            if (targetBrand.id) {
+                await updateDoc(doc(db, 'brands', targetBrand.id), {
+                    order: currentOrder,
+                });
+            }
+
+            setStatusMessage({
+                type: 'success',
+                message: 'Ordre de la marque modifié avec succès',
+            });
+        } catch (error) {
+            console.error('Erreur lors de la réorganisation des marques:', error);
+            setStatusMessage({
+                type: 'error',
+                message: 'Erreur lors de la réorganisation des marques',
+            });
+        }
+    };
+
     // Soumission du formulaire de marque
     const onSubmitBrand = async (data: Brand) => {
         setSavingBrand(true);
@@ -272,23 +462,36 @@ export default function HomeTabClients() {
                     name: data.name,
                     imageSrc: data.imageSrc,
                     href: data.href,
+                    order: editingBrand.order || 0, // Conserver l'ordre existant
                 });
 
                 setBrands((prevBrands) =>
                     prevBrands.map((brand) =>
-                        brand.id === editingBrand.id ? { ...data, id: brand.id } : brand,
+                        brand.id === editingBrand.id
+                            ? { ...data, id: brand.id, order: brand.order }
+                            : brand,
                     ),
                 );
                 setStatusMessage({ type: 'success', message: 'Marque mise à jour avec succès' });
             } else {
                 // Ajout d'une nouvelle marque
+                // Trouver l'ordre le plus élevé et ajouter 1
+                const maxOrder =
+                    brands.length > 0
+                        ? Math.max(...brands.map((brand) => brand.order || 0)) + 1
+                        : 0;
+
                 const docRef = await addDoc(collection(db, 'brands'), {
                     name: data.name,
                     imageSrc: data.imageSrc,
                     href: data.href,
+                    order: maxOrder, // Assigner le nouvel ordre
                 });
 
-                setBrands((prevBrands) => [...prevBrands, { ...data, id: docRef.id }]);
+                setBrands((prevBrands) => [
+                    ...prevBrands,
+                    { ...data, id: docRef.id, order: maxOrder },
+                ]);
                 setStatusMessage({
                     type: 'success',
                     message: 'Nouvelle marque ajoutée avec succès',
@@ -328,28 +531,7 @@ export default function HomeTabClients() {
 
                 // Supprimer l'image si elle existe
                 if (brand.imageSrc) {
-                    const fileName = brand.imageSrc.split('/').pop();
-                    const filePath = brand.imageSrc.substring(1, brand.imageSrc.lastIndexOf('/'));
-
-                    if (fileName) {
-                        try {
-                            const response = await fetch(
-                                `/api/delete?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`,
-                                {
-                                    method: 'DELETE',
-                                },
-                            );
-
-                            if (!response.ok) {
-                                console.error(
-                                    "Erreur lors de la suppression de l'image:",
-                                    await response.text(),
-                                );
-                            }
-                        } catch (imageError) {
-                            console.error("Erreur lors de la suppression de l'image:", imageError);
-                        }
-                    }
+                    await deleteMediaFile(brand.imageSrc);
                 }
 
                 setBrands((prevBrands) => prevBrands.filter((b) => b.id !== brand.id));
@@ -379,6 +561,73 @@ export default function HomeTabClients() {
         setPreviewBrandImage(null);
     };
 
+    // Fonction pour gérer le changement d'ordre d'un client
+    const handleReorderClient = async (clientId: string | undefined, direction: 'up' | 'down') => {
+        if (!clientId) return;
+
+        try {
+            // Trier les clients par ordre
+            const sortedClients = [...clients].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+            // Trouver l'index actuel du client
+            const currentIndex = sortedClients.findIndex((client) => client.id === clientId);
+            if (currentIndex === -1) return;
+
+            // Déterminer le nouvel index en fonction de la direction
+            const newIndex =
+                direction === 'up'
+                    ? Math.max(0, currentIndex - 1)
+                    : Math.min(sortedClients.length - 1, currentIndex + 1);
+
+            // Si l'index ne change pas (déjà en haut ou en bas), ne rien faire
+            if (newIndex === currentIndex) return;
+
+            // Échanger les ordres entre les deux clients
+            const targetClient = sortedClients[newIndex];
+            const currentClient = sortedClients[currentIndex];
+
+            const currentOrder = currentClient.order || 0;
+            const targetOrder = targetClient.order || 0;
+
+            // Mettre à jour les ordres
+            const updatedClients = sortedClients.map((client) => {
+                if (client.id === clientId) {
+                    return { ...client, order: targetOrder };
+                } else if (client.id === targetClient.id) {
+                    return { ...client, order: currentOrder };
+                }
+                return client;
+            });
+
+            // Mettre à jour l'état local
+            setClients(updatedClients);
+
+            // Mettre à jour Firestore
+            if (currentClient.id) {
+                await updateDoc(doc(db, 'clients', currentClient.id), {
+                    order: targetOrder,
+                });
+            }
+
+            if (targetClient.id) {
+                await updateDoc(doc(db, 'clients', targetClient.id), {
+                    order: currentOrder,
+                });
+            }
+
+            setStatusMessage({
+                type: 'success',
+                message: 'Ordre du client modifié avec succès',
+            });
+        } catch (error) {
+            console.error('Erreur lors de la réorganisation des clients:', error);
+            setStatusMessage({
+                type: 'error',
+                message: 'Erreur lors de la réorganisation des clients',
+            });
+        }
+    };
+
     // Soumission du formulaire de client
     const onSubmitClient = async (data: Client) => {
         setSavingClient(true);
@@ -391,25 +640,38 @@ export default function HomeTabClients() {
                     imageSrc: data.imageSrc,
                     imageBackground: data.imageBackground,
                     href: data.href,
+                    order: editingClient.order || 0, // Conserver l'ordre existant
                 });
 
                 setClients((prevClients) =>
                     prevClients.map((client) =>
-                        client.id === editingClient.id ? { ...data, id: client.id } : client,
+                        client.id === editingClient.id
+                            ? { ...data, id: client.id, order: client.order }
+                            : client,
                     ),
                 );
                 setStatusMessage({ type: 'success', message: 'Client mis à jour avec succès' });
             } else {
                 // Ajout d'un nouveau client
+                // Trouver l'ordre le plus élevé et ajouter 1
+                const maxOrder =
+                    clients.length > 0
+                        ? Math.max(...clients.map((client) => client.order || 0)) + 1
+                        : 0;
+
                 const docRef = await addDoc(collection(db, 'clients'), {
                     name: data.name,
                     domain: data.domain,
                     imageSrc: data.imageSrc,
                     imageBackground: data.imageBackground,
                     href: data.href,
+                    order: maxOrder, // Assigner le nouvel ordre
                 });
 
-                setClients((prevClients) => [...prevClients, { ...data, id: docRef.id }]);
+                setClients((prevClients) => [
+                    ...prevClients,
+                    { ...data, id: docRef.id, order: maxOrder },
+                ]);
                 setStatusMessage({ type: 'success', message: 'Nouveau client ajouté avec succès' });
             }
 
@@ -456,31 +718,7 @@ export default function HomeTabClients() {
 
                 for (const image of imagesToDelete) {
                     if (image.url) {
-                        const fileName = image.url.split('/').pop();
-                        const filePath = image.url.substring(1, image.url.lastIndexOf('/'));
-
-                        if (fileName) {
-                            try {
-                                const response = await fetch(
-                                    `/api/delete?path=${encodeURIComponent(filePath)}&name=${encodeURIComponent(fileName)}`,
-                                    {
-                                        method: 'DELETE',
-                                    },
-                                );
-
-                                if (!response.ok) {
-                                    console.error(
-                                        `Erreur lors de la suppression de l'${image.type}:`,
-                                        await response.text(),
-                                    );
-                                }
-                            } catch (imageError) {
-                                console.error(
-                                    `Erreur lors de la suppression de l'${image.type}:`,
-                                    imageError,
-                                );
-                            }
-                        }
+                        await deleteMediaFile(image.url);
                     }
                 }
 
@@ -513,6 +751,90 @@ export default function HomeTabClients() {
         });
         setPreviewClientImage(null);
         setPreviewClientBgImage(null);
+    };
+
+    // Fonctions pour gérer le drag and drop des marques
+    const handleDragEndBrands = async (result: DropResult) => {
+        if (!result.destination) return;
+        if (result.destination.index === result.source.index) return;
+
+        const items = Array.from(brands);
+        const [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+
+        // Mettre à jour les ordres
+        const updatedBrands = items.map((brand, index) => ({
+            ...brand,
+            order: index,
+        }));
+
+        setBrands(updatedBrands);
+
+        // Mettre à jour dans Firestore
+        try {
+            setUpdatingBrandOrder(true);
+            setStatusMessage({ type: 'success', message: "Mise à jour de l'ordre des marques..." });
+
+            for (const brand of updatedBrands) {
+                if (brand.id) {
+                    await updateDoc(doc(db, 'brands', brand.id), {
+                        order: brand.order,
+                    });
+                }
+            }
+
+            setStatusMessage({ type: 'success', message: 'Ordre des marques mis à jour' });
+        } catch (error) {
+            console.error("Erreur lors de la mise à jour de l'ordre des marques:", error);
+            setStatusMessage({
+                type: 'error',
+                message: "Erreur lors de la mise à jour de l'ordre des marques",
+            });
+        } finally {
+            setUpdatingBrandOrder(false);
+        }
+    };
+
+    // Fonctions pour gérer le drag and drop des clients
+    const handleDragEndClients = async (result: DropResult) => {
+        if (!result.destination) return;
+        if (result.destination.index === result.source.index) return;
+
+        const items = Array.from(clients);
+        const [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+
+        // Mettre à jour les ordres
+        const updatedClients = items.map((client, index) => ({
+            ...client,
+            order: index,
+        }));
+
+        setClients(updatedClients);
+
+        // Mettre à jour dans Firestore
+        try {
+            setUpdatingClientOrder(true);
+            setStatusMessage({ type: 'success', message: "Mise à jour de l'ordre des clients..." });
+
+            for (const client of updatedClients) {
+                if (client.id) {
+                    await updateDoc(doc(db, 'clients', client.id), {
+                        order: client.order,
+                    });
+                }
+            }
+
+            setStatusMessage({ type: 'success', message: 'Ordre des clients mis à jour' });
+        } catch (error) {
+            console.error("Erreur lors de la mise à jour de l'ordre des clients:", error);
+            setStatusMessage({
+                type: 'error',
+                message: "Erreur lors de la mise à jour de l'ordre des clients",
+            });
+        } finally {
+            setUpdatingClientOrder(false);
+        }
     };
 
     return (
@@ -706,64 +1028,216 @@ export default function HomeTabClients() {
                                 </div>
                             ) : (
                                 <div className="overflow-auto">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50">
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Nom
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Logo
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Lien
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Actions
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {brands.map((brand) => (
-                                                <tr key={brand.id}>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        {brand.name}
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="h-10 w-24 relative bg-gray-200 rounded-md">
-                                                            <Image
-                                                                src={getMediaUrl(brand.imageSrc)}
-                                                                alt={brand.name}
-                                                                fill
-                                                                className="object-contain"
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="max-w-xs truncate">
-                                                            {brand.href}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleEditBrand(brand)}
-                                                            className="text-indigo-600 hover:text-indigo-900"
-                                                        >
-                                                            Modifier
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleDeleteBrand(brand)}
-                                                            className="text-red-600 hover:text-red-900"
-                                                        >
-                                                            Supprimer
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                    <DragDropContext onDragEnd={handleDragEndBrands}>
+                                        <Droppable droppableId="brands">
+                                            {(provided) => (
+                                                <table
+                                                    className="min-w-full divide-y divide-gray-200"
+                                                    {...provided.droppableProps}
+                                                    ref={provided.innerRef}
+                                                >
+                                                    <thead className="bg-gray-50">
+                                                        <tr>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Ordre
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Nom
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Logo
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Lien
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Actions
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="bg-white divide-y divide-gray-200">
+                                                        {brands
+                                                            .sort(
+                                                                (a, b) =>
+                                                                    (a.order || 0) - (b.order || 0),
+                                                            )
+                                                            .map((brand, index) => (
+                                                                <Draggable
+                                                                    key={`brand-${index}`}
+                                                                    draggableId={`brand-${index}`}
+                                                                    index={index}
+                                                                >
+                                                                    {(provided, snapshot) => (
+                                                                        <tr
+                                                                            ref={provided.innerRef}
+                                                                            {...provided.draggableProps}
+                                                                            className={`${snapshot.isDragging ? 'bg-gray-100' : ''}`}
+                                                                        >
+                                                                            <td
+                                                                                className="px-6 py-4 whitespace-nowrap"
+                                                                                {...provided.dragHandleProps}
+                                                                            >
+                                                                                <div className="flex flex-col items-center">
+                                                                                    <button
+                                                                                        onClick={() =>
+                                                                                            handleReorderBrand(
+                                                                                                brand.id,
+                                                                                                'up',
+                                                                                            )
+                                                                                        }
+                                                                                        disabled={
+                                                                                            brand.order ===
+                                                                                                0 ||
+                                                                                            updatingBrandOrder
+                                                                                        }
+                                                                                        className={`text-gray-500 hover:text-gray-700 mb-1 ${
+                                                                                            brand.order ===
+                                                                                                0 ||
+                                                                                            updatingBrandOrder
+                                                                                                ? 'opacity-30 cursor-not-allowed'
+                                                                                                : ''
+                                                                                        }`}
+                                                                                    >
+                                                                                        <svg
+                                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                                            className="h-5 w-5"
+                                                                                            fill="none"
+                                                                                            viewBox="0 0 24 24"
+                                                                                            stroke="currentColor"
+                                                                                        >
+                                                                                            <path
+                                                                                                strokeLinecap="round"
+                                                                                                strokeLinejoin="round"
+                                                                                                strokeWidth={
+                                                                                                    2
+                                                                                                }
+                                                                                                d="M5 15l7-7 7 7"
+                                                                                            />
+                                                                                        </svg>
+                                                                                    </button>
+                                                                                    <span className="text-sm font-medium flex items-center">
+                                                                                        <svg
+                                                                                            className="h-5 w-5 text-gray-400 mr-1"
+                                                                                            fill="none"
+                                                                                            viewBox="0 0 24 24"
+                                                                                            stroke="currentColor"
+                                                                                        >
+                                                                                            <path
+                                                                                                strokeLinecap="round"
+                                                                                                strokeLinejoin="round"
+                                                                                                strokeWidth={
+                                                                                                    2
+                                                                                                }
+                                                                                                d="M4 8h16M4 16h16"
+                                                                                            />
+                                                                                        </svg>
+                                                                                        {brand.order !==
+                                                                                        undefined
+                                                                                            ? brand.order
+                                                                                            : '?'}
+                                                                                    </span>
+                                                                                    <button
+                                                                                        onClick={() =>
+                                                                                            handleReorderBrand(
+                                                                                                brand.id,
+                                                                                                'down',
+                                                                                            )
+                                                                                        }
+                                                                                        disabled={
+                                                                                            brand.order ===
+                                                                                                brands.length -
+                                                                                                    1 ||
+                                                                                            updatingBrandOrder
+                                                                                        }
+                                                                                        className={`text-gray-500 hover:text-gray-700 mt-1 ${
+                                                                                            brand.order ===
+                                                                                                brands.length -
+                                                                                                    1 ||
+                                                                                            updatingBrandOrder
+                                                                                                ? 'opacity-30 cursor-not-allowed'
+                                                                                                : ''
+                                                                                        }`}
+                                                                                    >
+                                                                                        <svg
+                                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                                            className="h-5 w-5"
+                                                                                            fill="none"
+                                                                                            viewBox="0 0 24 24"
+                                                                                            stroke="currentColor"
+                                                                                        >
+                                                                                            <path
+                                                                                                strokeLinecap="round"
+                                                                                                strokeLinejoin="round"
+                                                                                                strokeWidth={
+                                                                                                    2
+                                                                                                }
+                                                                                                d="M19 9l-7 7-7-7"
+                                                                                            />
+                                                                                        </svg>
+                                                                                    </button>
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                                {brand.name}
+                                                                            </td>
+                                                                            <td className="px-6 py-4">
+                                                                                <div className="h-10 w-24 relative bg-gray-200 rounded-md">
+                                                                                    <Image
+                                                                                        src={getMediaUrl(
+                                                                                            brand.imageSrc,
+                                                                                        )}
+                                                                                        alt={
+                                                                                            brand.name
+                                                                                        }
+                                                                                        fill
+                                                                                        className="object-contain"
+                                                                                    />
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="px-6 py-4">
+                                                                                <div className="max-w-xs truncate">
+                                                                                    {brand.href}
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="px-6 py-4 whitespace-nowrap space-x-2">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() =>
+                                                                                        handleEditBrand(
+                                                                                            brand,
+                                                                                        )
+                                                                                    }
+                                                                                    className="text-indigo-600 hover:text-indigo-900"
+                                                                                >
+                                                                                    Modifier
+                                                                                </button>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() =>
+                                                                                        handleDeleteBrand(
+                                                                                            brand,
+                                                                                        )
+                                                                                    }
+                                                                                    className="text-red-600 hover:text-red-900"
+                                                                                >
+                                                                                    Supprimer
+                                                                                </button>
+                                                                            </td>
+                                                                        </tr>
+                                                                    )}
+                                                                </Draggable>
+                                                            ))}
+                                                        {provided.placeholder}
+                                                    </tbody>
+                                                </table>
+                                            )}
+                                        </Droppable>
+                                    </DragDropContext>
+                                    {updatingBrandOrder && (
+                                        <div className="flex justify-center py-2">
+                                            <Spinner small />
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -1002,79 +1476,229 @@ export default function HomeTabClients() {
                                 </div>
                             ) : (
                                 <div className="overflow-auto">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50">
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Nom
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Domaine
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Photo
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Arrière-plan
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Actions
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {clients.map((client) => (
-                                                <tr key={client.id}>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        {client.name}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        {client.domain}
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="h-12 w-12 relative">
-                                                            <Image
-                                                                src={getMediaUrl(client.imageSrc)}
-                                                                alt={client.name}
-                                                                fill
-                                                                className="object-cover rounded-full"
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="h-12 w-24 relative">
-                                                            <Image
-                                                                src={getMediaUrl(
-                                                                    client.imageBackground,
-                                                                )}
-                                                                alt={`${client.name} background`}
-                                                                fill
-                                                                className="object-cover rounded-md"
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleEditClient(client)}
-                                                            className="text-indigo-600 hover:text-indigo-900"
-                                                        >
-                                                            Modifier
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleDeleteClient(client)
-                                                            }
-                                                            className="text-red-600 hover:text-red-900"
-                                                        >
-                                                            Supprimer
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                    <DragDropContext onDragEnd={handleDragEndClients}>
+                                        <Droppable droppableId="clients">
+                                            {(provided) => (
+                                                <table
+                                                    className="min-w-full divide-y divide-gray-200"
+                                                    {...provided.droppableProps}
+                                                    ref={provided.innerRef}
+                                                >
+                                                    <thead className="bg-gray-50">
+                                                        <tr>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Ordre
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Nom
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Domaine
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Photo
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Arrière-plan
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Actions
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="bg-white divide-y divide-gray-200">
+                                                        {clients
+                                                            .sort(
+                                                                (a, b) =>
+                                                                    (a.order || 0) - (b.order || 0),
+                                                            )
+                                                            .map((client, index) => (
+                                                                <Draggable
+                                                                    key={`client-${index}`}
+                                                                    draggableId={`client-${index}`}
+                                                                    index={index}
+                                                                >
+                                                                    {(provided, snapshot) => (
+                                                                        <tr
+                                                                            ref={provided.innerRef}
+                                                                            {...provided.draggableProps}
+                                                                            className={`${snapshot.isDragging ? 'bg-gray-100' : ''}`}
+                                                                        >
+                                                                            <td
+                                                                                className="px-6 py-4 whitespace-nowrap"
+                                                                                {...provided.dragHandleProps}
+                                                                            >
+                                                                                <div className="flex flex-col items-center">
+                                                                                    <button
+                                                                                        onClick={() =>
+                                                                                            handleReorderClient(
+                                                                                                client.id,
+                                                                                                'up',
+                                                                                            )
+                                                                                        }
+                                                                                        disabled={
+                                                                                            client.order ===
+                                                                                                0 ||
+                                                                                            updatingClientOrder
+                                                                                        }
+                                                                                        className={`text-gray-500 hover:text-gray-700 mb-1 ${
+                                                                                            client.order ===
+                                                                                                0 ||
+                                                                                            updatingClientOrder
+                                                                                                ? 'opacity-30 cursor-not-allowed'
+                                                                                                : ''
+                                                                                        }`}
+                                                                                    >
+                                                                                        <svg
+                                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                                            className="h-5 w-5"
+                                                                                            fill="none"
+                                                                                            viewBox="0 0 24 24"
+                                                                                            stroke="currentColor"
+                                                                                        >
+                                                                                            <path
+                                                                                                strokeLinecap="round"
+                                                                                                strokeLinejoin="round"
+                                                                                                strokeWidth={
+                                                                                                    2
+                                                                                                }
+                                                                                                d="M5 15l7-7 7 7"
+                                                                                            />
+                                                                                        </svg>
+                                                                                    </button>
+                                                                                    <span className="text-sm font-medium flex items-center">
+                                                                                        <svg
+                                                                                            className="h-5 w-5 text-gray-400 mr-1"
+                                                                                            fill="none"
+                                                                                            viewBox="0 0 24 24"
+                                                                                            stroke="currentColor"
+                                                                                        >
+                                                                                            <path
+                                                                                                strokeLinecap="round"
+                                                                                                strokeLinejoin="round"
+                                                                                                strokeWidth={
+                                                                                                    2
+                                                                                                }
+                                                                                                d="M4 8h16M4 16h16"
+                                                                                            />
+                                                                                        </svg>
+                                                                                        {client.order !==
+                                                                                        undefined
+                                                                                            ? client.order
+                                                                                            : '?'}
+                                                                                    </span>
+                                                                                    <button
+                                                                                        onClick={() =>
+                                                                                            handleReorderClient(
+                                                                                                client.id,
+                                                                                                'down',
+                                                                                            )
+                                                                                        }
+                                                                                        disabled={
+                                                                                            client.order ===
+                                                                                                clients.length -
+                                                                                                    1 ||
+                                                                                            updatingClientOrder
+                                                                                        }
+                                                                                        className={`text-gray-500 hover:text-gray-700 mt-1 ${
+                                                                                            client.order ===
+                                                                                                clients.length -
+                                                                                                    1 ||
+                                                                                            updatingClientOrder
+                                                                                                ? 'opacity-30 cursor-not-allowed'
+                                                                                                : ''
+                                                                                        }`}
+                                                                                    >
+                                                                                        <svg
+                                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                                            className="h-5 w-5"
+                                                                                            fill="none"
+                                                                                            viewBox="0 0 24 24"
+                                                                                            stroke="currentColor"
+                                                                                        >
+                                                                                            <path
+                                                                                                strokeLinecap="round"
+                                                                                                strokeLinejoin="round"
+                                                                                                strokeWidth={
+                                                                                                    2
+                                                                                                }
+                                                                                                d="M19 9l-7 7-7-7"
+                                                                                            />
+                                                                                        </svg>
+                                                                                    </button>
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                                {client.name}
+                                                                            </td>
+                                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                                {client.domain}
+                                                                            </td>
+                                                                            <td className="px-6 py-4">
+                                                                                <div className="h-12 w-12 relative">
+                                                                                    <Image
+                                                                                        src={getMediaUrl(
+                                                                                            client.imageSrc,
+                                                                                        )}
+                                                                                        alt={
+                                                                                            client.name
+                                                                                        }
+                                                                                        fill
+                                                                                        className="object-cover rounded-full"
+                                                                                    />
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="px-6 py-4">
+                                                                                <div className="h-12 w-24 relative">
+                                                                                    <Image
+                                                                                        src={getMediaUrl(
+                                                                                            client.imageBackground,
+                                                                                        )}
+                                                                                        alt={`${client.name} background`}
+                                                                                        fill
+                                                                                        className="object-cover rounded-md"
+                                                                                    />
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="px-6 py-4 whitespace-nowrap space-x-2">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() =>
+                                                                                        handleEditClient(
+                                                                                            client,
+                                                                                        )
+                                                                                    }
+                                                                                    className="text-indigo-600 hover:text-indigo-900"
+                                                                                >
+                                                                                    Modifier
+                                                                                </button>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() =>
+                                                                                        handleDeleteClient(
+                                                                                            client,
+                                                                                        )
+                                                                                    }
+                                                                                    className="text-red-600 hover:text-red-900"
+                                                                                >
+                                                                                    Supprimer
+                                                                                </button>
+                                                                            </td>
+                                                                        </tr>
+                                                                    )}
+                                                                </Draggable>
+                                                            ))}
+                                                        {provided.placeholder}
+                                                    </tbody>
+                                                </table>
+                                            )}
+                                        </Droppable>
+                                    </DragDropContext>
+                                    {updatingClientOrder && (
+                                        <div className="flex justify-center py-2">
+                                            <Spinner small />
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

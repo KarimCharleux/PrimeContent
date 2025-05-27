@@ -60,17 +60,6 @@ $header-height: 80px;
 .expertise-section {
     position: relative;
 
-    &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle at center, rgba(44, 108, 176, 0.1) 0%, transparent 70%);
-        pointer-events: none;
-    }
-
     // Particules décoratives
     &::after {
         content: '';
