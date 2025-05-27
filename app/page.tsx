@@ -839,22 +839,66 @@ export default function Page() {
                             </div>
 
                             {loading ? (
-                                <div className="flex justify-center items-center py-">
+                                <div className="flex justify-center items-center py-16">
                                     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
                                 </div>
                             ) : (
-                                <div className="flex flex-row flex-wrap justify-center gap-8 stats-grid">
-                                    {keyFigures.map((figure, index) => (
-                                        <AnimatedStat
-                                            key={figure.id || index}
-                                            value={figure.value}
-                                            description={figure.description}
-                                            prefix={figure.prefix}
-                                            suffix={figure.suffix}
-                                            isPercentage={figure.isPercentage}
-                                            delay={index * 0.2}
-                                        />
-                                    ))}
+                                <div className="flex flex-col items-center gap-8">
+                                    {/* Affichage desktop - ligne unique */}
+                                    <div className="hidden md:flex flex-row flex-wrap justify-center gap-8 stats-grid">
+                                        {keyFigures.map((figure, index) => (
+                                            <AnimatedStat
+                                                key={figure.id || index}
+                                                value={figure.value}
+                                                description={figure.description}
+                                                prefix={figure.prefix}
+                                                suffix={figure.suffix}
+                                                isPercentage={figure.isPercentage}
+                                                delay={index * 0.2}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    {/* Affichage mobile - 2 lignes */}
+                                    <div className="md:hidden flex flex-col gap-6 w-full">
+                                        {/* Première ligne - 3 chiffres */}
+                                        <div className="grid grid-cols-3 gap-4">
+                                            {keyFigures.slice(0, 3).map((figure, index) => (
+                                                <AnimatedStat
+                                                    key={figure.id || index}
+                                                    value={figure.value}
+                                                    description={figure.description}
+                                                    prefix={figure.prefix}
+                                                    suffix={figure.suffix}
+                                                    isPercentage={figure.isPercentage}
+                                                    delay={index * 0.2}
+                                                    className="text-center"
+                                                />
+                                            ))}
+                                        </div>
+
+                                        {/* Deuxième ligne - 2 chiffres centrés */}
+                                        {keyFigures.length > 3 && (
+                                            <div className="flex justify-center gap-8">
+                                                {keyFigures.slice(3, 5).map((figure, index) => (
+                                                    <div
+                                                        key={figure.id || index + 3}
+                                                        className="flex-1 max-w-[40%]"
+                                                    >
+                                                        <AnimatedStat
+                                                            value={figure.value}
+                                                            description={figure.description}
+                                                            prefix={figure.prefix}
+                                                            suffix={figure.suffix}
+                                                            isPercentage={figure.isPercentage}
+                                                            delay={(index + 3) * 0.2}
+                                                            className="text-center"
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -875,10 +919,20 @@ export default function Page() {
                             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
                         </div>
                     ) : (
-                        <PortfolioGrid
-                            projects={projects.filter((p) => !p.isLatest)}
-                            showFilter={true}
-                        />
+                        <>
+                            <PortfolioGrid
+                                projects={projects.filter((p) => !p.isLatest)}
+                                showFilter={true}
+                            />
+                            <div className="mt-16 mx-auto w-fit">
+                                <PrimaryButton
+                                    text="Explorer plus"
+                                    href="/portfolio"
+                                    animateOnMount={true}
+                                    delay={0.5}
+                                />
+                            </div>
+                        </>
                     )}
                 </div>
             </section>
