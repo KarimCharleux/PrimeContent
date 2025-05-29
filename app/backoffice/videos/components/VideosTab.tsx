@@ -959,21 +959,12 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                                             >
                                                 {previewThumbnail ? (
                                                     <>
-                                                        {previewThumbnail.startsWith('blob:') ? (
-                                                            <Image
-                                                                src={previewThumbnail}
-                                                                alt="Prévisualisation"
-                                                                fill
-                                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                                            />
-                                                        ) : (
-                                                            <Image
-                                                                src={getMediaUrl(previewThumbnail)}
-                                                                alt="Prévisualisation"
-                                                                fill
-                                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                                            />
-                                                        )}
+                                                        <Image
+                                                            src={getMediaUrl(previewThumbnail)}
+                                                            alt="Prévisualisation"
+                                                            fill
+                                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                        />
                                                         {formData.category && (
                                                             <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
                                                                 {formData.category}

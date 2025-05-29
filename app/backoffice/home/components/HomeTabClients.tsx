@@ -966,21 +966,12 @@ export default function HomeTabClients() {
                                         <div className="h-40 w-full flex items-center justify-center bg-gray-700 rounded-md">
                                             {previewBrandImage ? (
                                                 <div className="relative h-32 w-32">
-                                                    {previewBrandImage.startsWith('blob:') ? (
-                                                        <Image
-                                                            src={previewBrandImage}
-                                                            alt="Prévisualisation"
-                                                            fill
-                                                            className="object-contain"
-                                                        />
-                                                    ) : (
-                                                        <Image
-                                                            src={getMediaUrl(previewBrandImage)}
-                                                            alt="Prévisualisation"
-                                                            fill
-                                                            className="object-contain"
-                                                        />
-                                                    )}
+                                                    <Image
+                                                        src={getMediaUrl(previewBrandImage)}
+                                                        alt="Prévisualisation"
+                                                        fill
+                                                        className="object-contain"
+                                                    />
                                                 </div>
                                             ) : (
                                                 <p className="text-gray-400">
@@ -1383,21 +1374,12 @@ export default function HomeTabClients() {
                                         <div className="h-40 w-full flex items-center justify-center bg-gray-100 rounded-md">
                                             {previewClientImage ? (
                                                 <div className="relative h-32 w-32">
-                                                    {previewClientImage.startsWith('blob:') ? (
-                                                        <Image
-                                                            src={previewClientImage}
-                                                            alt="Prévisualisation"
-                                                            fill
-                                                            className="object-contain"
-                                                        />
-                                                    ) : (
-                                                        <Image
-                                                            src={getMediaUrl(previewClientImage)}
-                                                            alt="Prévisualisation"
-                                                            fill
-                                                            className="object-contain"
-                                                        />
-                                                    )}
+                                                    <Image
+                                                        src={getMediaUrl(previewClientImage)}
+                                                        alt="Prévisualisation"
+                                                        fill
+                                                        className="object-contain"
+                                                    />
                                                 </div>
                                             ) : (
                                                 <p className="text-gray-400">
@@ -1414,21 +1396,12 @@ export default function HomeTabClients() {
                                         <div className="h-40 w-full flex items-center justify-center bg-gray-100 rounded-md overflow-hidden">
                                             {previewClientBgImage ? (
                                                 <div className="relative h-full w-full">
-                                                    {previewClientBgImage.startsWith('blob:') ? (
-                                                        <Image
-                                                            src={previewClientBgImage}
-                                                            alt="Prévisualisation de l'arrière-plan"
-                                                            fill
-                                                            className="object-cover"
-                                                        />
-                                                    ) : (
-                                                        <Image
-                                                            src={getMediaUrl(previewClientBgImage)}
-                                                            alt="Prévisualisation de l'arrière-plan"
-                                                            fill
-                                                            className="object-cover"
-                                                        />
-                                                    )}
+                                                    <Image
+                                                        src={getMediaUrl(previewClientBgImage)}
+                                                        alt="Prévisualisation de l'arrière-plan"
+                                                        fill
+                                                        className="object-cover"
+                                                    />
                                                 </div>
                                             ) : (
                                                 <p className="text-gray-400">

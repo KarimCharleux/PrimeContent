@@ -290,21 +290,12 @@ export default function EventForm({
                                 </label>
                                 <div className="relative aspect-[3/2] bg-gray-100 rounded-lg overflow-hidden">
                                     {previewImage ? (
-                                        previewImage.startsWith('blob:') ? (
-                                            <Image
-                                                src={previewImage}
-                                                alt="Prévisualisation"
-                                                fill
-                                                className="object-cover"
-                                            />
-                                        ) : (
-                                            <Image
-                                                src={getMediaUrl(previewImage)}
-                                                alt="Prévisualisation"
-                                                fill
-                                                className="object-cover"
-                                            />
-                                        )
+                                        <Image
+                                            src={getMediaUrl(previewImage)}
+                                            alt="Prévisualisation"
+                                            fill
+                                            className="object-cover"
+                                        />
                                     ) : (
                                         <div className="flex flex-col items-center justify-center h-full text-gray-400">
                                             <svg
