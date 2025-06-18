@@ -158,7 +158,7 @@ export default function HomeTabTeam() {
     const uploadImage = async (file: File): Promise<string> => {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('folder', 'team');
+        formData.append('path', 'team');
 
         const response = await fetch('/api/upload', {
             method: 'POST',
@@ -173,11 +173,11 @@ export default function HomeTabTeam() {
 
         const result = await response.json();
 
-        if (!result.path) {
+        if (!result.fileUrl) {
             throw new Error("Aucun chemin d'image retourné par l'API");
         }
 
-        return result.path;
+        return result.fileUrl;
     };
 
     // Soumettre le formulaire
