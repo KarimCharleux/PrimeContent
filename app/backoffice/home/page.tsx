@@ -10,6 +10,7 @@ import HomeTabGallery from './components/HomeTabGallery';
 import HomeTabKeyFigures from './components/HomeTabKeyFigures';
 import HomeTabProjects from './components/HomeTabProjects';
 import HomeTabReviews from './components/HomeTabReviews';
+import HomeTabTeam from './components/HomeTabTeam';
 
 export default function HomeEditPage() {
     const { loading } = useAuth();
@@ -83,6 +84,12 @@ export default function HomeEditPage() {
                     >
                         Témoignages
                     </button>
+                    <button
+                        onClick={() => setActiveTab('team')}
+                        className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'team' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                    >
+                        Équipe
+                    </button>
                 </nav>
             </div>
 
@@ -94,6 +101,7 @@ export default function HomeEditPage() {
                 {activeTab === 'keyFigures' && <HomeTabKeyFigures />}
                 {activeTab === 'projects' && <HomeTabProjects />}
                 {activeTab === 'testimonials' && <HomeTabReviews />}
+                {activeTab === 'team' && <HomeTabTeam />}
             </div>
         </div>
     );

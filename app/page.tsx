@@ -3,6 +3,7 @@ import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { useEffect, useRef, useState } from 'react';
 
 import { db } from './backoffice/lib/firebase-client';
+import AboutUsSection from './components/AboutUsSection';
 import AnimatedStat from './components/AnimatedStat';
 import BrandLogo from './components/BrandLogo';
 import ClientProfile from './components/ClientProfile';
@@ -989,6 +990,9 @@ export default function Page() {
                     )}
                 </section>
             )}
+
+            {/* Section À PROPOS DE NOUS */}
+            <AboutUsSection />
 
             <Footer />
         </main>
