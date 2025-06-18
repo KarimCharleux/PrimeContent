@@ -278,18 +278,22 @@ export default function CustomerReviews({ reviews, autoplaySpeed = 5000 }: Custo
             onTouchMove={handleTouchMove}
             onTouchEnd={handleMouseUp}
         >
-            <div ref={sliderTrackRef} className="flex gap-6 py-4" style={{ touchAction: 'pan-y' }}>
+            <div
+                ref={sliderTrackRef}
+                className="flex gap-3 sm:gap-6 py-4"
+                style={{ touchAction: 'pan-y' }}
+            >
                 {duplicatedReviews.map((review, index) => {
                     const gradient = generateGradient(review.text);
                     return (
                         <motion.div
                             key={`${review.order}-${index}`}
-                            className="review-item flex-shrink-0 w-96"
+                            className="review-item flex-shrink-0 w-80 sm:w-96 md:w-96"
                             whileHover={{ y: -5 }}
                             transition={{ duration: 0.3 }}
                         >
                             <div
-                                className="group relative p-6 rounded-xl h-full overflow-hidden"
+                                className="group relative p-4 sm:p-6 rounded-xl h-full overflow-hidden"
                                 style={{
                                     background: gradient.normal,
                                 }}
@@ -308,19 +312,19 @@ export default function CustomerReviews({ reviews, autoplaySpeed = 5000 }: Custo
 
                                 {/* Content */}
                                 <div className="relative z-10 flex flex-col h-full">
-                                    <div className="mb-4">
-                                        <div className="text-white text-lg md:text-xl font-light italic mb-4">
+                                    <div className="mb-3 sm:mb-4">
+                                        <div className="text-white text-base sm:text-lg md:text-xl font-light italic mb-2 sm:mb-4">
                                             ❝
                                         </div>
-                                        <p className="text-white/90 group-hover:text-white text-base md:text-lg leading-relaxed select-none transition-colors duration-300">
+                                        <p className="text-white/90 group-hover:text-white text-sm sm:text-base md:text-lg leading-relaxed select-none transition-colors duration-300">
                                             {review.text}
                                         </p>
                                     </div>
 
-                                    <div className="mt-auto flex items-center gap-4">
+                                    <div className="mt-auto flex items-center gap-3 sm:gap-4">
                                         {review.imageSrc && (
                                             <div className="flex-shrink-0">
-                                                <div className="w-12 h-12 rounded-full overflow-hidden relative border-2 border-white/20 group-hover:border-white/40 transition-all duration-300 shadow-lg">
+                                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden relative border-2 border-white/20 group-hover:border-white/40 transition-all duration-300 shadow-lg">
                                                     <Image
                                                         src={getMediaUrl(review.imageSrc)}
                                                         alt={review.name}
@@ -333,10 +337,10 @@ export default function CustomerReviews({ reviews, autoplaySpeed = 5000 }: Custo
                                         )}
 
                                         <div>
-                                            <p className="font-bold text-white select-none">
+                                            <p className="font-bold text-white select-none text-sm sm:text-base">
                                                 {review.name}
                                             </p>
-                                            <p className="text-blue-100/70 group-hover:text-blue-100 text-sm select-none transition-colors duration-300">
+                                            <p className="text-blue-100/70 group-hover:text-blue-100 text-xs sm:text-sm select-none transition-colors duration-300">
                                                 {review.role}, {review.company}
                                             </p>
                                         </div>

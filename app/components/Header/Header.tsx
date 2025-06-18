@@ -37,6 +37,19 @@ export default function Header() {
         setMobileMenuOpen(!mobileMenuOpen);
     };
 
+    const handleContactClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        const contactSection = document.getElementById('contact');
+        if (contactSection) {
+            contactSection.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        }
+        // Fermer le menu mobile si ouvert
+        setMobileMenuOpen(false);
+    };
+
     const headerVariants = {
         hidden: {
             y: -100,
@@ -57,7 +70,7 @@ export default function Header() {
         { name: 'Vidéos', href: '/videos' },
         { name: 'Événements', href: '/evenements' },
         { name: 'Mariages', href: '/mariages' },
-        { name: 'Contact', href: '/contact' },
+        { name: 'Contact', href: '#contact' },
     ];
 
     // Items supplémentaires pour mobile uniquement
@@ -99,6 +112,9 @@ export default function Header() {
                                 <Link
                                     href={item.href}
                                     className="text-white hover:text-gray-300 transition-colors duration-300"
+                                    onClick={
+                                        item.name === 'Contact' ? handleContactClick : undefined
+                                    }
                                 >
                                     {item.name}
                                 </Link>
@@ -177,7 +193,11 @@ export default function Header() {
                                 <Link
                                     href={item.href}
                                     className="text-white text-2xl hover:text-gray-300 transition-colors duration-300"
-                                    onClick={() => setMobileMenuOpen(false)}
+                                    onClick={
+                                        item.name === 'Contact'
+                                            ? handleContactClick
+                                            : () => setMobileMenuOpen(false)
+                                    }
                                 >
                                     {item.name}
                                 </Link>

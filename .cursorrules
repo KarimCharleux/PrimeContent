@@ -1,0 +1,300 @@
+# Instructions Cursor - Projet Next.js Moderne
+
+## 🎯 Règles Générales
+- **Toujours répondre en français**
+- Utiliser TypeScript strict avec des types explicites
+- Suivre les conventions de nommage camelCase pour les variables/fonctions, PascalCase pour les composants
+- Préférer les composants fonctionnels avec hooks
+- Utiliser des commentaires explicites pour la logique complexe
+
+## 🏗️ Architecture & Structure
+
+### Stack Technique
+- **Framework**: Next.js 14+ avec App Router
+- **Language**: TypeScript strict
+- **Styling**: Tailwind CSS + CSS Modules si nécessaire
+- **State Management**: Zustand (pour l'état global)
+- **UI Components**: Radix UI + shadcn/ui
+- **Animations**: Framer Motion + GSAP
+- **Base de données**: Firebase Firestore
+- **Déploiement**: O2Switch
+
+### Architecture Client/Admin
+Le projet est divisé en deux parties distinctes :
+
+#### 🎨 **Partie Client (Publique)**
+- **Route principale** : `/` (page d'accueil, services, portfolio)
+- **Layout** : `ClientLayout` avec SplashScreen et Google Analytics
+- **Pages** : Accueil, Contact, Mariages, Événements, Photos, Vidéos
+- **Composants** : Interface utilisateur publique avec animations
+- **Analytics** : Google Tag Manager et Google Analytics intégrés
+
+#### 🔐 **Partie Admin (Backoffice)**
+- **Route** : `/backoffice/*`
+- **Layout** : `AdminLayout` avec authentification et sidebar
+- **Authentification** : Système de login avec `AuthGuard`
+- **Pages** : Dashboard, Gestion des clients, Photos, Vidéos, Paramètres
+- **Composants** : Interface d'administration avec gestion de contenu
+
+### Organisation des Dossiers
+```
+app/
+├── components/           # Composants réutilisables (client)
+│   ├── Header/          # Header public
+│   ├── Footer/          # Footer public
+│   └── ...
+├── backoffice/          # Interface d'administration
+│   ├── components/      # Composants admin spécifiques
+│   ├── hooks/           # Hooks admin (useAuth, etc.)
+│   ├── lib/             # Utilitaires admin
+│   ├── dashboard/       # Tableau de bord
+│   ├── clients/         # Gestion des clients
+│   ├── photos/          # Gestion des photos
+│   ├── videos/          # Gestion des vidéos
+│   └── settings/        # Paramètres
+├── lib/                 # Utilitaires et configurations
+├── hooks/               # Custom hooks (client)
+├── store/               # Zustand stores
+├── utils/               # Fonctions utilitaires
+├── styles/              # Styles globaux
+└── api/                 # Routes API
+```
+
+### Séparation Client/Admin
+```typescript
+// Layout principal - détecte automatiquement client/admin
+export default function RootLayout({ children }) {
+  return (
+    <html lang="fr">
+      <body>
+        <ClientLayout>{children}</ClientLayout>
+      </body>
+    </html>
+  );
+}
+
+// ClientLayout - gère la partie publique
+const ClientLayout = ({ children }) => {
+  const pathname = usePathname();
+  const isAdminPage = pathname?.startsWith('/backoffice');
+  
+  return (
+    <>
+      {!isAdminPage && <SplashScreen />}
+      {children}
+    </>
+  );
+};
+
+// AdminLayout - gère la partie admin
+const AdminLayout = ({ children }) => {
+  return (
+    <AuthProvider>
+      <AuthGuard>
+        <div className="flex h-screen">
+          <Sidebar />
+          <main>{children}</main>
+        </div>
+      </AuthGuard>
+    </AuthProvider>
+  );
+};
+```
+
+## ⚛️ Bonnes Pratiques React
+
+### Composants
+- Utiliser des composants fonctionnels avec hooks
+- Extraire la logique dans des custom hooks
+- Utiliser `React.memo()` pour les composants coûteux
+- Préférer les props de type `children` pour la composition
+- Utiliser des interfaces TypeScript pour les props
+
+```typescript
+interface ComponentProps {
+  title: string;
+  children?: React.ReactNode;
+  className?: string;
+}
+
+const Component: React.FC<ComponentProps> = ({ title, children, className }) => {
+  return (
+    <div className={cn("base-classes", className)}>
+      <h2>{title}</h2>
+      {children}
+    </div>
+  );
+};
+```
+
+### Hooks
+- Créer des custom hooks pour la logique réutilisable
+- Utiliser `useCallback` pour les fonctions passées en props
+- Utiliser `useMemo` pour les calculs coûteux
+- Toujours inclure les dépendances dans les hooks useEffect
+
+```typescript
+const useCustomHook = (param: string) => {
+  const [state, setState] = useState<string>('');
+  
+  const memoizedValue = useMemo(() => {
+    return expensiveCalculation(param);
+  }, [param]);
+  
+  const handleAction = useCallback(() => {
+    // logique
+  }, []);
+  
+  return { state, memoizedValue, handleAction };
+};
+```
+
+### State Management
+- Utiliser Zustand pour l'état global
+- Préférer les stores atomiques par domaine
+- Utiliser des actions typées
+- Éviter les stores monolithiques
+
+```typescript
+interface StoreState {
+  data: DataType[];
+  loading: boolean;
+  actions: {
+    setData: (data: DataType[]) => void;
+    setLoading: (loading: boolean) => void;
+  };
+}
+
+export const useStore = create<StoreState>((set) => ({
+  data: [],
+  loading: false,
+  actions: {
+    setData: (data) => set({ data }),
+    setLoading: (loading) => set({ loading }),
+  },
+}));
+```
+
+## 🎨 Styling & UI
+
+### Tailwind CSS
+- Utiliser les classes utilitaires Tailwind
+- Créer des composants avec `cn()` pour combiner les classes
+- Utiliser les variables CSS personnalisées pour les couleurs
+- Préférer les classes responsive et dark mode
+
+```typescript
+import { cn } from "@/lib/utils";
+
+const Button = ({ className, ...props }) => (
+  <button 
+    className={cn(
+      "px-4 py-2 rounded-md bg-primary text-primary-foreground",
+      "hover:bg-primary/90 transition-colors",
+      className
+    )}
+    {...props}
+  />
+);
+```
+
+### Composants UI
+- Créer des composants composables
+- Utiliser des variants avec `cva` (class-variance-authority)
+
+## 🔧 Performance & Optimisation
+
+### Next.js
+- Utiliser les Server Components par défaut
+- Utiliser les Client Components uniquement si nécessaire
+- Optimiser les images avec `next/image`
+- Utiliser le cache approprié pour les données
+
+### Code Splitting
+- Utiliser le lazy loading pour les composants lourds
+- Implémenter le dynamic import pour les pages
+- Optimiser les bundles avec des imports conditionnels
+
+```typescript
+const HeavyComponent = dynamic(() => import('./HeavyComponent'), {
+  loading: () => <Skeleton />,
+  ssr: false
+});
+```
+
+### Animations
+- Utiliser Framer Motion pour les animations complexes
+- Utiliser GSAP pour les animations avancées
+- Implémenter les animations avec `useInView`
+- Optimiser les performances avec `will-change`
+
+## 🛡️ Sécurité & Validation
+
+### Validation des Données
+- Utiliser Zod pour la validation des schémas
+- Valider les données côté client et serveur
+- Utiliser des types TypeScript stricts
+- Sanitiser les entrées utilisateur
+
+```typescript
+import { z } from 'zod';
+
+const UserSchema = z.object({
+  name: z.string().min(1, "Le nom est requis"),
+  email: z.string().email("Email invalide"),
+  age: z.number().min(18, "Âge minimum 18 ans")
+});
+
+type User = z.infer<typeof UserSchema>;
+```
+
+### Sécurité
+- Utiliser les variables d'environnement pour les secrets
+- Utiliser HTTPS en production
+
+## 📝 Code Quality
+
+### ESLint & Prettier
+- Suivre les règles ESLint configurées
+- Utiliser Prettier pour le formatage
+- Implémenter les hooks rules
+- Éviter les variables non utilisées
+
+## 📱 Responsive & Accessibilité
+
+### Responsive Design
+- Utiliser les breakpoints Tailwind
+- Tester sur différents appareils
+- Optimiser les images pour chaque breakpoint
+
+## 🔐 Authentification & Autorisation
+
+### Backoffice
+- Implémenter un système d'authentification robuste
+- Utiliser des guards pour protéger les routes admin
+- Gérer les sessions et tokens d'accès
+- Implémenter la déconnexion automatique
+
+```typescript
+// Exemple de guard d'authentification
+const AuthGuard = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) return <Spinner />;
+  if (!isAuthenticated) return <Redirect to="/backoffice/login" />;
+  
+  return children;
+};
+```
+
+## 🎯 Priorités de Développement
+
+1. **Performance** : Optimiser le Core Web Vitals
+2. **Sécurité** : Protection des données et accès admin
+3. **Maintenabilité** : Code propre et bien documenté
+4. **UX** : Expérience utilisateur fluide et intuitive
+5. **Accessibilité** : Rendre l'application accessible à tous
+
+---
+
+**Note** : Ces règles doivent être suivies pour maintenir la qualité et la cohérence du code dans tout le projet.

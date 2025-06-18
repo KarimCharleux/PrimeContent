@@ -1,9 +1,7 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
 
-import gsap from '../../lib/gsap-config';
-import PrimaryButton from '../PrimaryButton';
+import ContactForm from '../ContactForm';
 
 import styles from './footer.module.scss';
 
@@ -12,96 +10,10 @@ interface FooterProps {
 }
 
 export default function Footer({ hideCTA = false }: FooterProps) {
-    const titleRef = useRef<HTMLHeadingElement>(null);
-    const textRef = useRef<HTMLParagraphElement>(null);
-    const socialRefs = useRef<(HTMLAnchorElement | null)[]>([]);
-
-    useEffect(() => {
-        // Animation du titre et du texte
-        if (!hideCTA && titleRef.current && textRef.current) {
-            gsap.fromTo(
-                titleRef.current,
-                { y: 30, opacity: 0 },
-                {
-                    y: 0,
-                    opacity: 1,
-                    duration: 0.8,
-                    scrollTrigger: {
-                        trigger: titleRef.current,
-                        start: 'top 80%',
-                        toggleActions: 'play none none none',
-                    },
-                },
-            );
-
-            gsap.fromTo(
-                textRef.current,
-                { y: 20, opacity: 0 },
-                {
-                    y: 0,
-                    opacity: 1,
-                    duration: 0.8,
-                    delay: 0.2,
-                    scrollTrigger: {
-                        trigger: textRef.current,
-                        start: 'top 80%',
-                        toggleActions: 'play none none none',
-                    },
-                },
-            );
-        }
-
-        // Animation des icônes sociales
-        if (socialRefs.current.length > 0) {
-            socialRefs.current.forEach((icon, index) => {
-                if (icon) {
-                    gsap.fromTo(
-                        icon,
-                        { scale: 0, opacity: 0 },
-                        {
-                            scale: 1,
-                            opacity: 1,
-                            duration: 0.5,
-                            delay: 0.1 * index,
-                            ease: 'back.out(1.7)',
-                            scrollTrigger: {
-                                trigger: icon,
-                                start: 'top 90%',
-                                toggleActions: 'play none none none',
-                            },
-                        },
-                    );
-                }
-            });
-        }
-    }, [hideCTA]);
-
-    const addSocialRef = (el: HTMLAnchorElement | null, index: number) => {
-        socialRefs.current[index] = el;
-    };
-
     return (
         <footer className={styles['footer-container']}>
-            {/* Section CTA - conditionnellement affichée */}
-            {!hideCTA && (
-                <div className={styles['cta-section']}>
-                    <h2 ref={titleRef} className={styles['cta-title']}>
-                        Boostez Votre Présence Aujourd&apos;hui !
-                    </h2>
-                    <p ref={textRef} className={styles['cta-text']}>
-                        Votre image mérite d&apos;être vue, entendue, ressentie. Rejoignez{' '}
-                        <b className="primecontent-title">
-                            Prime<span className="text-gray-400">content.</span>
-                        </b>{' '}
-                        pour propulser votre présence visuelle et numérique au niveau supérieur.
-                    </p>
-                    <PrimaryButton
-                        text="Contactez-nous"
-                        href="/contact"
-                        className={styles['cta-button']}
-                    />
-                </div>
-            )}
+            {/* Section Contact Form - remplace la CTA */}
+            {!hideCTA && <ContactForm />}
 
             {/* Section Info */}
             <div className={styles['info-section']}>
@@ -117,7 +29,6 @@ export default function Footer({ hideCTA = false }: FooterProps) {
                         <span className={styles.social}>
                             <Link
                                 href="https://www.instagram.com/dali.ayaida"
-                                ref={(el) => addSocialRef(el, 0)}
                                 className="flex items-center gap-2"
                                 aria-label="Instagram"
                                 target="_blank"
@@ -139,7 +50,6 @@ export default function Footer({ hideCTA = false }: FooterProps) {
                         <span className={styles.social}>
                             <Link
                                 href="https://www.instagram.com/primecontent.fr"
-                                ref={(el) => addSocialRef(el, 0)}
                                 className="flex items-center gap-2"
                                 aria-label="Instagram"
                                 target="_blank"
@@ -204,20 +114,6 @@ export default function Footer({ hideCTA = false }: FooterProps) {
                         </span>
                         +33 6 49 09 57 95
                     </a>
-                </div>
-            </div>
-
-            {/* Section Copyright */}
-            <div className={styles['copyright-section']}>
-                <div className={styles['copyright-content']}>
-                    <p className={styles['brand-name']}>
-                        <span className="text-white">Prime</span>
-                        <span className="text-gray-400">content.</span>
-                    </p>
-                    <p className={styles['copyright-text']}>
-                        © 2024 <span className="primecontent-title">Primecontent</span>. All rights
-                        reserved
-                    </p>
                 </div>
             </div>
         </footer>

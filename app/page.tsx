@@ -608,7 +608,15 @@ export default function Page() {
                     </h1>
                     <PrimaryButton
                         text="Contactez-nous"
-                        href="/contact"
+                        onClick={() => {
+                            const contactSection = document.getElementById('contact');
+                            if (contactSection) {
+                                contactSection.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'start',
+                                });
+                            }
+                        }}
                         animateOnMount={true}
                         delay={1.2} // Délai augmenté pour s'assurer que le bouton apparaît après les autres éléments
                     />
@@ -969,7 +977,7 @@ export default function Page() {
                 <section className="py-16 bg-gradient-to-b from-black via-gray-900 to-black reviews-section">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
-                            CE QUE NOS CLIENTS DISENT DE NOUS
+                            MERCI POUR VOS RETOURS
                         </h2>
                     </div>
                     {loading ? (
