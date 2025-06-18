@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 
-import { ContactInfo } from '../../models/contactTypes';
+import { ContactInfo, SocialNetwork } from '../../models/contactTypes';
+
+import SocialNetworksManager from './SocialNetworksManager';
 
 interface ContactInfoFormProps {
     readonly initialInfo?: ContactInfo;
@@ -15,7 +17,8 @@ export default function ContactInfoForm({ initialInfo, onSave, onCancel }: Conta
         telephone: '',
         email: '',
         adresse: '',
-        reseauxSociaux: {
+        reseauxSociaux: [],
+        legacyReseauxSociaux: {
             instagram: '',
             facebook: '',
             twitter: '',
@@ -36,14 +39,70 @@ export default function ContactInfoForm({ initialInfo, onSave, onCancel }: Conta
 
     useEffect(() => {
         if (initialInfo) {
+            // Migration des anciens réseaux sociaux vers le nouveau format si nécessaire
+            let migrateddReseauxSociaux: SocialNetwork[] = initialInfo.reseauxSociaux || [];
+
+            // Si on a l'ancien format mais pas le nouveau, on migre
+            if (!initialInfo.reseauxSociaux && initialInfo.legacyReseauxSociaux) {
+                migrateddReseauxSociaux = [];
+                const legacy = initialInfo.legacyReseauxSociaux;
+
+                if (legacy.instagram) {
+                    migrateddReseauxSociaux.push({
+                        id: 'legacy-instagram',
+                        type: 'instagram',
+                        name: 'Instagram',
+                        url: legacy.instagram,
+                        displayName: '@dali.ayaida',
+                    });
+                }
+                if (legacy.facebook) {
+                    migrateddReseauxSociaux.push({
+                        id: 'legacy-facebook',
+                        type: 'facebook',
+                        name: 'Facebook',
+                        url: legacy.facebook,
+                        displayName: 'Facebook',
+                    });
+                }
+                if (legacy.twitter) {
+                    migrateddReseauxSociaux.push({
+                        id: 'legacy-twitter',
+                        type: 'twitter',
+                        name: 'Twitter',
+                        url: legacy.twitter,
+                        displayName: 'Twitter',
+                    });
+                }
+                if (legacy.linkedin) {
+                    migrateddReseauxSociaux.push({
+                        id: 'legacy-linkedin',
+                        type: 'linkedin',
+                        name: 'LinkedIn',
+                        url: legacy.linkedin,
+                        displayName: 'LinkedIn',
+                    });
+                }
+                if (legacy.tiktok) {
+                    migrateddReseauxSociaux.push({
+                        id: 'legacy-tiktok',
+                        type: 'tiktok',
+                        name: 'TikTok',
+                        url: legacy.tiktok,
+                        displayName: 'TikTok',
+                    });
+                }
+            }
+
             setFormData({
                 ...initialInfo,
-                reseauxSociaux: {
-                    instagram: initialInfo.reseauxSociaux?.instagram || '',
-                    facebook: initialInfo.reseauxSociaux?.facebook || '',
-                    twitter: initialInfo.reseauxSociaux?.twitter || '',
-                    linkedin: initialInfo.reseauxSociaux?.linkedin || '',
-                    tiktok: initialInfo.reseauxSociaux?.tiktok || '',
+                reseauxSociaux: migrateddReseauxSociaux,
+                legacyReseauxSociaux: initialInfo.legacyReseauxSociaux || {
+                    instagram: '',
+                    facebook: '',
+                    twitter: '',
+                    linkedin: '',
+                    tiktok: '',
                 },
             });
         }
@@ -51,22 +110,17 @@ export default function ContactInfoForm({ initialInfo, onSave, onCancel }: Conta
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
 
-        if (name.includes('.')) {
-            const [parent, child] = name.split('.');
-            setFormData((prev) => ({
-                ...prev,
-                [parent]: {
-                    ...(prev[parent as keyof ContactInfo] as Record<string, any>),
-                    [child]: value,
-                },
-            }));
-        } else {
-            setFormData((prev) => ({
-                ...prev,
-                [name]: value,
-            }));
-        }
+    const handleSocialNetworksChange = (networks: SocialNetwork[]) => {
+        setFormData((prev) => ({
+            ...prev,
+            reseauxSociaux: networks,
+        }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -224,99 +278,12 @@ export default function ContactInfoForm({ initialInfo, onSave, onCancel }: Conta
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Réseaux sociaux</h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label
-                            htmlFor="reseauxSociaux.instagram"
-                            className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                            Instagram
-                        </label>
-                        <input
-                            type="url"
-                            id="reseauxSociaux.instagram"
-                            name="reseauxSociaux.instagram"
-                            value={formData.reseauxSociaux?.instagram}
-                            onChange={handleChange}
-                            className="w-full rounded-md border border-gray-300 shadow-sm p-2 text-sm"
-                            placeholder="https://instagram.com/votre-compte"
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            htmlFor="reseauxSociaux.facebook"
-                            className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                            Facebook
-                        </label>
-                        <input
-                            type="url"
-                            id="reseauxSociaux.facebook"
-                            name="reseauxSociaux.facebook"
-                            value={formData.reseauxSociaux?.facebook}
-                            onChange={handleChange}
-                            className="w-full rounded-md border border-gray-300 shadow-sm p-2 text-sm"
-                            placeholder="https://facebook.com/votre-page"
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            htmlFor="reseauxSociaux.twitter"
-                            className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                            Twitter
-                        </label>
-                        <input
-                            type="url"
-                            id="reseauxSociaux.twitter"
-                            name="reseauxSociaux.twitter"
-                            value={formData.reseauxSociaux?.twitter}
-                            onChange={handleChange}
-                            className="w-full rounded-md border border-gray-300 shadow-sm p-2 text-sm"
-                            placeholder="https://twitter.com/votre-compte"
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            htmlFor="reseauxSociaux.linkedin"
-                            className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                            LinkedIn
-                        </label>
-                        <input
-                            type="url"
-                            id="reseauxSociaux.linkedin"
-                            name="reseauxSociaux.linkedin"
-                            value={formData.reseauxSociaux?.linkedin}
-                            onChange={handleChange}
-                            className="w-full rounded-md border border-gray-300 shadow-sm p-2 text-sm"
-                            placeholder="https://linkedin.com/in/votre-compte"
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            htmlFor="reseauxSociaux.tiktok"
-                            className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                            TikTok
-                        </label>
-                        <input
-                            type="url"
-                            id="reseauxSociaux.tiktok"
-                            name="reseauxSociaux.tiktok"
-                            value={formData.reseauxSociaux?.tiktok}
-                            onChange={handleChange}
-                            className="w-full rounded-md border border-gray-300 shadow-sm p-2 text-sm"
-                            placeholder="https://tiktok.com/@votre-compte"
-                        />
-                    </div>
-                </div>
+                <SocialNetworksManager
+                    socialNetworks={
+                        Array.isArray(formData.reseauxSociaux) ? formData.reseauxSociaux : []
+                    }
+                    onChange={handleSocialNetworksChange}
+                />
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow">

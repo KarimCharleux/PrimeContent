@@ -1,0 +1,363 @@
+'use client';
+
+import {
+    collection,
+    deleteDoc,
+    doc,
+    getDocs,
+    query,
+    updateDoc,
+    Timestamp,
+    where,
+    orderBy,
+} from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+
+import { Spinner } from '../components/Spinner';
+import ContactList from '../contact/components/ContactList';
+import MessageDetailsModal from '../contact/components/MessageDetailsModal';
+import { useAuth } from '../hooks/useAuth';
+import { db } from '../lib/firebase-client';
+import { ContactFilter, ContactMessage, ContactStats, MessageStatus } from '../models/contactTypes';
+
+export default function MessagesPage() {
+    const { loading: authLoading } = useAuth();
+    const [loading, setLoading] = useState(true);
+    const [messages, setMessages] = useState<ContactMessage[]>([]);
+    const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
+    const [filter, setFilter] = useState<ContactFilter>({});
+    const [stats, setStats] = useState<ContactStats>({
+        totalMessages: 0,
+        nouveauxMessages: 0,
+        messagesRepondus: 0,
+        messagesArchives: 0,
+    });
+
+    // Récupérer les messages depuis Firestore
+    const fetchMessages = async () => {
+        try {
+            setLoading(true);
+            const messagesCollection = collection(db, 'contacts');
+
+            // Construire la requête avec les filtres
+            let messagesQuery;
+
+            if (filter.status) {
+                // Si un statut est spécifié, on filtre par ce statut
+                messagesQuery = query(
+                    messagesCollection,
+                    where('status', '==', filter.status),
+                    orderBy('createdAt', 'desc'),
+                );
+            } else {
+                // Sinon, on récupère tous les messages triés par date
+                messagesQuery = query(messagesCollection, orderBy('createdAt', 'desc'));
+            }
+
+            const messagesSnapshot = await getDocs(messagesQuery);
+
+            if (!messagesSnapshot.empty) {
+                const fetchedMessages = messagesSnapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                })) as ContactMessage[];
+
+                // Filtrer par terme de recherche si présent
+                const filteredMessages = filter.searchTerm
+                    ? fetchedMessages.filter(
+                          (message) =>
+                              `${message.prenom} ${message.nom}`
+                                  .toLowerCase()
+                                  .includes(filter.searchTerm?.toLowerCase() || '') ||
+                              message.email
+                                  .toLowerCase()
+                                  .includes(filter.searchTerm?.toLowerCase() || '') ||
+                              message.message
+                                  .toLowerCase()
+                                  .includes(filter.searchTerm?.toLowerCase() || ''),
+                      )
+                    : fetchedMessages;
+
+                setMessages(filteredMessages);
+
+                // Calculer les statistiques - toujours basées sur tous les messages
+                // Pour cela, on fait une requête supplémentaire si on a un filtre
+                let allMessages = fetchedMessages;
+
+                if (filter.status) {
+                    // On récupère tous les messages pour calculer les statistiques complètes
+                    const allMessagesQuery = query(messagesCollection);
+                    const allMessagesSnapshot = await getDocs(allMessagesQuery);
+                    allMessages = allMessagesSnapshot.docs.map((doc) => ({
+                        id: doc.id,
+                        ...doc.data(),
+                    })) as ContactMessage[];
+                }
+
+                const statsData: ContactStats = {
+                    totalMessages: allMessages.length,
+                    nouveauxMessages: allMessages.filter((m) => m.status === 'nouveau').length,
+                    messagesRepondus: allMessages.filter((m) => m.status === 'répondu').length,
+                    messagesArchives: allMessages.filter((m) => m.status === 'archivé').length,
+                };
+
+                setStats(statsData);
+            } else {
+                setMessages([]);
+                setStats({
+                    totalMessages: 0,
+                    nouveauxMessages: 0,
+                    messagesRepondus: 0,
+                    messagesArchives: 0,
+                });
+            }
+        } catch (error) {
+            console.error('Erreur lors de la récupération des messages:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!authLoading) {
+            fetchMessages();
+        }
+    }, [authLoading, filter]);
+
+    const handleViewMessage = (message: ContactMessage) => {
+        setSelectedMessage(message);
+    };
+
+    const handleStatusChange = async (messageId: string, newStatus: MessageStatus) => {
+        try {
+            await updateDoc(doc(db, 'contacts', messageId), {
+                status: newStatus,
+                updatedAt: Timestamp.now(),
+            });
+
+            // Mettre à jour l'interface utilisateur
+            setMessages((prevMessages) =>
+                prevMessages.map((message) =>
+                    message.id === messageId
+                        ? { ...message, status: newStatus, updatedAt: Timestamp.now() }
+                        : message,
+                ),
+            );
+
+            // Mettre à jour le message sélectionné s'il est ouvert
+            if (selectedMessage?.id === messageId) {
+                setSelectedMessage((prev) =>
+                    prev ? { ...prev, status: newStatus, updatedAt: Timestamp.now() } : null,
+                );
+            }
+
+            // Rafraîchir les statistiques
+            fetchMessages();
+        } catch (error) {
+            console.error('Erreur lors de la mise à jour du statut:', error);
+        }
+    };
+
+    const handleNotesChange = async (messageId: string, notes: string) => {
+        try {
+            await updateDoc(doc(db, 'contacts', messageId), {
+                notes,
+                updatedAt: Timestamp.now(),
+            });
+
+            // Mettre à jour l'interface utilisateur
+            setMessages((prevMessages) =>
+                prevMessages.map((message) =>
+                    message.id === messageId
+                        ? { ...message, notes, updatedAt: Timestamp.now() }
+                        : message,
+                ),
+            );
+
+            // Mettre à jour le message sélectionné s'il est ouvert
+            if (selectedMessage?.id === messageId) {
+                setSelectedMessage((prev) =>
+                    prev ? { ...prev, notes, updatedAt: Timestamp.now() } : null,
+                );
+            }
+        } catch (error) {
+            console.error('Erreur lors de la mise à jour des notes:', error);
+        }
+    };
+
+    const handleDeleteMessage = async (messageId: string) => {
+        if (
+            confirm(
+                'Êtes-vous sûr de vouloir supprimer ce message ? Cette action est irréversible.',
+            )
+        ) {
+            try {
+                await deleteDoc(doc(db, 'contacts', messageId));
+
+                // Mettre à jour l'interface utilisateur
+                setMessages((prevMessages) =>
+                    prevMessages.filter((message) => message.id !== messageId),
+                );
+
+                // Fermer le modal si le message supprimé est celui affiché
+                if (selectedMessage?.id === messageId) {
+                    setSelectedMessage(null);
+                }
+
+                // Rafraîchir les statistiques
+                fetchMessages();
+            } catch (error) {
+                console.error('Erreur lors de la suppression du message:', error);
+            }
+        }
+    };
+
+    const applyFilter = (newFilter: ContactFilter) => {
+        setFilter({
+            ...filter,
+            ...newFilter,
+        });
+    };
+
+    if (authLoading) {
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <Spinner />
+            </div>
+        );
+    }
+
+    return (
+        <div className="container mx-auto px-4 py-8">
+            <h1 className="text-2xl font-bold mb-4">Messages de Contact</h1>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white p-4 rounded-lg shadow">
+                    <p className="text-sm text-gray-500">Total messages</p>
+                    <p className="text-2xl font-bold">{stats.totalMessages}</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow">
+                    <p className="text-sm text-gray-500">Nouveaux</p>
+                    <p className="text-2xl font-bold text-yellow-600">{stats.nouveauxMessages}</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow">
+                    <p className="text-sm text-gray-500">Répondus</p>
+                    <p className="text-2xl font-bold text-green-600">{stats.messagesRepondus}</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow">
+                    <p className="text-sm text-gray-500">Archivés</p>
+                    <p className="text-2xl font-bold text-gray-600">{stats.messagesArchives}</p>
+                </div>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap gap-4 mb-6">
+                <div className="flex-grow max-w-md">
+                    <input
+                        type="text"
+                        placeholder="Rechercher un message..."
+                        value={filter.searchTerm || ''}
+                        onChange={(e) => applyFilter({ searchTerm: e.target.value })}
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                    />
+                </div>
+                <div className="flex space-x-2">
+                    <button
+                        onClick={() => applyFilter({ status: undefined })}
+                        className={`px-3 py-1 rounded-md ${
+                            !filter.status ? 'bg-black text-white' : 'bg-gray-200 hover:bg-gray-300'
+                        }`}
+                    >
+                        Tous
+                    </button>
+                    <button
+                        onClick={() => applyFilter({ status: 'nouveau' })}
+                        className={`px-3 py-1 rounded-md ${
+                            filter.status === 'nouveau'
+                                ? 'bg-yellow-500 text-white'
+                                : 'bg-gray-200 hover:bg-gray-300'
+                        }`}
+                    >
+                        Nouveaux
+                    </button>
+                    <button
+                        onClick={() => applyFilter({ status: 'lu' })}
+                        className={`px-3 py-1 rounded-md ${
+                            filter.status === 'lu'
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-200 hover:bg-gray-300'
+                        }`}
+                    >
+                        Lus
+                    </button>
+                    <button
+                        onClick={() => applyFilter({ status: 'répondu' })}
+                        className={`px-3 py-1 rounded-md ${
+                            filter.status === 'répondu'
+                                ? 'bg-green-500 text-white'
+                                : 'bg-gray-200 hover:bg-gray-300'
+                        }`}
+                    >
+                        Répondus
+                    </button>
+                    <button
+                        onClick={() => applyFilter({ status: 'archivé' })}
+                        className={`px-3 py-1 rounded-md ${
+                            filter.status === 'archivé'
+                                ? 'bg-gray-500 text-white'
+                                : 'bg-gray-200 hover:bg-gray-300'
+                        }`}
+                    >
+                        Archivés
+                    </button>
+                </div>
+                {(filter.status || filter.searchTerm) && (
+                    <button
+                        onClick={() => setFilter({})}
+                        className="px-3 py-1 rounded-md bg-red-100 text-red-700 hover:bg-red-200 flex items-center"
+                    >
+                        <svg
+                            className="h-4 w-4 mr-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                            />
+                        </svg>
+                        Effacer les filtres
+                    </button>
+                )}
+            </div>
+
+            {/* Main content */}
+            {loading ? (
+                <div className="flex justify-center my-12">
+                    <Spinner />
+                </div>
+            ) : (
+                <ContactList
+                    messages={messages}
+                    onViewMessage={handleViewMessage}
+                    onStatusChange={handleStatusChange}
+                    onDelete={handleDeleteMessage}
+                />
+            )}
+
+            {/* Modal pour afficher les détails d'un message */}
+            {selectedMessage && (
+                <MessageDetailsModal
+                    message={selectedMessage}
+                    onClose={() => setSelectedMessage(null)}
+                    onStatusChange={handleStatusChange}
+                    onNotesChange={handleNotesChange}
+                />
+            )}
+        </div>
+    );
+}

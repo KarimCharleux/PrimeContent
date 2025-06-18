@@ -17,13 +17,39 @@ export interface ContactMessage {
     notes?: string; // Notes internes sur le message
 }
 
+// Interface pour un réseau social dynamique
+export interface SocialNetwork {
+    id: string;
+    name: string;
+    url: string;
+    type: SocialNetworkType;
+    displayName: string;
+}
+
+// Types de réseaux sociaux supportés
+export type SocialNetworkType =
+    | 'instagram'
+    | 'facebook'
+    | 'twitter'
+    | 'linkedin'
+    | 'tiktok'
+    | 'youtube'
+    | 'snapchat'
+    | 'pinterest'
+    | 'whatsapp'
+    | 'telegram'
+    | 'website'
+    | 'other';
+
 // Interface pour les informations de contact affichées sur le site
 export interface ContactInfo {
     id?: string;
     telephone: string;
     email: string;
     adresse: string;
-    reseauxSociaux?: {
+    reseauxSociaux?: SocialNetwork[];
+    // Garder l'ancien format pour la compatibilité
+    legacyReseauxSociaux?: {
         instagram?: string;
         facebook?: string;
         twitter?: string;

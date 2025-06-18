@@ -298,3 +298,4 @@ const AuthGuard = ({ children }) => {
 ---
 
 **Note** : Ces règles doivent être suivies pour maintenir la qualité et la cohérence du code dans tout le projet.
+ 

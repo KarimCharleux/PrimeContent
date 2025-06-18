@@ -6,10 +6,15 @@ import React, { useState } from 'react';
 
 import { getMediaUrl } from '../../utils/mediaUrl';
 import { useAuth } from '../hooks/useAuth';
+import { useNotifications } from '../hooks/useNotifications';
+
+import NotificationPanel from './NotificationPanel';
 
 export default function Header() {
     const { user, signOut } = useAuth();
+    const { notifications, newMessagesCount } = useNotifications();
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
 
     return (
         <header className="bg-white shadow">
@@ -19,23 +24,45 @@ export default function Header() {
                 </div>
 
                 <div className="flex items-center">
-                    {/* Notification Icon */}
-                    <button className="p-2 rounded-full text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none">
-                        <svg
-                            className="h-6 w-6"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg"
+                    {/* Notification Icon with Badge */}
+                    <div className="relative">
+                        <button
+                            onClick={() => {
+                                setShowNotifications(!showNotifications);
+                                setShowUserMenu(false);
+                            }}
+                            className="p-2 rounded-full text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none transition-colors duration-200"
+                            title="Notifications"
                         >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                            ></path>
-                        </svg>
-                    </button>
+                            <svg
+                                className="h-6 w-6"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                                ></path>
+                            </svg>
+                            {/* Badge de notification */}
+                            {newMessagesCount > 0 && (
+                                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full min-w-[18px] h-[18px] animate-pulse shadow-lg">
+                                    {newMessagesCount > 99 ? '99+' : newMessagesCount}
+                                </span>
+                            )}
+                        </button>
+
+                        {/* Volet de notifications */}
+                        <NotificationPanel
+                            notifications={notifications}
+                            isOpen={showNotifications}
+                            onClose={() => setShowNotifications(false)}
+                        />
+                    </div>
 
                     {/* Divider */}
                     <div className="border-l border-gray-200 h-6 mx-3"></div>
@@ -43,7 +70,10 @@ export default function Header() {
                     {/* User Dropdown */}
                     <div className="relative">
                         <button
-                            onClick={() => setShowUserMenu(!showUserMenu)}
+                            onClick={() => {
+                                setShowUserMenu(!showUserMenu);
+                                setShowNotifications(false);
+                            }}
                             className="flex items-center space-x-2 rounded-full focus:outline-none"
                         >
                             <span className="text-sm font-medium text-gray-700">
