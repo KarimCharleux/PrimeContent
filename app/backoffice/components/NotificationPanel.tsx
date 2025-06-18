@@ -168,7 +168,7 @@ export default function NotificationPanel({
                                             </p>
                                             {notification.data?.messagePreview && (
                                                 <p className="text-xs text-gray-400 mt-1 italic">
-                                                    "{notification.data.messagePreview}"
+                                                    &quot;{notification.data.messagePreview}&quot;
                                                 </p>
                                             )}
                                         </div>

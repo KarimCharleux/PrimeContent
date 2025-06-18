@@ -84,13 +84,8 @@ export default function EventMediaManager({
         setImages(evenement.images || []);
     }, [evenement]);
 
-    // Calculer les statistiques quand les images changent
-    useEffect(() => {
-        calculateStats();
-    }, [images]);
-
     // Fonction pour calculer les statistiques
-    const calculateStats = () => {
+    const calculateStats = useCallback(() => {
         let totalImages = 0;
         let totalVideos = 0;
         let imagesSize = 0;
@@ -128,7 +123,12 @@ export default function EventMediaManager({
 
         setStats(stats);
         onStatsChange?.(stats);
-    };
+    }, [images, onStatsChange]);
+
+    // Calculer les statistiques quand les images changent
+    useEffect(() => {
+        calculateStats();
+    }, [calculateStats]);
 
     // Fonction pour gérer le changement d'ordre d'un média
     const handleReorder = async (imageId: string, direction: 'up' | 'down') => {

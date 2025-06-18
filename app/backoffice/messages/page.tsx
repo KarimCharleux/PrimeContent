@@ -11,7 +11,7 @@ import {
     where,
     orderBy,
 } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 import { Spinner } from '../components/Spinner';
 import ContactList from '../contact/components/ContactList';
@@ -34,7 +34,7 @@ export default function MessagesPage() {
     });
 
     // Récupérer les messages depuis Firestore
-    const fetchMessages = async () => {
+    const fetchMessages = useCallback(async () => {
         try {
             setLoading(true);
             const messagesCollection = collection(db, 'contacts');
@@ -116,13 +116,13 @@ export default function MessagesPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filter]);
 
     useEffect(() => {
         if (!authLoading) {
             fetchMessages();
         }
-    }, [authLoading, filter]);
+    }, [authLoading, fetchMessages]);
 
     const handleViewMessage = (message: ContactMessage) => {
         setSelectedMessage(message);

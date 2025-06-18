@@ -102,7 +102,7 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
     }, [evenements]);
 
     // Récupérer les événements depuis Firestore
-    const fetchEvents = async () => {
+    const fetchEvents = useCallback(async () => {
         try {
             setLoading(true);
             const eventsCollection = collection(db, 'evenements');
@@ -145,11 +145,11 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filter]);
 
     useEffect(() => {
         fetchEvents();
-    }, [filter]);
+    }, [fetchEvents]);
 
     useEffect(() => {
         if (evenements.length > 0) {

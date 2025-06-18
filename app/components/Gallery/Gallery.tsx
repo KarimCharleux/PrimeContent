@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 import { useImageStore } from '../../store/imageStore';
 
@@ -26,7 +26,7 @@ export default function Gallery() {
     const [imageRows, setImageRows] = useState<HTMLImageElement[][]>([]);
 
     // Préparer la galerie (3 lignes fixes, images réparties équitablement)
-    const prepareGallery = () => {
+    const prepareGallery = useCallback(() => {
         if (!preloadedImages || preloadedImages.length === 0) return;
         // Hauteur de ligne : 90% de la hauteur de la galerie divisée par 3
         const galleryHeight = galleryContainerRef.current?.offsetHeight || 350;
@@ -43,13 +43,13 @@ export default function Gallery() {
         });
         setImageRows(distributedRows);
         setIsReady(true);
-    };
+    }, [preloadedImages]);
 
     useEffect(() => {
         if (preloadedImages && preloadedImages.length > 0) {
             prepareGallery();
         }
-    }, [preloadedImages]);
+    }, [preloadedImages, prepareGallery]);
 
     // Rendu d'une image dans une ligne
     const renderImageInRow = (img: HTMLImageElement, index: number) => {

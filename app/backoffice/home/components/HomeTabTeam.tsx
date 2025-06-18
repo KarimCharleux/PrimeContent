@@ -503,11 +503,12 @@ export default function HomeTabTeam() {
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                                 />
                                 {formImagePreview && (
-                                    <div className="mt-2">
-                                        <img
+                                    <div className="mt-2 relative w-24 h-24">
+                                        <Image
                                             src={formImagePreview}
                                             alt="Aperçu"
-                                            className="w-24 h-24 object-cover rounded-md"
+                                            fill
+                                            className="object-cover rounded-md"
                                         />
                                     </div>
                                 )}

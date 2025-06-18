@@ -29,7 +29,8 @@ export default function ContactPage() {
                     telephone: '+33 6 49 09 57 95',
                     email: 'contact@primecontent.fr',
                     adresse: 'Paris, France',
-                    reseauxSociaux: {
+                    reseauxSociaux: [],
+                    legacyReseauxSociaux: {
                         instagram: '',
                         facebook: '',
                         twitter: '',

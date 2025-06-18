@@ -335,7 +335,7 @@ export default function SocialNetworksManager({
                                 required
                             />
                             <p className="text-xs text-gray-500 mt-1">
-                                Vous pouvez saisir l'URL avec ou sans https:// (sera ajouté
+                                Vous pouvez saisir l&apos;URL avec ou sans https:// (sera ajouté
                                 automatiquement)
                             </p>
                         </div>
