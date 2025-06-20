@@ -1,14 +1,14 @@
 'use client';
 
 import { collection, getDocs } from 'firebase/firestore';
+import { gsap } from 'gsap';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 
 import { db } from '../backoffice/lib/firebase-client';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
 import PortfolioGrid, { Project } from '../components/PortfolioGrid/PortfolioGrid';
-import gsap from '../lib/gsap-config';
 
 import './client.scss';
 
@@ -37,7 +37,8 @@ interface MediaFile {
     thumbnail?: string;
 }
 
-export default function ClientPage() {
+// Composant principal avec useSearchParams
+function ClientPageContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
@@ -332,7 +333,7 @@ export default function ClientPage() {
                                         Aucun média disponible
                                     </h3>
                                     <p className="text-gray-500">
-                                        Aucun média n'a encore été ajouté pour les{' '}
+                                        Aucun média n&apos;a encore été ajouté pour les{' '}
                                         {activeType === 'marques' ? 'marques' : 'célébrités'}.
                                     </p>
                                 </div>
@@ -343,5 +344,23 @@ export default function ClientPage() {
             </main>
             <Footer />
         </>
+    );
+}
+
+// Loading component pour Suspense
+function ClientPageLoading() {
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+        </div>
+    );
+}
+
+// Page principale avec Suspense
+export default function ClientPage() {
+    return (
+        <Suspense fallback={<ClientPageLoading />}>
+            <ClientPageContent />
+        </Suspense>
     );
 }

@@ -41,7 +41,7 @@ export default function ClientMediaPageClient() {
                                 <div className="mt-2 text-sm text-red-700">
                                     <p>
                                         Les paramètres nécessaires (type, nom, ID) ne sont pas
-                                        présents dans l'URL.
+                                        présents dans l&apos;URL.
                                     </p>
                                 </div>
                                 <div className="mt-4">

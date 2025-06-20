@@ -3,6 +3,9 @@ import path from 'path';
 
 import { NextResponse } from 'next/server';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+
 // Définir le chemin racine pour les médias selon l'environnement
 const MEDIA_ROOT =
     process.env.NODE_ENV === 'production'
@@ -44,8 +47,10 @@ export async function GET(request: Request) {
 
         // Vérifier si le dossier existe
         if (!fs.existsSync(targetDir)) {
+            console.warn(`Dossier non trouvé: ${targetDir}`);
             return NextResponse.json({
                 images: [],
+                media: [],
                 count: 0,
                 message: 'Dossier non trouvé',
             });

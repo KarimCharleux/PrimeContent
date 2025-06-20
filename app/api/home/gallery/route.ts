@@ -1,9 +1,12 @@
 import { createReadStream, constants } from 'fs';
-import { readdir, stat } from 'fs/promises';
+import { readdir, stat, access } from 'fs/promises';
 import { join } from 'path';
 
 import { NextResponse } from 'next/server';
 import sharp from 'sharp';
+
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
 
 // Définir le chemin racine pour les médias selon l'environnement
 const MEDIA_ROOT =
@@ -39,6 +42,21 @@ async function getImageDimensions(
 export async function GET() {
     try {
         const galleryPath = join(MEDIA_ROOT, 'home', 'gallery');
+
+        // Vérifier si le dossier existe
+        try {
+            await access(galleryPath);
+        } catch {
+            console.warn(`Dossier gallery non trouvé: ${galleryPath}`);
+            return NextResponse.json({
+                images: [],
+                stats: {
+                    totalImages: 0,
+                    totalSize: 0,
+                    averageLoadTime: 0,
+                },
+            });
+        }
 
         // Lire tous les fichiers du dossier
         const files = await readdir(galleryPath);
