@@ -19,11 +19,22 @@ export default function ClientProfile({
     domain = '',
     imageSrc,
     imageBackground,
-    href = '#',
+    href,
     className = '',
 }: ClientProfileProps) {
     const [imageError, setImageError] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
+
+    // Générer l'URL vers la page client avec le filtre de la célébrité
+    const getClientUrl = () => {
+        if (href && href !== '#') {
+            return href; // Utiliser le href existant si défini
+        }
+
+        // Créer l'URL vers la page client avec le filtre de la célébrité
+        const filterName = name.toLowerCase().replace(/\s+/g, '-');
+        return `/client?type=celebrites&filter=${filterName}`;
+    };
 
     // Effet de parallaxe au survol
     useEffect(() => {
@@ -32,34 +43,28 @@ export default function ClientProfile({
 
         const handleMouseMove = (e: MouseEvent) => {
             const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left; // Position X de la souris dans la carte
-            const y = e.clientY - rect.top; // Position Y de la souris dans la carte
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
 
-            // Calculer le pourcentage de la position de la souris dans la carte
-            const xPercent = (x / rect.width - 0.5) * 2; // -1 à 1
-            const yPercent = (y / rect.height - 0.5) * 2; // -1 à 1
+            const xPercent = (x / rect.width - 0.5) * 2;
+            const yPercent = (y / rect.height - 0.5) * 2;
 
-            // Appliquer la rotation et le parallaxe
-            const intensity = 5; // Intensité de la rotation
+            const intensity = 5;
             card.style.transform = `perspective(1000px) rotateX(${-yPercent * intensity}deg) rotateY(${xPercent * intensity}deg)`;
 
-            // Effet de parallaxe sur l'image
             const imageElement = card.querySelector('.client-image') as HTMLElement;
             const textElement = card.querySelector('.client-text') as HTMLElement;
 
             if (imageElement) {
-                // L'image se déplace plus rapidement (effet de profondeur)
                 imageElement.style.transform = `translateX(${xPercent * 15}px) translateY(${yPercent * 15}px)`;
             }
 
             if (textElement) {
-                // Le texte se déplace moins rapidement
                 textElement.style.transform = `translateX(${xPercent * 5}px) translateY(${yPercent * 5}px)`;
             }
         };
 
         const handleMouseLeave = () => {
-            // Réinitialiser les transformations
             card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0)';
 
             const imageElement = card.querySelector('.client-image') as HTMLElement;
@@ -152,11 +157,9 @@ export default function ClientProfile({
         </div>
     );
 
-    return href && href !== '#' ? (
-        <Link href={href} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+    return (
+        <Link href={getClientUrl()} className="block w-full h-full">
             {content}
         </Link>
-    ) : (
-        content
     );
 }

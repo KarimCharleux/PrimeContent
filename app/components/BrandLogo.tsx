@@ -11,8 +11,19 @@ interface BrandLogoProps {
     readonly href?: string;
 }
 
-export default function BrandLogo({ name, imageSrc, href = '#' }: BrandLogoProps) {
+export default function BrandLogo({ name, imageSrc, href }: BrandLogoProps) {
     const [imageError, setImageError] = useState(false);
+
+    // Générer l'URL vers la page client avec le filtre de la marque
+    const getClientUrl = () => {
+        if (href && href !== '#') {
+            return href; // Utiliser le href existant si défini
+        }
+
+        // Créer l'URL vers la page client avec le filtre de la marque
+        const filterName = name.toLowerCase().replace(/\s+/g, '-');
+        return `/client?type=marques&filter=${filterName}`;
+    };
 
     const content = (
         <div className="p-1 lg:p-2 rounded-lg w-full h-full flex items-center justify-center relative overflow-hidden group transition-all duration-300 border border-white/10 hover:border-white/30">
@@ -41,18 +52,9 @@ export default function BrandLogo({ name, imageSrc, href = '#' }: BrandLogoProps
 
     return (
         <div className="brand-logo-container w-full h-full">
-            {href && href !== '#' ? (
-                <Link
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full h-full"
-                >
-                    {content}
-                </Link>
-            ) : (
-                content
-            )}
+            <Link href={getClientUrl()} className="block w-full h-full">
+                {content}
+            </Link>
         </div>
     );
 }

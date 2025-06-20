@@ -1,0 +1,252 @@
+// Variables
+$primary-color: #000;
+$secondary-color: #fff;
+$accent-color: #f5f5f5;
+$text-color: #333;
+$gray-light: #f8f9fa;
+$gray-medium: #6c757d;
+$border-radius: 12px;
+$transition: all 0.3s ease;
+
+// Styles pour la page client - inspirés de photos.scss
+.client-page {
+    color: white;
+
+    // Animation fade-in pour tous les éléments
+    * {
+        opacity: 1;
+        transition: opacity 0.3s ease;
+    }
+}
+
+// Section hero
+.client-hero {
+    color: $secondary-color;
+    padding: 4rem 0;
+
+    @media (max-width: 768px) {
+        padding: 3rem 0;
+    }
+}
+
+// Titre principal
+.client-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(45deg, #fff, #ccc);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    @media (max-width: 768px) {
+        font-size: 2.5rem;
+    }
+
+    @media (max-width: 480px) {
+        font-size: 2rem;
+    }
+}
+
+// Description
+.client-description {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 3rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+
+    @media (max-width: 768px) {
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+    }
+}
+
+// Toggle moderne
+.client-toggle {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.toggle-container {
+    position: relative;
+    display: flex;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    padding: 4px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-btn {
+    position: relative;
+    z-index: 2;
+    padding: 12px 24px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: $transition;
+    border-radius: 46px;
+    min-width: 120px;
+
+    &.active {
+        color: $primary-color;
+    }
+
+    &:hover:not(.active) {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    @media (max-width: 480px) {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+        min-width: 100px;
+    }
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    height: calc(100% - 8px);
+    background: linear-gradient(45deg, #fff, #f0f0f0);
+    border-radius: 42px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+
+    &.right {
+        transform: translateX(100%);
+    }
+
+    &.left {
+        transform: translateX(0);
+    }
+}
+
+// Styles pour le titre avec soulignement
+.underline-title {
+    position: relative;
+    display: inline-block;
+
+    &::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 4px;
+        background: linear-gradient(90deg, transparent, white, transparent);
+        border-radius: 2px;
+    }
+}
+
+// Animations d'entrée
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+}
+
+// Responsive
+@media (max-width: 768px) {
+    .client-toggle {
+        margin-bottom: 1.5rem;
+    }
+
+    .toggle-container {
+        padding: 3px;
+    }
+
+    .underline-title {
+        font-size: 2.5rem !important;
+
+        &::after {
+            width: 60px;
+            height: 3px;
+        }
+    }
+}
+
+// Styles pour la section portfolio
+.portfolio-section {
+    background: linear-gradient(to bottom, #000, #1a1a1a, #000);
+    min-height: 50vh;
+}
+
+// Loading spinner
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4rem 0;
+
+    .spinner {
+        width: 4rem;
+        height: 4rem;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+// Section galerie
+.client-gallery {
+    padding: 4rem 0;
+    background-color: $gray-light;
+
+    @media (max-width: 768px) {
+        padding: 3rem 0;
+    }
+}
+
+// Animations
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+    .client-page {
+        background-color: #1a1a1a;
+    }
+
+    .client-gallery {
+        background-color: #1a1a1a;
+    }
+}

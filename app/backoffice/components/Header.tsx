@@ -50,7 +50,7 @@ export default function Header() {
                             </svg>
                             {/* Badge de notification */}
                             {newMessagesCount > 0 && (
-                                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full min-w-[18px] h-[18px] animate-pulse shadow-lg">
+                                <span className="absolute top-2 right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full min-w-[18px] h-[18px] animate-pulse shadow-lg">
                                     {newMessagesCount > 99 ? '99+' : newMessagesCount}
                                 </span>
                             )}

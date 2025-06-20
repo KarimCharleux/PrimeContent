@@ -18,6 +18,14 @@ export interface Project {
     isVideo?: boolean;
     format?: 'paysage' | 'portrait';
     thumbnail?: string; // Miniature optionnelle pour les vidéos
+    clientType?: 'marque' | 'celebrite'; // Type de client
+    clientName?: string; // Nom du client
+}
+
+// Interface pour les filtres personnalisés
+interface CustomFilter {
+    key: string;
+    label: string;
 }
 
 interface PortfolioGridProps {
@@ -28,6 +36,10 @@ interface PortfolioGridProps {
     onSelectionChange?: (selectedItems: Set<string>) => void;
     selectedItems?: Set<string>;
     selectionLabel?: string;
+    // Support pour les filtres personnalisés
+    customFilters?: CustomFilter[];
+    activeFilter?: string;
+    onFilterChange?: (filter: string) => void;
 }
 
 const PortfolioGrid: React.FC<PortfolioGridProps> = ({
@@ -37,9 +49,12 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
     onSelectionChange,
     selectedItems: externalSelectedItems,
     selectionLabel = 'Sélectionner',
+    customFilters,
+    activeFilter: externalActiveFilter,
+    onFilterChange,
 }) => {
     // État pour le filtre actif
-    const [activeFilter, setActiveFilter] = useState('Tout');
+    const [internalActiveFilter, setInternalActiveFilter] = useState('Tout');
     // État pour les projets filtrés
     const [filteredProjects, setFilteredProjects] = useState<Project[]>(projects);
     // État pour la vidéo en cours de lecture
@@ -49,6 +64,9 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     // État pour les éléments sélectionnés (gestion interne si pas fourni en props)
     const [internalSelectedItems, setInternalSelectedItems] = useState<Set<string>>(new Set());
+
+    // Utiliser soit le filtre externe soit l'interne
+    const activeFilter = externalActiveFilter || internalActiveFilter;
 
     // Utiliser soit les selectedItems externes soit les internes
     const selectedItems = externalSelectedItems || internalSelectedItems;
@@ -120,13 +138,30 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         }
     };
 
+    // Fonction pour gérer le changement de filtre
+    const handleFilterChange = (filter: string) => {
+        if (onFilterChange) {
+            onFilterChange(filter);
+        } else {
+            setInternalActiveFilter(filter);
+        }
+    };
+
     // Effet pour filtrer les projets quand le filtre change
     useEffect(() => {
         // Filtrer les projets en fonction du filtre actif
         let newFilteredProjects = projects;
 
-        // Filtrer par catégorie si ce n'est pas "Tout"
-        if (activeFilter !== 'Tout') {
+        // Si on utilise des filtres personnalisés
+        if (customFilters && activeFilter !== 'Tout') {
+            const filterKey = activeFilter;
+            newFilteredProjects = newFilteredProjects.filter((project) => {
+                const clientKey = project.clientName?.toLowerCase().replace(/\s+/g, '-');
+                return clientKey === filterKey;
+            });
+        }
+        // Sinon, utiliser le filtrage par catégorie
+        else if (!customFilters && activeFilter !== 'Tout') {
             newFilteredProjects = newFilteredProjects.filter(
                 (project) => project.category === activeFilter,
             );
@@ -177,7 +212,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                 }, 50);
             },
         });
-    }, [activeFilter, projects, activeVideoIndex]);
+    }, [activeFilter, projects, activeVideoIndex, customFilters]);
 
     // Gestion de la lecture des vidéos
     useEffect(() => {
@@ -193,11 +228,17 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         });
     }, [activeVideoIndex]);
 
-    // Extraire les catégories uniques des projets
-    const categories = [
-        'Tout',
-        ...Array.from(new Set(projects.map((project) => project.category).filter(Boolean))),
-    ];
+    // Générer les catégories ou utiliser les filtres personnalisés
+    const categories = customFilters
+        ? ['Tout', ...customFilters.map((f) => f.key)]
+        : [
+              'Tout',
+              ...Array.from(new Set(projects.map((project) => project.category).filter(Boolean))),
+          ];
+
+    const categoryLabels = customFilters
+        ? Object.fromEntries([['Tout', 'Tout'], ...customFilters.map((f) => [f.key, f.label])])
+        : {};
 
     // Fonction pour déterminer la classe de taille en fonction du format de l'image
     const getItemSizeClass = (project: Project) => {
@@ -244,9 +285,9 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                 className={`${styles.filterBtn} ${
                                     activeFilter === category ? styles.active : styles.inactive
                                 }`}
-                                onClick={() => setActiveFilter(category)}
+                                onClick={() => handleFilterChange(category)}
                             >
-                                {category}
+                                {customFilters ? categoryLabels[category] || category : category}
                             </button>
                         ))}
                     </div>

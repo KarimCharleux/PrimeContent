@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 
 import { useAuth } from '../hooks/useAuth';
 
-import HomeTabClients from './components/HomeTabClients';
 import HomeTabExpertises from './components/HomeTabExpertises';
 import HomeTabGallery from './components/HomeTabGallery';
 import HomeTabKeyFigures from './components/HomeTabKeyFigures';
@@ -61,12 +60,6 @@ export default function HomeEditPage() {
                         Expertises
                     </button>
                     <button
-                        onClick={() => setActiveTab('clients')}
-                        className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'clients' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-                    >
-                        Clients & Marques
-                    </button>
-                    <button
                         onClick={() => setActiveTab('keyFigures')}
                         className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'keyFigures' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                     >
@@ -97,7 +90,6 @@ export default function HomeEditPage() {
             <div className="mt-6">
                 {activeTab === 'gallery' && <HomeTabGallery onStatusChange={handleStatusChange} />}
                 {activeTab === 'expertises' && <HomeTabExpertises />}
-                {activeTab === 'clients' && <HomeTabClients />}
                 {activeTab === 'keyFigures' && <HomeTabKeyFigures />}
                 {activeTab === 'projects' && <HomeTabProjects />}
                 {activeTab === 'testimonials' && <HomeTabReviews />}
