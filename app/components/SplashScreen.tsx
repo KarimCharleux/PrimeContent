@@ -80,7 +80,7 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                             setLoadingProgress(Math.round((loadedCount / totalImages) * 100));
                             resolve(img);
                         };
-                        img.src = mediaItem.url;
+                        img.src = getMediaUrl(mediaItem.url);
                     });
 
                 const loadedImages = await Promise.all(
