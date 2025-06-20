@@ -44,12 +44,22 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
             try {
                 if (!isMounted) return;
 
-                const response = await fetch('/api/gallery-images');
+                const response = await fetch('/api/gallery-images?path=home/gallery');
                 const data = await response.json();
-                const totalImages = data.images.length;
+
+                // Vérifier si nous avons des images à charger
+                if (!data.media || data.media.length === 0) {
+                    console.warn('Aucune image trouvée dans la galerie');
+                    if (isMounted) {
+                        setImagesLoaded(true);
+                    }
+                    return;
+                }
+
+                const totalImages = data.media.length;
                 let loadedCount = 0;
 
-                const loadImage = (src: string): Promise<HTMLImageElement> =>
+                const loadImage = (mediaItem: any): Promise<HTMLImageElement> =>
                     new Promise((resolve, reject) => {
                         const img = new Image();
                         img.onload = () => {
@@ -59,11 +69,23 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                             setLoadingProgress(Math.round((loadedCount / totalImages) * 100));
                             resolve(img);
                         };
-                        img.onerror = reject;
-                        img.src = getMediaUrl(`/home/gallery/${src}`);
+                        img.onerror = (error) => {
+                            console.warn(
+                                `Erreur lors du chargement de l'image: ${mediaItem.url}`,
+                                error,
+                            );
+                            // Continuer même si une image échoue
+                            if (!isMounted) return;
+                            loadedCount++;
+                            setLoadingProgress(Math.round((loadedCount / totalImages) * 100));
+                            resolve(img);
+                        };
+                        img.src = mediaItem.url;
                     });
 
-                const loadedImages = await Promise.all(data.images.map(loadImage));
+                const loadedImages = await Promise.all(
+                    data.media.filter((item: any) => item.type === 'image').map(loadImage),
+                );
                 if (isMounted) {
                     setPreloadedImages(loadedImages);
                     setImagesLoaded(true);
