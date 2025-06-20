@@ -258,8 +258,8 @@ function ClientPageContent() {
 
     return (
         <>
-            <Header />
             <main className="client-page global-main-page">
+                <Header />
                 <section className="client-hero">
                     <div className="container mx-auto px-4 py-16">
                         <div className="text-center max-w-4xl mx-auto">
@@ -341,8 +341,8 @@ function ClientPageContent() {
                         )}
                     </div>
                 </section>
+                <Footer />
             </main>
-            <Footer />
         </>
     );
 }

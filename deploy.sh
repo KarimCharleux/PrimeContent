@@ -47,6 +47,9 @@ ssh "$SERVER_USER@$SERVER_IP" << EOF
   
   echo "Extraction du nouveau dossier .next..."
   tar -xzf ~/$ARCHIVE_NAME
+  
+  echo "Nettoyage du fichier d'archive sur le serveur..."
+  rm ~/$ARCHIVE_NAME
 EOF
 
 # Nettoyer les fichiers temporaires
