@@ -49,21 +49,6 @@ ssh "$SERVER_USER@$SERVER_IP" << EOF
   tar -xzf ~/$ARCHIVE_NAME
 EOF
 
-echo -e "${YELLOW}[5/5] Redémarrage du service...${NC}"
-ssh "$SERVER_USER@$SERVER_IP" << EOF
-  cd $SERVER_PATH
-  
-  echo "Nettoyage..."
-  rm ~/$ARCHIVE_NAME
-  
-  echo "Redémarrage du service (si PM2 est utilisé)..."
-  if command -v pm2 &> /dev/null; then
-    pm2 restart all
-  else
-    echo "PM2 n'est pas installé. Redémarrez manuellement votre application."
-  fi
-EOF
-
 # Nettoyer les fichiers temporaires
 rm "$ARCHIVE_NAME"
 
