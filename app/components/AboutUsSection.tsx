@@ -59,7 +59,7 @@ export default function AboutUsSection() {
                 </div>
 
                 <motion.div
-                    className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
+                    className="grid grid-cols-2 md:grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto"
                     variants={containerVariants}
                     initial="hidden"
                     whileInView="visible"
