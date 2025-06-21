@@ -1,0 +1,236 @@
+// Styles pour la page Web
+.web-page {
+    background: #000;
+    color: #fff;
+    min-height: 100vh;
+
+    .title-container {
+        text-align: center;
+        position: relative;
+        margin-bottom: 2rem;
+    }
+
+    .description {
+        max-width: 800px;
+        margin: 0 auto 2.5rem;
+        text-align: center;
+        font-size: 1.1rem;
+        line-height: 1.6;
+        opacity: 0.8;
+    }
+
+    // Section Hero
+    .hero-section {
+        padding-top: 6rem;
+        padding-bottom: 4rem;
+    }
+
+    // Section Processus
+    .process-section {
+        background: rgba(255, 255, 255, 0.02);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+        .process-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: start;
+
+            @media (max-width: 768px) {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+        }
+
+        .process-left {
+            .section-title {
+                font-size: 2rem;
+                font-weight: bold;
+                margin-bottom: 2rem;
+                color: #fff;
+            }
+
+            .process-image {
+                img {
+                    width: 100%;
+                    height: auto;
+                    object-fit: cover;
+                }
+            }
+        }
+
+        .process-right {
+            .process-step {
+                display: flex;
+                gap: 1.5rem;
+                margin-bottom: 2rem;
+                padding: 1.5rem;
+                background: rgba(255, 255, 255, 0.03);
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+
+                .step-number {
+                    font-size: 1.5rem;
+                    font-weight: bold;
+                    color: #007bff;
+                    min-width: 3rem;
+                    text-align: center;
+                }
+
+                .step-content {
+                    flex: 1;
+
+                    .step-title {
+                        font-size: 1.2rem;
+                        font-weight: bold;
+                        margin-bottom: 0.5rem;
+                        color: #fff;
+                    }
+
+                    .step-description {
+                        font-size: 0.95rem;
+                        line-height: 1.5;
+                        opacity: 0.8;
+                        color: #ccc;
+                    }
+                }
+            }
+        }
+    }
+
+    // Section Chiffres Clés
+    .stats-section {
+        padding: 4rem 0;
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 3rem;
+            color: #fff;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+
+            @media (max-width: 768px) {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+
+            .stat-item {
+                text-align: center;
+                padding: 2rem 1rem;
+                transition:
+                    transform 0.3s ease,
+                    box-shadow 0.3s ease;
+
+                &:hover {
+                    transform: translateY(-5px);
+                }
+            }
+        }
+    }
+
+    // Section Réalisations
+    .realisations-section {
+        padding: 4rem 0;
+        background: rgba(255, 255, 255, 0.02);
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 3rem;
+            color: #fff;
+            text-align: center;
+        }
+
+        .realisations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+
+            @media (max-width: 768px) {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+
+        .realisation-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            transition:
+                transform 0.3s ease,
+                box-shadow 0.3s ease;
+
+            &:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 30px rgba(0, 123, 255, 0.2);
+            }
+
+            .realisation-date {
+                font-size: 0.85rem;
+                color: #007bff;
+                font-weight: 600;
+                padding: 1rem 1rem 0;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .realisation-content {
+                padding: 0 1rem 1rem;
+
+                .realisation-image {
+                    margin: 1rem 0;
+
+                    img {
+                        width: 100%;
+                        height: 200px;
+                        object-fit: cover;
+                        border-radius: 8px;
+                    }
+                }
+
+                .realisation-info {
+                    .realisation-title {
+                        font-size: 1.1rem;
+                        font-weight: bold;
+                        margin-bottom: 0.5rem;
+                        color: #fff;
+                        line-height: 1.3;
+                    }
+
+                    .realisation-category {
+                        display: inline-block;
+                        font-size: 0.8rem;
+                        color: #007bff;
+                        background: rgba(0, 123, 255, 0.1);
+                        padding: 0.25rem 0.75rem;
+                        border-radius: 20px;
+                        margin-bottom: 0.75rem;
+                        font-weight: 500;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                    }
+
+                    .realisation-description {
+                        font-size: 0.9rem;
+                        line-height: 1.5;
+                        opacity: 0.8;
+                        color: #ccc;
+                        margin-top: 0.5rem;
+                    }
+                }
+            }
+        }
+    }
+}

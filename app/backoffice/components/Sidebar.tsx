@@ -285,6 +285,40 @@ const MessagesIcon = () => (
     </svg>
 );
 
+const SocialMediaIcon = () => (
+    <svg
+        className="w-6 h-6"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+    >
+        <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+        ></path>
+    </svg>
+);
+
+const DeviceIcon = () => (
+    <svg
+        className="w-6 h-6"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+    >
+        <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M12 18h.01M8 21h8a1 1 0 001-1V4a1 1 0 00-1-1H8a1 1 0 00-1 1v16a1 1 0 001 1z"
+        ></path>
+    </svg>
+);
+
 export default function Sidebar() {
     const [isOpen, setIsOpen] = useState(true);
     const pathname = usePathname();
@@ -298,6 +332,8 @@ export default function Sidebar() {
         { name: 'Galerie vidéos', href: '/backoffice/videos', icon: VideoIcon },
         { name: 'Événements', href: '/backoffice/evenements', icon: EventsIcon },
         { name: 'Mariages', href: '/backoffice/mariages', icon: WeddingsIcon },
+        { name: 'Réseaux sociaux', href: '/backoffice/reseaux-sociaux', icon: SocialMediaIcon },
+        { name: 'Conception Web', href: '/backoffice/web', icon: DeviceIcon },
         { name: 'Clients', href: '/backoffice/clients', icon: ClientsIcon },
         { name: 'Contact', href: '/backoffice/contact', icon: ContactIcon },
         { name: 'Messages', href: '/backoffice/messages', icon: MessagesIcon },
