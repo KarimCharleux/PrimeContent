@@ -235,14 +235,14 @@ export default function RealisationsTab() {
         try {
             if (editingRealisation) {
                 // Modification
-                await updateDoc(doc(db, 'web-realisations', editingRealisation.id), data);
+                await updateDoc(doc(db, 'web-realisations', editingRealisation.id), data as any);
             } else {
                 // Ajout
                 const newOrder = realisations.length + 1;
                 await addDoc(collection(db, 'web-realisations'), {
                     ...data,
                     order: newOrder,
-                });
+                } as any);
             }
 
             reset();

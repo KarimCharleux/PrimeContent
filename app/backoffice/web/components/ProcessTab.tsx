@@ -180,14 +180,14 @@ export default function ProcessTab() {
         try {
             if (editingStep) {
                 // Modification
-                await updateDoc(doc(db, 'web-process', editingStep.id), data);
+                await updateDoc(doc(db, 'web-process', editingStep.id), data as any);
             } else {
                 // Ajout
                 const newOrder = steps.length + 1;
                 await addDoc(collection(db, 'web-process'), {
                     ...data,
                     order: newOrder,
-                });
+                } as any);
             }
 
             reset();

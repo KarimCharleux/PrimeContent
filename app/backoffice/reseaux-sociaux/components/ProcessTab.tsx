@@ -161,7 +161,7 @@ export default function ProcessTab({ onStatusChange }: ProcessTabProps) {
             if (editingStep?.id) {
                 // Mettre à jour l'étape existante
                 const stepRef = doc(db, 'reseaux-sociaux-process', editingStep.id);
-                await updateDoc(stepRef, data);
+                await updateDoc(stepRef, data as any);
 
                 setSteps(
                     steps.map((step) => (step.id === editingStep.id ? { ...step, ...data } : step)),

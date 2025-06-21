@@ -202,7 +202,7 @@ export default function RealisationsTab({ onStatusChange }: RealisationsTabProps
                     'reseaux-sociaux-realisations',
                     editingRealisation.id,
                 );
-                await updateDoc(realisationRef, realisationData);
+                await updateDoc(realisationRef, realisationData as any);
 
                 setRealisations(
                     realisations.map((realisation) =>
