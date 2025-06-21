@@ -71,6 +71,7 @@ export default function HomeTabProjects() {
         isLatest: false,
         thumbnail: '',
     });
+    const [uploadCategory, setUploadCategory] = useState<string>('');
 
     // Extraire les catégories uniques des projets
     const categories = Array.from(new Set(projects.map((project) => project.category))).filter(
@@ -171,6 +172,7 @@ export default function HomeTabProjects() {
         });
         setPreviewImage(null);
         setStatusMessage(null);
+        setUploadCategory('');
     }, [activeTab]);
 
     const fetchProjects = async () => {
@@ -414,6 +416,7 @@ export default function HomeTabProjects() {
                     order: currentOrder++,
                     isLatest: activeTab === 'latest',
                     isVideo: file.type.startsWith('video/'),
+                    category: uploadCategory, // Utiliser la catégorie sélectionnée pour l'upload
                 };
 
                 await addDoc(collection(db, 'projects'), newProject);
@@ -575,6 +578,7 @@ export default function HomeTabProjects() {
         setPreviewImage(null);
         setShowForm(false);
         setStatusMessage(null);
+        setUploadCategory('');
     };
 
     // Fonction pour déterminer la classe de taille en fonction du format
@@ -715,6 +719,43 @@ export default function HomeTabProjects() {
                             {statusMessage.message}
                         </div>
                     )}
+
+                    {/* Sélection de catégorie pour l'upload */}
+                    <div className="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-200">
+                        <h4 className="text-sm font-medium text-blue-800 mb-3">
+                            Catégorie pour l'upload en lot
+                        </h4>
+                        <div className="flex space-x-3">
+                            <div className="flex-1">
+                                <select
+                                    value={uploadCategory}
+                                    onChange={(e) => setUploadCategory(e.target.value)}
+                                    className="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                >
+                                    <option value="">Aucune catégorie</option>
+                                    {categories.map((category) => (
+                                        <option key={category} value={category}>
+                                            {category}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex-1">
+                                <input
+                                    type="text"
+                                    value={uploadCategory}
+                                    onChange={(e) => setUploadCategory(e.target.value)}
+                                    placeholder="Ou créer une nouvelle catégorie"
+                                    className="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                        </div>
+                        <p className="mt-2 text-xs text-blue-600">
+                            {uploadCategory
+                                ? `Tous les médias uploadés seront assignés à la catégorie "${uploadCategory}"`
+                                : "Sélectionnez ou créez une catégorie pour l'assigner automatiquement à tous les médias uploadés"}
+                        </p>
+                    </div>
 
                     {/* Zone de drop pour les médias */}
                     <div
