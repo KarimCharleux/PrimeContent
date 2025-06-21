@@ -127,7 +127,7 @@ export default function ContentTab({ onStatusChange }: ContentTabProps) {
             if (content?.id) {
                 // Mettre à jour le document existant
                 const contentRef = doc(db, 'reseaux-sociaux-content', content.id);
-                await updateDoc(contentRef, contentData);
+                await updateDoc(contentRef, contentData as any);
             } else {
                 // Créer un nouveau document
                 const contentCollection = collection(db, 'reseaux-sociaux-content');

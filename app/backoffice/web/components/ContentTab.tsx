@@ -2,7 +2,7 @@
 
 import { addDoc, collection, doc, getDocs, updateDoc } from 'firebase/firestore';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { getMediaUrl } from '../../../utils/mediaUrl';
@@ -32,11 +32,7 @@ export default function ContentTab() {
 
     const watchedProcessImage = watch('processImage');
 
-    useEffect(() => {
-        fetchContent();
-    }, []);
-
-    const fetchContent = async () => {
+    const fetchContent = useCallback(async () => {
         try {
             const contentCollection = collection(db, 'web-content');
             const contentSnapshot = await getDocs(contentCollection);
@@ -71,7 +67,11 @@ export default function ContentTab() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [setValue]);
+
+    useEffect(() => {
+        fetchContent();
+    }, [fetchContent]);
 
     const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -107,7 +107,7 @@ export default function ContentTab() {
             if (content?.id) {
                 // Mise à jour
                 const docRef = doc(db, 'web-content', content.id);
-                await updateDoc(docRef, data);
+                await updateDoc(docRef, data as any);
             } else {
                 // Création
                 await addDoc(collection(db, 'web-content'), data);

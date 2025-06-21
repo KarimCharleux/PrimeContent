@@ -190,14 +190,14 @@ export default function KeyFiguresTab() {
         try {
             if (editingFigure) {
                 // Modification
-                await updateDoc(doc(db, 'web-figures', editingFigure.id), data);
+                await updateDoc(doc(db, 'web-figures', editingFigure.id), data as any);
             } else {
                 // Ajout
                 const newOrder = figures.length + 1;
                 await addDoc(collection(db, 'web-figures'), {
                     ...data,
                     order: newOrder,
-                });
+                } as any);
             }
 
             reset();
@@ -376,6 +376,7 @@ export default function KeyFiguresTab() {
 
             {figures.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
+                    {/* eslint-disable-next-line react/no-unescaped-entities */}
                     Aucun chiffre configuré. Cliquez sur "Ajouter un chiffre" pour commencer.
                 </div>
             )}

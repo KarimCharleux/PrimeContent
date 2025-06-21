@@ -723,7 +723,7 @@ export default function HomeTabProjects() {
                     {/* Sélection de catégorie pour l'upload */}
                     <div className="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-200">
                         <h4 className="text-sm font-medium text-blue-800 mb-3">
-                            Catégorie pour l'upload en lot
+                            Catégorie pour l&apos;upload en lot
                         </h4>
                         <div className="flex space-x-3">
                             <div className="flex-1">
@@ -753,7 +753,7 @@ export default function HomeTabProjects() {
                         <p className="mt-2 text-xs text-blue-600">
                             {uploadCategory
                                 ? `Tous les médias uploadés seront assignés à la catégorie "${uploadCategory}"`
-                                : "Sélectionnez ou créez une catégorie pour l'assigner automatiquement à tous les médias uploadés"}
+                                : 'Sélectionnez ou créez une catégorie pour l&apos;assigner automatiquement à tous les médias uploadés'}
                         </p>
                     </div>
 

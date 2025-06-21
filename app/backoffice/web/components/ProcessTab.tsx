@@ -349,6 +349,7 @@ export default function ProcessTab() {
 
             {steps.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
+                    {/* eslint-disable-next-line react/no-unescaped-entities */}
                     Aucune étape configurée. Cliquez sur "Ajouter une étape" pour commencer.
                 </div>
             )}

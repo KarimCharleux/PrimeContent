@@ -309,6 +309,7 @@ export default function RealisationsTab() {
             {showForm && (
                 <div className="bg-gray-50 p-6 rounded-lg mb-6">
                     <h3 className="text-lg font-medium mb-4">
+                        {/* eslint-disable-next-line react/no-unescaped-entities */}
                         {editingRealisation ? 'Modifier la réalisation' : 'Nouvelle réalisation'}
                     </h3>
 
@@ -458,6 +459,7 @@ export default function RealisationsTab() {
 
             {realisations.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
+                    {/* eslint-disable-next-line react/no-unescaped-entities */}
                     Aucune réalisation configurée. Cliquez sur "Ajouter une réalisation" pour
                     commencer.
                 </div>
