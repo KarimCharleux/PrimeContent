@@ -7,7 +7,7 @@
 SERVER_USER="aymo1441"
 SERVER_IP="109.234.166.34"
 SERVER_PATH="~/PrimeContent"
-LOCAL_PATH="/Users/karimcharleux/Documents/Onlook/Projects/project-1739396691362"
+LOCAL_PATH="$(pwd)"
 
 # Couleurs pour les messages
 GREEN='\033[0;32m'
