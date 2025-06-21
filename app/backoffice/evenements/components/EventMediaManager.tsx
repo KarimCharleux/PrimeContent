@@ -998,8 +998,8 @@ export default function EventMediaManager({
                     </div>
                     {selectedCategory && (
                         <p className="mt-1 text-xs text-gray-500">
-                            Tous les médias uploadés seront assignés à la catégorie "
-                            {selectedCategory}"
+                            Tous les médias uploadés seront assignés à la catégorie &quot;
+                            {selectedCategory}&quot;
                         </p>
                     )}
                 </div>
