@@ -364,6 +364,85 @@ export default function RealisationsMediaManager({
         });
     };
 
+    // Supprimer tous les médias
+    const handleDeleteAllMedia = async () => {
+        if (medias.length === 0) {
+            onStatusChange?.({
+                type: 'error',
+                message: 'Aucun média à supprimer',
+            });
+            return;
+        }
+
+        if (
+            window.confirm(
+                `ATTENTION: Vous êtes sur le point de supprimer tous les médias (${medias.length}) des réalisations. Cette action est irréversible. Continuer?`,
+            )
+        ) {
+            try {
+                setUploading(true); // Utiliser l'état uploading pour montrer que le traitement est en cours
+                const totalMediasToDelete = medias.length; // Stocker le nombre avant suppression
+
+                // Supprimer tous les médias de Firestore et les fichiers
+                for (const media of medias) {
+                    try {
+                        // Supprimer de Firestore
+                        const collectionName = media.isVideo
+                            ? 'realisations-videos'
+                            : 'realisations-photos';
+                        await deleteDoc(doc(db, collectionName, media.id));
+
+                        // Supprimer le fichier principal
+                        if (media.path) {
+                            const fileName = media.path.split('/').pop();
+                            if (fileName) {
+                                await fetch(
+                                    `/api/delete?path=realisations&name=${encodeURIComponent(fileName)}`,
+                                    {
+                                        method: 'DELETE',
+                                    },
+                                );
+                            }
+                        }
+
+                        // Supprimer la miniature si elle existe
+                        if (media.thumbnail) {
+                            const thumbnailName = media.thumbnail.split('/').pop();
+                            if (thumbnailName) {
+                                await fetch(
+                                    `/api/delete?path=realisations/thumbnails&name=${encodeURIComponent(thumbnailName)}`,
+                                    {
+                                        method: 'DELETE',
+                                    },
+                                );
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Erreur lors de la suppression d'un média:", err);
+                    }
+                }
+
+                // Recharger les médias depuis Firestore
+                await loadMedias();
+
+                onStatusChange?.({
+                    type: 'success',
+                    message: `Tous les médias (${totalMediasToDelete}) ont été supprimés avec succès`,
+                });
+
+                router.refresh();
+            } catch (error) {
+                console.error('Erreur lors de la suppression de tous les médias:', error);
+                onStatusChange?.({
+                    type: 'error',
+                    message: 'Erreur lors de la suppression des médias',
+                });
+            } finally {
+                setUploading(false);
+            }
+        }
+    };
+
     // Supprimer un média
     const handleDeleteMedia = async (mediaId: string) => {
         if (window.confirm('Êtes-vous sûr de vouloir supprimer ce média ?')) {
@@ -887,6 +966,29 @@ export default function RealisationsMediaManager({
             <div>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-medium">Gestion des médias ({medias.length})</h3>
+                    {medias.length > 0 && (
+                        <button
+                            onClick={handleDeleteAllMedia}
+                            disabled={uploading}
+                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                            </svg>
+                            <span>Supprimer tout</span>
+                        </button>
+                    )}
                 </div>
 
                 <div className="border rounded-lg overflow-hidden">

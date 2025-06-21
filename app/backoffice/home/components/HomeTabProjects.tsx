@@ -430,6 +430,9 @@ export default function HomeTabProjects() {
                 message: `${files.length} réalisation(s) ajoutée(s) avec succès`,
             });
 
+            // Réinitialiser la catégorie après l'upload réussi
+            setUploadCategory('');
+
             // Rafraîchir la liste des projets
             fetchProjects();
         } catch (error) {
