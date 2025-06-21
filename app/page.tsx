@@ -12,7 +12,6 @@ import ExpertiseCard from './components/ExpertiseCard';
 import Footer from './components/Footer';
 import Gallery from './components/Gallery';
 import Header from './components/Header';
-import LatestProjects from './components/LatestProjects';
 import PortfolioGrid from './components/PortfolioGrid/PortfolioGrid';
 import PrimaryButton from './components/PrimaryButton';
 import gsap from './lib/gsap-config';
@@ -73,6 +72,7 @@ interface PortfolioProject {
     order: number;
     isLatest?: boolean;
     link?: string;
+    thumbnail?: string;
 }
 
 // Interface pour les reviews
@@ -959,15 +959,18 @@ export default function Page() {
                             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
                         </div>
                     ) : (
-                        <LatestProjects
+                        <PortfolioGrid
                             projects={projects
                                 .filter((p) => p.isLatest)
                                 .map((p) => ({
-                                    id: p.id || crypto.randomUUID(),
                                     title: p.title,
-                                    imageSrc: p.source,
-                                    link: p.link || `/portfolio/${p.id}`,
+                                    category: p.category,
+                                    source: p.source,
+                                    isVideo: p.isVideo,
+                                    format: p.format,
+                                    thumbnail: p.thumbnail,
                                 }))}
+                            showFilter={false}
                         />
                     )}
                 </div>
