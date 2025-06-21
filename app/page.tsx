@@ -936,7 +936,7 @@ export default function Page() {
                             <div className="mt-16 mx-auto w-fit">
                                 <PrimaryButton
                                     text="Explorer plus"
-                                    href="/portfolio"
+                                    href="/realisations"
                                     animateOnMount={true}
                                     delay={0.5}
                                 />

@@ -68,6 +68,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
     });
     const [videoFile, setVideoFile] = useState<File | null>(null);
     const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+    const [uploadCategory, setUploadCategory] = useState<string>('');
 
     // Extraire les catégories uniques des vidéos
     const categories = Array.from(new Set(videos.map((video) => video.category))).filter(Boolean);
@@ -289,6 +290,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         setThumbnailFile(null);
         setPreviewThumbnail(null);
         setStatusMessage(null);
+        setUploadCategory('');
     };
 
     // Gérer le drag & drop des fichiers
@@ -500,7 +502,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                     thumbnail: '', // Laisser la miniature vide
                     duration,
                     order: currentOrder++,
-                    category: '',
+                    category: uploadCategory, // Utiliser la catégorie sélectionnée pour l'upload
                     size: file.size, // Stocker la taille réelle du fichier
                     format, // Ajouter le format détecté
                 };
@@ -704,6 +706,43 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                             {statusMessage.message}
                         </div>
                     )}
+
+                    {/* Sélection de catégorie pour l'upload */}
+                    <div className="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-200">
+                        <h4 className="text-sm font-medium text-blue-800 mb-3">
+                            Catégorie pour l&apos;upload en lot
+                        </h4>
+                        <div className="flex space-x-3">
+                            <div className="flex-1">
+                                <select
+                                    value={uploadCategory}
+                                    onChange={(e) => setUploadCategory(e.target.value)}
+                                    className="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                >
+                                    <option value="">Aucune catégorie</option>
+                                    {categories.map((category) => (
+                                        <option key={category} value={category}>
+                                            {category}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex-1">
+                                <input
+                                    type="text"
+                                    value={uploadCategory}
+                                    onChange={(e) => setUploadCategory(e.target.value)}
+                                    placeholder="Ou créer une nouvelle catégorie"
+                                    className="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                        </div>
+                        <p className="mt-2 text-xs text-blue-600">
+                            {uploadCategory
+                                ? `Toutes les vidéos uploadées seront assignées à la catégorie "${uploadCategory}"`
+                                : 'Sélectionnez ou créez une catégorie pour l&apos;assigner automatiquement à toutes les vidéos uploadées'}
+                        </p>
+                    </div>
 
                     {/* Zone de drop pour les vidéos */}
                     <div

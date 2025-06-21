@@ -170,48 +170,56 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         // Animation de sortie
         const tl = gsap.timeline();
 
-        tl.to(projectRefs.current, {
-            opacity: 0,
-            y: 20,
-            stagger: 0.05,
-            duration: 0.3,
-            onComplete: () => {
-                // Arrêter toutes les vidéos en cours de lecture
-                if (activeVideoIndex !== null) {
-                    const currentVideo = videoRefs.current[activeVideoIndex];
-                    if (currentVideo) {
-                        currentVideo.pause();
-                        currentVideo.currentTime = 0;
+        // Filtrer les références valides (non nulles)
+        const validProjectRefs = projectRefs.current.filter((ref) => ref !== null);
+
+        if (validProjectRefs.length > 0) {
+            tl.to(validProjectRefs, {
+                opacity: 0,
+                y: 20,
+                stagger: 0.05,
+                duration: 0.3,
+                onComplete: () => {
+                    // Arrêter toutes les vidéos en cours de lecture
+                    if (activeVideoIndex !== null) {
+                        const currentVideo = videoRefs.current[activeVideoIndex];
+                        if (currentVideo) {
+                            currentVideo.pause();
+                            currentVideo.currentTime = 0;
+                        }
+                        setActiveVideoIndex(null);
                     }
-                    setActiveVideoIndex(null);
-                }
 
-                // Mettre à jour les projets filtrés
-                setFilteredProjects(newFilteredProjects);
+                    // Mettre à jour les projets filtrés
+                    setFilteredProjects(newFilteredProjects);
 
-                // Animation d'entrée après mise à jour
-                setTimeout(() => {
-                    const portfolioItems = projectsContainerRef.current?.querySelectorAll(
-                        `.${styles.portfolioItem}`,
-                    );
-                    if (portfolioItems && portfolioItems.length > 0) {
-                        gsap.fromTo(
-                            portfolioItems,
-                            {
-                                opacity: 0,
-                                y: 20,
-                            },
-                            {
-                                opacity: 1,
-                                y: 0,
-                                stagger: 0.05,
-                                duration: 0.5,
-                            },
+                    // Animation d'entrée après mise à jour
+                    setTimeout(() => {
+                        const portfolioItems = projectsContainerRef.current?.querySelectorAll(
+                            `.${styles.portfolioItem}`,
                         );
-                    }
-                }, 50);
-            },
-        });
+                        if (portfolioItems && portfolioItems.length > 0) {
+                            gsap.fromTo(
+                                portfolioItems,
+                                {
+                                    opacity: 0,
+                                    y: 20,
+                                },
+                                {
+                                    opacity: 1,
+                                    y: 0,
+                                    stagger: 0.05,
+                                    duration: 0.5,
+                                },
+                            );
+                        }
+                    }, 50);
+                },
+            });
+        } else {
+            // Si pas d'éléments valides, juste mettre à jour les projets filtrés
+            setFilteredProjects(newFilteredProjects);
+        }
     }, [activeFilter, projects, activeVideoIndex, customFilters]);
 
     // Gestion de la lecture des vidéos
