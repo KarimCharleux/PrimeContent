@@ -23,18 +23,138 @@
 Le projet est divisé en deux parties distinctes :
 
 #### 🎨 **Partie Client (Publique)**
-- **Route principale** : `/` (page d'accueil, services, portfolio)
 - **Layout** : `ClientLayout` avec SplashScreen et Google Analytics
-- **Pages** : Accueil, Contact, Mariages, Événements, Photos, Vidéos
 - **Composants** : Interface utilisateur publique avec animations
 - **Analytics** : Google Tag Manager et Google Analytics intégrés
 
+##### **Pages Publiques**
+- **`/`** - Page d'accueil
+  - Fichiers : `app/page.tsx`, `app/styles/home.scss`
+  - Composants : AboutUsSection, Gallery, CustomerReviews, TeamCard
+  - Données : Expertise, projets, équipe, avis clients
+
+- **`/mariages`** - Services mariages
+  - Fichiers : `app/mariages/page.tsx`, `app/mariages/layout.tsx`, `app/mariages/mariages.scss`
+  - Données : Forfaits mariage, galerie spécialisée
+
+- **`/evenements`** - Services événements
+  - Fichiers : `app/evenements/page.tsx`, `app/evenements/layout.tsx`, `app/evenements/evenements.scss`
+  - Composants : EventCard avec animations 3D
+  - Données : Liste des événements organisés
+
+- **`/evenements/[id]`** - Détail événement
+  - Fichiers : `app/evenements/[id]/page.tsx`, `app/evenements/[id]/EventDetailClient.tsx`, `app/evenements/[id]/eventDetail.scss`
+  - Données : Médias, description détaillée de l'événement
+
+- **`/photos`** - Galerie photos
+  - Fichiers : `app/photos/page.tsx`, `app/photos/layout.tsx`, `app/photos/photos.scss`
+  - Composants : PortfolioGrid avec filtres par catégorie
+
+- **`/videos`** - Galerie vidéos
+  - Fichiers : `app/videos/page.tsx`, `app/videos/layout.tsx`, `app/videos/videos.scss`
+  - Support : YouTube et vidéos uploadées
+
+- **`/realisations`** - Portfolio général
+  - Fichiers : `app/realisations/page.tsx`, `app/realisations/layout.tsx`, `app/realisations/realisations.scss`
+  - Données : Tous types de projets réalisés
+
+- **`/web`** - Services développement web
+  - Fichiers : `app/web/page.tsx`, `app/web/layout.tsx`, `app/web/web.scss`
+  - Contenu : Processus, technologies, réalisations web
+
+- **`/reseaux-sociaux`** - Services réseaux sociaux
+  - Fichiers : `app/reseaux-sociaux/page.tsx`, `app/reseaux-sociaux/layout.tsx`, `app/reseaux-sociaux/reseaux-sociaux.scss`
+  - Contenu : Stratégies, gestion de communauté
+
 #### 🔐 **Partie Admin (Backoffice)**
-- **Route** : `/backoffice/*`
+- **Route racine** : `/backoffice/*`
 - **Layout** : `AdminLayout` avec authentification et sidebar
 - **Authentification** : Système de login avec `AuthGuard`
-- **Pages** : Dashboard, Gestion des clients, Photos, Vidéos, Paramètres
 - **Composants** : Interface d'administration avec gestion de contenu
+
+##### **Pages d'Authentification**
+- **`/backoffice/login`** - Connexion admin
+  - Fichiers : `app/backoffice/login/page.tsx`, `app/backoffice/login/layout.tsx`
+  - Fonctionnalités : Authentification Firebase, redirection
+
+##### **Pages de Gestion**
+- **`/backoffice/dashboard`** - Tableau de bord
+  - Fichiers : `app/backoffice/dashboard/page.tsx`, `app/backoffice/dashboard/layout.tsx`
+  - Statistiques : Visiteurs, médias, messages de contact
+
+- **`/backoffice/home`** - Gestion page d'accueil
+  - Fichiers : `app/backoffice/home/page.tsx`, `app/backoffice/home/layout.tsx`
+  - Composants : HomeTabClients, HomeTabExpertises, HomeTabGallery, HomeTabKeyFigures, HomeTabProjects, HomeTabReviews, HomeTabTeam
+  - Gestion : Galerie, projets, avis, équipe, statistiques
+
+- **`/backoffice/mariages`** - Gestion services mariages
+  - Fichiers : `app/backoffice/mariages/page.tsx`, `app/backoffice/mariages/layout.tsx`
+  - Contenu : Forfaits, tarifs, galerie spécialisée
+
+- **`/backoffice/evenements`** - Gestion événements
+  - Fichiers : `app/backoffice/evenements/page.tsx`, `app/backoffice/evenements/layout.tsx`
+  - Composants : EvenementsTab, EventDetailClient, EventForm, EventList, EventMediaManager
+  - Fonctionnalités : CRUD événements, gestion médias par événement
+
+- **`/backoffice/evenements/media`** - Médias événements
+  - Fichiers : `app/backoffice/evenements/media/page.tsx`, `app/backoffice/evenements/media/MediaPageClient.tsx`
+  - Gestion : Upload, organisation médias par événement
+
+- **`/backoffice/photos`** - Gestion galerie photos
+  - Fichiers : `app/backoffice/photos/page.tsx`, `app/backoffice/photos/layout.tsx`
+  - Composants : PhotosTab
+  - Fonctionnalités : Upload, catégorisation, réorganisation
+
+- **`/backoffice/videos`** - Gestion galerie vidéos
+  - Fichiers : `app/backoffice/videos/page.tsx`, `app/backoffice/videos/layout.tsx`
+  - Composants : VideosTab
+  - Support : YouTube, vidéos uploadées, miniatures
+
+- **`/backoffice/realisations`** - Gestion portfolio
+  - Fichiers : `app/backoffice/realisations/page.tsx`, `app/backoffice/realisations/layout.tsx`
+  - Composants : RealisationsMediaManager
+  - Fonctionnalités : Gestion complète des réalisations (photos, vidéos, YouTube)
+
+- **`/backoffice/web`** - Gestion services web
+  - Fichiers : `app/backoffice/web/page.tsx`, `app/backoffice/web/layout.tsx`
+  - Composants : ContentTab, ProcessTab, KeyFiguresTab, RealisationsTab
+  - Contenu : Processus, technologies, projets web
+
+- **`/backoffice/reseaux-sociaux`** - Gestion services social media
+  - Fichiers : `app/backoffice/reseaux-sociaux/page.tsx`, `app/backoffice/reseaux-sociaux/layout.tsx`
+  - Composants : ContentTab, ProcessTab, KeyFiguresTab, RealisationsTab
+  - Contenu : Stratégies, métriques, campagnes
+
+- **`/backoffice/clients`** - Gestion clients
+  - Fichiers : `app/backoffice/clients/page.tsx`, `app/backoffice/clients/layout.tsx`
+  - Composants : ClientsTab
+  - Fonctionnalités : Base clients, historique projets
+
+- **`/backoffice/clients/media`** - Médias clients
+  - Fichiers : `app/backoffice/clients/media/page.tsx`, `app/backoffice/clients/media/ClientMediaPageClient.tsx`
+  - Composants : ClientMediaManager
+  - Gestion : Médias privés par client
+
+- **`/backoffice/contact`** - Gestion messages
+  - Fichiers : `app/backoffice/contact/page.tsx`, `app/backoffice/contact/layout.tsx`
+  - Composants : ContactInfoForm, ContactList, MessageDetailsModal, SocialNetworksManager
+  - Fonctionnalités : Messages de contact, réseaux sociaux
+
+- **`/backoffice/messages`** - Centre de messages
+  - Fichiers : `app/backoffice/messages/page.tsx`, `app/backoffice/messages/layout.tsx`
+  - Gestion : Tous les messages entrants
+
+- **`/backoffice/users`** - Gestion utilisateurs
+  - Fichiers : `app/backoffice/users/layout.tsx`
+  - Administration : Comptes admin, permissions
+
+- **`/backoffice/profile`** - Profil utilisateur
+  - Fichiers : `app/backoffice/profile/page.tsx`, `app/backoffice/profile/layout.tsx`
+  - Fonctionnalités : Paramètres compte, sécurité
+
+- **`/backoffice/settings`** - Paramètres généraux
+  - Fichiers : `app/backoffice/settings/page.tsx`, `app/backoffice/settings/layout.tsx`
+  - Configuration : Site, SEO, intégrations
 
 ### Organisation des Dossiers
 ```

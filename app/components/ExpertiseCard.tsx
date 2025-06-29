@@ -1,6 +1,7 @@
 'use client';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ReactNode, useState } from 'react';
 
 import { getMediaUrl } from '../utils/mediaUrl';
@@ -38,12 +39,70 @@ export default function ExpertiseCard({
         return `linear-gradient(135deg, hsla(${hue1}, 80%, 30%, 0.85), hsla(${hue2}, 90%, 15%, 0.9), hsla(0, 0%, 5%, 0.95))`;
     };
 
-    return (
+    const cardContent = (
         <motion.div
-            className={`group relative overflow-hidden rounded-2xl transition-all duration-500 h-[280px] md:h-[400px] ${className}`}
+            className={`group relative overflow-hidden rounded-2xl transition-all duration-500 w-full h-full ${className}`}
             whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
         >
+            {/* Icône cliquable - visible seulement sur mobile/tablet */}
+            <div className="md:hidden absolute top-3 right-3 z-20 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+                <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-white drop-shadow-lg transition-all duration-500 ease-in-out group-hover:animate-[iconTeleport_0.6s_ease-in-out]"
+                    style={
+                        {
+                            '--icon-start-x': '0px',
+                            '--icon-start-y': '0px',
+                            '--icon-mid-x': '8px',
+                            '--icon-mid-y': '-8px',
+                            '--icon-end-x': '-14px',
+                            '--icon-end-y': '14px',
+                        } as React.CSSProperties
+                    }
+                >
+                    <path d="M7 17L17 7" />
+                    <path d="M7 7h10v10" />
+                </svg>
+            </div>
+
+            {/* Animation CSS */}
+            <style jsx>{`
+                @keyframes iconTeleport {
+                    0% {
+                        transform: translate(var(--icon-start-x), var(--icon-start-y)) scale(1);
+                        opacity: 1;
+                    }
+                    30% {
+                        transform: translate(var(--icon-mid-x), var(--icon-mid-y)) scale(0.8);
+                        opacity: 0.7;
+                    }
+                    50% {
+                        transform: translate(var(--icon-mid-x), var(--icon-mid-y)) scale(0.6);
+                        opacity: 0;
+                    }
+                    51% {
+                        transform: translate(var(--icon-end-x), var(--icon-end-y)) scale(0.6);
+                        opacity: 0;
+                    }
+                    70% {
+                        transform: translate(var(--icon-end-x), var(--icon-end-y)) scale(0.8);
+                        opacity: 0.7;
+                    }
+                    100% {
+                        transform: translate(var(--icon-start-x), var(--icon-start-y)) scale(1);
+                        opacity: 1;
+                    }
+                }
+            `}</style>
+
             {/* Arrière-plan avec gradient ou image */}
             <div
                 className="absolute inset-0 z-0 opacity-90 group-hover:opacity-100 transition-all duration-500 bg-gradient-to-br from-white/5 via-blue-900/40 to-black/80"
@@ -68,37 +127,37 @@ export default function ExpertiseCard({
             <div className="absolute inset-0 z-0 bg-gradient-to-tr from-white/0 via-blue-400/0 to-white/0 group-hover:via-blue-400/10 transition-all duration-700 blur-xl"></div>
 
             {/* Contenu de la carte */}
-            <div className="relative z-10 h-full flex flex-col justify-end p-3 md:p-6 xl:p-8">
+            <div className="relative z-10 h-full flex flex-col justify-end p-2 sm:p-3 md:p-4 lg:p-6">
                 {/* Contenu principal (icône et titre) */}
-                <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-3 md:space-y-0 mb-1 md:mb-3">
-                    <div className="w-10 h-10 md:w-[48px] md:h-[48px] md:min-w-[48px] md:min-h-[48px] bg-gradient-to-br from-white to-blue-100 rounded-lg flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg group-hover:shadow-blue-500/30">
+                <div className="flex flex-col space-y-2 sm:space-y-3 mb-2">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-white to-blue-100 rounded-lg flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg group-hover:shadow-blue-500/30 mx-auto sm:mx-0">
                         {icon}
                     </div>
-                    <div className="w-full md:max-w-[calc(100%-60px)] h-[2.5rem] md:h-[3rem] xl:h-[3.5rem] flex items-start">
-                        <h3 className="text-sm md:text-lg xl:text-xl font-bold transition-colors duration-300 line-clamp-2 overflow-hidden text-white group-hover:text-blue-100">
+                    <div className="text-center sm:text-left">
+                        <h3 className="text-xs sm:text-sm md:text-base lg:text-lg font-bold transition-colors duration-300 line-clamp-2 text-white group-hover:text-blue-100 leading-tight">
                             {title}
                         </h3>
                     </div>
                 </div>
 
-                {/* Description et bouton - s'affiche au survol avec une transition douce */}
+                {/* Description et bouton - masqués sur mobile/tablet, visibles sur desktop */}
                 <div
-                    className="overflow-hidden transition-all duration-700 ease-in-out max-h-0 group-hover:max-h-[200px] opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0"
+                    className="hidden md:block overflow-hidden transition-all duration-700 ease-in-out max-h-0 group-hover:max-h-[150px] sm:group-hover:max-h-[200px] opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0"
                     style={{ transitionDelay: '0.1s' }}
                 >
-                    <p className="text-gray-300 text-xs md:text-lg leading-relaxed mb-1 md:mb-4 group-hover:text-blue-50">
+                    <p className="text-gray-300 text-xs sm:text-sm md:text-base leading-relaxed mb-2 sm:mb-3 group-hover:text-blue-50">
                         {description}
                     </p>
 
                     <a
                         href={href}
-                        className="inline-flex items-center text-blue-300 hover:text-blue-100 text-sm md:text-base group transition-all duration-300"
+                        className="inline-flex items-center text-blue-300 hover:text-blue-100 text-xs sm:text-sm md:text-base group transition-all duration-300"
                         style={{ transitionDelay: '0.2s' }}
                     >
-                        <span className="mr-0 md:mr-2 text-xs md:text-lg">En savoir plus</span>
+                        <span className="mr-1 sm:mr-2">En savoir plus</span>
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 md:h-5 md:w-5 transform transition-transform duration-300 group-hover:translate-x-2"
+                            className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 transform transition-transform duration-300 group-hover:translate-x-2"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -120,5 +179,20 @@ export default function ExpertiseCard({
             {/* Effet lumineux dans le coin supérieur droit au survol */}
             <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-400/0 group-hover:bg-blue-400/10 rounded-full blur-xl transition-all duration-700 ease-in-out transform group-hover:scale-150"></div>
         </motion.div>
+    );
+
+    // Wrapper conditionnel : Link sur mobile/tablet, div normale sur desktop
+    return (
+        <>
+            {/* Version mobile/tablet - carte cliquable */}
+            <div className="md:hidden w-full h-full">
+                <Link href={href} className="block w-full h-full">
+                    {cardContent}
+                </Link>
+            </div>
+
+            {/* Version desktop - comportement actuel */}
+            <div className="hidden md:block w-full h-full">{cardContent}</div>
+        </>
     );
 }

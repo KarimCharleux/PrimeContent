@@ -246,13 +246,13 @@ function ClientPageContent() {
 
     if (loading) {
         return (
-            <>
+            <main className="client-page global-main-page">
                 <Header />
-                <main className="min-h-screen bg-gray-50 flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-                </main>
+                <section className="min-h-screen flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
+                </section>
                 <Footer />
-            </>
+            </main>
         );
     }
 
@@ -350,9 +350,11 @@ function ClientPageContent() {
 // Loading component pour Suspense
 function ClientPageLoading() {
     return (
-        <div className="min-h-screen flex items-center justify-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-        </div>
+        <main className="client-page global-main-page">
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
+            </div>
+        </main>
     );
 }
 

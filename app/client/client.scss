@@ -221,7 +221,6 @@ $transition: all 0.3s ease;
 // Section galerie
 .client-gallery {
     padding: 4rem 0;
-    background-color: $gray-light;
 
     @media (max-width: 768px) {
         padding: 3rem 0;
@@ -243,10 +242,6 @@ $transition: all 0.3s ease;
 // Dark mode support
 @media (prefers-color-scheme: dark) {
     .client-page {
-        background-color: #1a1a1a;
-    }
-
-    .client-gallery {
         background-color: #1a1a1a;
     }
 }

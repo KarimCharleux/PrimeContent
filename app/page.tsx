@@ -635,13 +635,13 @@ export default function Page() {
 
                     <div
                         ref={servicesRef}
-                        className="flex flex-wrap justify-center gap-3 md:gap-4 lg:gap-5"
+                        className="flex flex-wrap justify-center gap-3 md:gap-4 lg:gap-6 mx-auto"
                     >
                         {expertises.map((expertise, index) => (
                             <div
                                 key={expertise.id || index}
                                 ref={(el) => addServiceRef(el, index)}
-                                className={`w-[31%] sm:w-[22%] md:w-[22%] lg:w-[18%] min-w-[100px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                className={`aspect-square w-[30%] md:w-[25%] lg:w-[18%] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
                             >
                                 <ExpertiseCard
                                     title={expertise.title}
@@ -649,7 +649,7 @@ export default function Page() {
                                     backgroundImage={expertise.backgroundImage}
                                     icon={getIconFromName(expertise.icon)}
                                     href={expertise.href}
-                                    className="expertise-card"
+                                    className="expertise-card h-full"
                                 />
                             </div>
                         ))}
@@ -734,7 +734,7 @@ export default function Page() {
                                         </div>
                                     ))}
                                 </div>
-                                <div className="grid grid-cols-4 md:grid-cols-5 gap-4 md:gap-6">
+                                <div className="grid grid-cols-4 gap-4 md:gap-6">
                                     {clients.slice(4).map((client, index) => (
                                         <div
                                             key={client.id || `${client.name}-${index + 4}`}
@@ -828,7 +828,7 @@ export default function Page() {
                     <div className="mt-16 mx-auto w-fit">
                         <PrimaryButton
                             text="Explorez plus"
-                            href="/portfolio"
+                            href="/client"
                             animateOnMount={true}
                             delay={0.5}
                         />

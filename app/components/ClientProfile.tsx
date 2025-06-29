@@ -91,12 +91,70 @@ export default function ClientProfile({
     const content = (
         <div
             ref={cardRef}
-            className={`client-profile-card relative w-full aspect-square overflow-hidden rounded-2xl cursor-pointer ${className}`}
+            className={`client-profile-card relative w-full aspect-square overflow-hidden rounded-2xl cursor-pointer group ${className}`}
             style={{
                 transformStyle: 'preserve-3d',
                 transition: 'transform 0.1s ease-out',
             }}
         >
+            {/* Icône cliquable */}
+            <div className="absolute top-3 right-3 z-20 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+                <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-white drop-shadow-lg transition-all duration-500 ease-in-out group-hover:animate-[iconTeleport_0.6s_ease-in-out]"
+                    style={
+                        {
+                            '--icon-start-x': '0px',
+                            '--icon-start-y': '0px',
+                            '--icon-mid-x': '8px',
+                            '--icon-mid-y': '-8px',
+                            '--icon-end-x': '-14px',
+                            '--icon-end-y': '14px',
+                        } as React.CSSProperties
+                    }
+                >
+                    <path d="M7 17L17 7" />
+                    <path d="M7 7h10v10" />
+                </svg>
+            </div>
+
+            {/* Animation CSS */}
+            <style jsx>{`
+                @keyframes iconTeleport {
+                    0% {
+                        transform: translate(var(--icon-start-x), var(--icon-start-y)) scale(1);
+                        opacity: 1;
+                    }
+                    30% {
+                        transform: translate(var(--icon-mid-x), var(--icon-mid-y)) scale(0.8);
+                        opacity: 0.7;
+                    }
+                    50% {
+                        transform: translate(var(--icon-mid-x), var(--icon-mid-y)) scale(0.6);
+                        opacity: 0;
+                    }
+                    51% {
+                        transform: translate(var(--icon-end-x), var(--icon-end-y)) scale(0.6);
+                        opacity: 0;
+                    }
+                    70% {
+                        transform: translate(var(--icon-end-x), var(--icon-end-y)) scale(0.8);
+                        opacity: 0.7;
+                    }
+                    100% {
+                        transform: translate(var(--icon-start-x), var(--icon-start-y)) scale(1);
+                        opacity: 1;
+                    }
+                }
+            `}</style>
+
             {/* Fond de la carte */}
             <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black overflow-hidden">
                 {imageBackground && !imageError ? (
