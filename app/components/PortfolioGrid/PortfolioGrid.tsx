@@ -6,6 +6,12 @@ import { useState, useEffect, useRef } from 'react';
 
 import gsap from '../../lib/gsap-config';
 import { getMediaUrl } from '../../utils/mediaUrl';
+import {
+    isYouTubeVideo,
+    getYouTubeThumbnail,
+    extractYouTubeId,
+    getYouTubeEmbedUrl,
+} from '../../utils/youtube';
 import ImageCarousel from '../ImageCarousel/ImageCarousel';
 
 import styles from './PortfolioGrid.module.scss';
@@ -20,6 +26,9 @@ export interface Project {
     thumbnail?: string; // Miniature optionnelle pour les vidéos
     clientType?: 'marque' | 'celebrite'; // Type de client
     clientName?: string; // Nom du client
+    // Propriétés YouTube
+    isYouTube?: boolean;
+    youtubeId?: string;
 }
 
 // Interface pour les filtres personnalisés
@@ -275,10 +284,28 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         }
     };
 
+    // Fonction pour récupérer la bonne miniature (YouTube ou fichier)
+    const getProjectThumbnail = (project: Project): string => {
+        // Si c'est YouTube et qu'on a un youtubeId
+        if (project.isYouTube && project.youtubeId) {
+            return getYouTubeThumbnail(project.youtubeId);
+        }
+
+        // Si on a une miniature personnalisée
+        if (project.thumbnail) {
+            return getMediaUrl(project.thumbnail);
+        }
+
+        // Sinon utiliser la source (pour les images ou videos fichiers)
+        return getMediaUrl(project.source);
+    };
+
     // Préparation des médias pour le carrousel (images et vidéos)
     const carouselMedia = filteredProjects.map((project) => ({
         src: project.source,
         isVideo: project.isVideo,
+        isYouTube: project.isYouTube,
+        youtubeId: project.youtubeId,
     }));
 
     return (
@@ -329,67 +356,46 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                 }}
                             >
                                 {project.isVideo ? (
-                                    <>
-                                        {project.thumbnail ? (
-                                            <div className={styles.portfolioImageContainer}>
-                                                <Image
-                                                    src={getMediaUrl(project.thumbnail)}
-                                                    alt={project.title ?? ''}
-                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                                    fill
-                                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                                    style={{ objectFit: 'cover' }}
-                                                />
-                                                <div
-                                                    className={`${styles.videoPlayBtn} ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
-                                                >
-                                                    <div className={styles.videoPlayIcon}>
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            className="h-8 w-8 text-white"
-                                                            viewBox="0 0 20 20"
-                                                            fill="currentColor"
-                                                        >
-                                                            <path
-                                                                fillRule="evenodd"
-                                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                                                                clipRule="evenodd"
-                                                            />
-                                                        </svg>
-                                                    </div>
-                                                </div>
+                                    <div className={styles.portfolioImageContainer}>
+                                        <Image
+                                            src={getProjectThumbnail(project)}
+                                            alt={project.title ?? ''}
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            fill
+                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                            style={{ objectFit: 'cover' }}
+                                        />
+                                        <div
+                                            className={`${styles.videoPlayBtn} ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
+                                        >
+                                            <div className={styles.videoPlayIcon}>
+                                                {project.isYouTube ? (
+                                                    // Icône YouTube
+                                                    <svg
+                                                        className="w-8 h-8 text-white"
+                                                        viewBox="0 0 24 24"
+                                                        fill="currentColor"
+                                                    >
+                                                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                                                    </svg>
+                                                ) : (
+                                                    // Icône play normale
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-8 w-8 text-white"
+                                                        viewBox="0 0 20 20"
+                                                        fill="currentColor"
+                                                    >
+                                                        <path
+                                                            fillRule="evenodd"
+                                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                                                            clipRule="evenodd"
+                                                        />
+                                                    </svg>
+                                                )}
                                             </div>
-                                        ) : (
-                                            <>
-                                                <video
-                                                    ref={(el) => addVideoRef(el, index)}
-                                                    src={getMediaUrl(project.source)}
-                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                                    loop
-                                                    muted
-                                                    playsInline
-                                                />
-                                                <div
-                                                    className={`${styles.videoPlayBtn} ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
-                                                >
-                                                    <div className={styles.videoPlayIcon}>
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            className="h-8 w-8 text-white"
-                                                            viewBox="0 0 20 20"
-                                                            fill="currentColor"
-                                                        >
-                                                            <path
-                                                                fillRule="evenodd"
-                                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                                                                clipRule="evenodd"
-                                                            />
-                                                        </svg>
-                                                    </div>
-                                                </div>
-                                            </>
-                                        )}
-                                    </>
+                                        </div>
+                                    </div>
                                 ) : (
                                     <div className={styles.portfolioImageContainer}>
                                         <Image

@@ -13,7 +13,9 @@ import {
 import Image from 'next/image';
 import { useEffect, useState, useCallback } from 'react';
 
+import VideoUpload, { VideoData } from '../../../components/VideoUpload';
 import { getMediaUrl } from '../../../utils/mediaUrl';
+import { extractYouTubeId, getYouTubeThumbnail, isYouTubeVideo } from '../../../utils/youtube';
 import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
 
@@ -23,6 +25,8 @@ interface Project {
     category: string;
     source: string;
     isVideo?: boolean;
+    isYouTube?: boolean;
+    youtubeId?: string;
     format: 'portrait' | 'paysage';
     order: number;
     isLatest?: boolean;
@@ -70,8 +74,11 @@ export default function HomeTabProjects() {
         order: 0,
         isLatest: false,
         thumbnail: '',
+        isYouTube: false,
+        youtubeId: '',
     });
     const [uploadCategory, setUploadCategory] = useState<string>('');
+    const [videoData, setVideoData] = useState<VideoData | null>(null);
 
     // Extraire les catégories uniques des projets
     const categories = Array.from(new Set(projects.map((project) => project.category))).filter(
@@ -100,6 +107,7 @@ export default function HomeTabProjects() {
         }
     };
 
+    // Fonction pour déterminer la classe de taille en fonction du format
     // Fonction pour calculer les statistiques
     const calculateStats = useCallback(async () => {
         let totalSize = 0;
@@ -169,10 +177,13 @@ export default function HomeTabProjects() {
             order: 0,
             isLatest: false,
             thumbnail: '',
+            isYouTube: false,
+            youtubeId: '',
         });
         setPreviewImage(null);
         setStatusMessage(null);
         setUploadCategory('');
+        setVideoData(null);
     }, [activeTab]);
 
     const fetchProjects = async () => {
@@ -203,28 +214,60 @@ export default function HomeTabProjects() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            if (editingProject?.id) {
-                const projectRef = doc(db, 'projects', editingProject.id);
-                await updateDoc(projectRef, {
-                    title: formData.title,
-                    source: formData.source || '',
-                    format: formData.format,
-                    order: formData.order,
-                    isLatest: formData.isLatest,
+            let projectData: Partial<Project>;
+
+            if (videoData) {
+                // Données provenant du composant VideoUpload
+                if (videoData.isYouTube) {
+                    projectData = {
+                        ...formData,
+                        source: videoData.source,
+                        isVideo: true,
+                        isYouTube: true,
+                        youtubeId: videoData.youtubeId,
+                        thumbnail: videoData.thumbnail,
+                    };
+                } else {
+                    // Fichier vidéo - il faut d'abord l'uploader
+                    if (videoData.file) {
+                        const uploadedData = await uploadFile(videoData.file);
+                        projectData = {
+                            ...formData,
+                            source: uploadedData.fileUrl,
+                            isVideo: true,
+                            isYouTube: false,
+                            thumbnail: formData.thumbnail || '',
+                        };
+                    } else {
+                        projectData = {
+                            ...formData,
+                            source: formData.source || '',
+                            isVideo: formData.source
+                                ? formData.source.match(/\.(mp4|webm|ogg)$/i) !== null
+                                : false,
+                            isYouTube: false,
+                        };
+                    }
+                }
+            } else {
+                // Données classiques du formulaire
+                projectData = {
+                    ...formData,
                     isVideo: formData.source
                         ? formData.source.match(/\.(mp4|webm|ogg)$/i) !== null
                         : false,
-                    category: formData.category || '',
-                    thumbnail: formData.thumbnail || '',
-                });
+                    isYouTube: false,
+                };
+            }
+
+            if (editingProject?.id) {
+                const projectRef = doc(db, 'projects', editingProject.id);
+                await updateDoc(projectRef, projectData);
                 setStatusMessage({ type: 'success', message: 'Projet mis à jour avec succès' });
             } else {
                 const newProject = {
-                    ...formData,
+                    ...projectData,
                     order: projects.length,
-                    isVideo: formData.source
-                        ? formData.source.match(/\.(mp4|webm|ogg)$/i) !== null
-                        : false,
                 };
                 await addDoc(collection(db, 'projects'), newProject);
                 setStatusMessage({
@@ -242,13 +285,35 @@ export default function HomeTabProjects() {
                 order: 0,
                 isLatest: false,
                 thumbnail: '',
+                isYouTube: false,
+                youtubeId: '',
             });
+            setVideoData(null);
             setPreviewImage(null);
             fetchProjects();
         } catch (error) {
             console.error('Erreur lors de la sauvegarde du projet:', error);
             setStatusMessage({ type: 'error', message: 'Erreur lors de la sauvegarde' });
         }
+    };
+
+    // Fonction pour uploader un fichier
+    const uploadFile = async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('path', 'home/projects');
+        formData.append('useUuid', 'false');
+
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            throw new Error('Erreur lors du téléchargement du média');
+        }
+
+        return await response.json();
     };
 
     // Gérer le drag & drop des fichiers
@@ -503,6 +568,26 @@ export default function HomeTabProjects() {
         setEditingProject(project);
         setFormData(project);
         setPreviewImage(project.source);
+
+        // Configurer VideoData si c'est une vidéo YouTube
+        if (project.isYouTube && project.youtubeId) {
+            setVideoData({
+                source: project.source,
+                isYouTube: true,
+                youtubeId: project.youtubeId,
+                thumbnail: project.thumbnail,
+                title: project.title,
+            });
+        } else if (project.isVideo) {
+            setVideoData({
+                source: project.source,
+                isYouTube: false,
+                title: project.title,
+            });
+        } else {
+            setVideoData(null);
+        }
+
         setShowForm(true);
 
         // Faire défiler la page jusqu'au formulaire
@@ -577,7 +662,10 @@ export default function HomeTabProjects() {
             order: 0,
             isLatest: false,
             thumbnail: '',
+            isYouTube: false,
+            youtubeId: '',
         });
+        setVideoData(null);
         setPreviewImage(null);
         setShowForm(false);
         setStatusMessage(null);
@@ -594,6 +682,57 @@ export default function HomeTabProjects() {
             default:
                 return 'aspect-[16/9]';
         }
+    };
+
+    // Fonction pour déterminer l'icône selon le type de média
+    const getMediaIcon = (project: Project) => {
+        if (project.isYouTube) {
+            return (
+                <svg className="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                </svg>
+            );
+        } else if (project.isVideo) {
+            return (
+                <svg
+                    className="w-4 h-4 text-blue-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                </svg>
+            );
+        } else {
+            return (
+                <svg
+                    className="w-4 h-4 text-green-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                </svg>
+            );
+        }
+    };
+
+    // Fonction pour obtenir la miniature d'aperçu
+    const getPreviewThumbnail = (project: Project) => {
+        if (project.isYouTube && project.youtubeId) {
+            return getYouTubeThumbnail(project.youtubeId);
+        }
+        return project.thumbnail || project.source;
     };
 
     if (loading) {
@@ -923,93 +1062,84 @@ export default function HomeTabProjects() {
                                 </div>
 
                                 <div>
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Média
-                                        </label>
-                                        <div className="flex items-center space-x-2">
-                                            <input
-                                                type="text"
-                                                value={formData.source}
-                                                onChange={(e) =>
-                                                    setFormData({
-                                                        ...formData,
-                                                        source: e.target.value,
-                                                    })
-                                                }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                placeholder="URL du média"
-                                                required
-                                            />
-                                            <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
-                                                Parcourir
-                                                <input
-                                                    type="file"
-                                                    className="hidden"
-                                                    accept="image/*,video/*"
-                                                    onChange={(e) =>
-                                                        e.target.files &&
-                                                        handleFileUpload(e.target.files)
-                                                    }
-                                                />
-                                            </label>
-                                        </div>
-                                    </div>
+                                    {/* Composant VideoUpload pour gérer YouTube et fichiers */}
+                                    <VideoUpload
+                                        label="Média (Image ou Vidéo)"
+                                        value={videoData}
+                                        onChange={setVideoData}
+                                        placeholder="URL YouTube ou télécharger un fichier"
+                                        className="mb-4"
+                                    />
 
-                                    {/* Champ pour la miniature (visible uniquement si le média est une vidéo) */}
-                                    {formData.source &&
-                                        formData.source.match(/\.(mp4|webm|ogg)$/i) && (
-                                            <div className="mb-4">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Miniature personnalisée (optionnel)
-                                                </label>
-                                                <div className="flex items-center space-x-2">
+                                    {/* Champ pour les images ou médias non-vidéo */}
+                                    {!videoData && (
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Image ou URL
+                                            </label>
+                                            <div className="flex items-center space-x-2">
+                                                <input
+                                                    type="text"
+                                                    value={formData.source}
+                                                    onChange={(e) =>
+                                                        setFormData({
+                                                            ...formData,
+                                                            source: e.target.value,
+                                                        })
+                                                    }
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                    placeholder="URL du média"
+                                                />
+                                                <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
+                                                    Parcourir
                                                     <input
-                                                        type="text"
-                                                        value={formData.thumbnail || ''}
+                                                        type="file"
+                                                        className="hidden"
+                                                        accept="image/*,video/*"
                                                         onChange={(e) =>
-                                                            setFormData({
-                                                                ...formData,
-                                                                thumbnail: e.target.value,
-                                                            })
+                                                            e.target.files &&
+                                                            handleFileUpload(e.target.files)
                                                         }
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                        placeholder="URL de la miniature"
                                                     />
-                                                    <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
-                                                        Parcourir
-                                                        <input
-                                                            type="file"
-                                                            className="hidden"
-                                                            accept="image/*"
-                                                            onChange={(e) =>
-                                                                e.target.files &&
-                                                                handleThumbnailUpload(
-                                                                    e.target.files,
-                                                                )
-                                                            }
-                                                        />
-                                                    </label>
-                                                </div>
-                                                {formData.thumbnail && (
-                                                    <div className="mt-2">
-                                                        <p className="text-sm text-gray-500 mb-1">
-                                                            Aperçu de la miniature :
-                                                        </p>
-                                                        <div className="w-32 h-24 relative overflow-hidden rounded">
-                                                            <Image
-                                                                src={getMediaUrl(
-                                                                    formData.thumbnail,
-                                                                )}
-                                                                alt="Aperçu de la miniature"
-                                                                fill
-                                                                className="object-cover"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                )}
+                                                </label>
                                             </div>
-                                        )}
+                                        </div>
+                                    )}
+
+                                    {/* Champ pour la miniature personnalisée (vidéos non-YouTube) */}
+                                    {videoData && !videoData.isYouTube && (
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Miniature personnalisée (optionnel)
+                                            </label>
+                                            <div className="flex items-center space-x-2">
+                                                <input
+                                                    type="text"
+                                                    value={formData.thumbnail || ''}
+                                                    onChange={(e) =>
+                                                        setFormData({
+                                                            ...formData,
+                                                            thumbnail: e.target.value,
+                                                        })
+                                                    }
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                    placeholder="URL de la miniature"
+                                                />
+                                                <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
+                                                    Parcourir
+                                                    <input
+                                                        type="file"
+                                                        className="hidden"
+                                                        accept="image/*"
+                                                        onChange={(e) =>
+                                                            e.target.files &&
+                                                            handleThumbnailUpload(e.target.files)
+                                                        }
+                                                    />
+                                                </label>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="mt-4">
                                         <h4 className="text-sm font-medium text-gray-700 mb-2">
@@ -1018,17 +1148,50 @@ export default function HomeTabProjects() {
                                         <div
                                             className={`w-full max-w-[400px] mx-auto relative bg-gray-100 rounded-lg overflow-hidden group ${getItemSizeClass(formData.format || 'paysage')}`}
                                         >
-                                            {previewImage ? (
+                                            {videoData?.source || formData.source ? (
                                                 <>
-                                                    {previewImage.match(/\.(mp4|webm|ogg)$/i) ? (
+                                                    {videoData?.isYouTube ? (
+                                                        <>
+                                                            <Image
+                                                                src={videoData.thumbnail || ''}
+                                                                alt="Aperçu YouTube"
+                                                                fill
+                                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                            />
+                                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                                <div className="bg-red-600 rounded-full p-3">
+                                                                    <svg
+                                                                        className="w-6 h-6 text-white"
+                                                                        viewBox="0 0 24 24"
+                                                                        fill="currentColor"
+                                                                    >
+                                                                        <path d="M8 5v14l11-7z" />
+                                                                    </svg>
+                                                                </div>
+                                                            </div>
+                                                            <div className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-medium">
+                                                                YouTube
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                          videoData?.source || formData.source
+                                                      )?.match(/\.(mp4|webm|ogg)$/i) ? (
                                                         <video
-                                                            src={getMediaUrl(previewImage)}
+                                                            src={getMediaUrl(
+                                                                videoData?.source ||
+                                                                    formData.source ||
+                                                                    '',
+                                                            )}
                                                             controls
                                                             className="w-full h-full object-cover"
                                                         />
                                                     ) : (
                                                         <Image
-                                                            src={getMediaUrl(previewImage)}
+                                                            src={getMediaUrl(
+                                                                videoData?.source ||
+                                                                    formData.source ||
+                                                                    '',
+                                                            )}
                                                             alt="Prévisualisation"
                                                             fill
                                                             className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1148,10 +1311,17 @@ export default function HomeTabProjects() {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <div className="h-10 w-10 relative overflow-hidden rounded">
-                                                        {project.source.match(
-                                                            /\.(mp4|webm|ogg)$/i,
-                                                        ) ? (
+                                                    <div className="h-10 w-10 relative overflow-hidden rounded flex items-center justify-center">
+                                                        {project.isYouTube ? (
+                                                            <Image
+                                                                src={getPreviewThumbnail(project)}
+                                                                alt={project.title}
+                                                                fill
+                                                                className="object-cover"
+                                                            />
+                                                        ) : project.source.match(
+                                                              /\.(mp4|webm|ogg)$/i,
+                                                          ) ? (
                                                             <video
                                                                 src={getMediaUrl(project.source)}
                                                                 className="w-full h-full object-cover"
@@ -1164,16 +1334,23 @@ export default function HomeTabProjects() {
                                                                 className="object-cover"
                                                             />
                                                         )}
+                                                        <div className="absolute bottom-0 right-0">
+                                                            {getMediaIcon(project)}
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    {project.source.match(/\.(mp4|webm|ogg)$/i) && (
+                                                    {(project.isVideo || project.isYouTube) && (
                                                         <div className="h-10 w-10 relative overflow-hidden rounded">
                                                             {project.thumbnail ? (
                                                                 <Image
-                                                                    src={getMediaUrl(
-                                                                        project.thumbnail,
-                                                                    )}
+                                                                    src={
+                                                                        project.isYouTube
+                                                                            ? project.thumbnail
+                                                                            : getMediaUrl(
+                                                                                  project.thumbnail,
+                                                                              )
+                                                                    }
                                                                     alt={`Miniature de ${project.title}`}
                                                                     fill
                                                                     className="object-cover"
@@ -1209,9 +1386,18 @@ export default function HomeTabProjects() {
                                                     {project.format}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    {project.source.match(/\.(mp4|webm|ogg)$/i)
-                                                        ? 'Vidéo'
-                                                        : 'Image'}
+                                                    <div className="flex items-center space-x-1">
+                                                        {getMediaIcon(project)}
+                                                        <span>
+                                                            {project.isYouTube
+                                                                ? 'YouTube'
+                                                                : project.source.match(
+                                                                        /\.(mp4|webm|ogg)$/i,
+                                                                    )
+                                                                  ? 'Vidéo'
+                                                                  : 'Image'}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap space-x-2">
                                                     <button

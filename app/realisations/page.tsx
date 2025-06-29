@@ -81,6 +81,8 @@ export default function RealisationsPage() {
                         format: data.format || 'paysage',
                         title: data.title || '',
                         isVideo: true,
+                        isYouTube: data.isYouTube || false,
+                        youtubeId: data.youtubeId || '',
                         thumbnail: data.thumbnail,
                     });
                 });

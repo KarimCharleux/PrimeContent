@@ -5,7 +5,9 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
+import VideoUpload, { VideoData } from '../../../components/VideoUpload';
 import { getMediaUrl } from '../../../utils/mediaUrl';
+import { extractYouTubeId, getYouTubeThumbnail, isYouTubeVideo } from '../../../utils/youtube';
 import { db } from '../../lib/firebase-client';
 
 export interface RealisationMedia {
@@ -14,6 +16,8 @@ export interface RealisationMedia {
     title?: string;
     source: string;
     isVideo: boolean;
+    isYouTube?: boolean;
+    youtubeId?: string;
     format: 'portrait' | 'paysage';
     order: number;
     thumbnail?: string;
@@ -57,6 +61,8 @@ export default function RealisationsMediaManager({
     const [showEditForm, setShowEditForm] = useState(false);
     const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
     const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(null);
+    const [videoData, setVideoData] = useState<VideoData | null>(null);
+    const [showForm, setShowForm] = useState(false);
 
     // Statistiques
     const [stats, setStats] = useState<MediaStats>({
@@ -87,6 +93,7 @@ export default function RealisationsMediaManager({
                     title: data.title || '',
                     source: data.url || data.path,
                     isVideo: false,
+                    isYouTube: false,
                     format: data.format || 'paysage',
                     order: data.order || 0,
                     thumbnail: data.thumbnail || '',
@@ -103,6 +110,8 @@ export default function RealisationsMediaManager({
                     title: data.title || '',
                     source: data.url || data.path,
                     isVideo: true,
+                    isYouTube: data.isYouTube || false,
+                    youtubeId: data.youtubeId || '',
                     format: data.format || 'paysage',
                     order: data.order || 0,
                     thumbnail: data.thumbnail || '',
@@ -199,6 +208,102 @@ export default function RealisationsMediaManager({
         if (fileInputRef.current) {
             fileInputRef.current.click();
         }
+    };
+
+    // Sauvegarder une nouvelle réalisation
+    const handleSaveRealization = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!editingMedia) return;
+
+        try {
+            let mediaData;
+
+            if (videoData) {
+                // Données provenant du composant VideoUpload
+                if (videoData.isYouTube) {
+                    mediaData = {
+                        title: editingMedia.title || 'Vidéo YouTube',
+                        url: videoData.source,
+                        source: videoData.source,
+                        isVideo: true,
+                        isYouTube: true,
+                        youtubeId: videoData.youtubeId,
+                        thumbnail: videoData.thumbnail,
+                        format: editingMedia.format || 'paysage',
+                        order: medias.length,
+                        category: editingMedia.category || '',
+                    };
+                } else {
+                    // Fichier vidéo - il faut d'abord l'uploader
+                    if (videoData.file) {
+                        const uploadedData = await uploadFile(videoData.file);
+                        mediaData = {
+                            title: editingMedia.title || '',
+                            url: uploadedData.fileUrl,
+                            source: uploadedData.fileUrl,
+                            isVideo: true,
+                            isYouTube: false,
+                            format: editingMedia.format || 'paysage',
+                            order: medias.length,
+                            category: editingMedia.category || '',
+                            thumbnail: editingMedia.thumbnail || '',
+                        };
+                    } else {
+                        return;
+                    }
+                }
+            } else {
+                // Image ou autre média
+                mediaData = {
+                    title: editingMedia.title || '',
+                    url: editingMedia.path,
+                    source: editingMedia.path,
+                    isVideo: editingMedia.isVideo || false,
+                    isYouTube: false,
+                    format: editingMedia.format || 'paysage',
+                    order: medias.length,
+                    category: editingMedia.category || '',
+                    thumbnail: editingMedia.thumbnail || '',
+                };
+            }
+
+            const collectionName = mediaData.isVideo
+                ? 'realisations-videos'
+                : 'realisations-photos';
+            await addDoc(collection(db, collectionName), mediaData);
+
+            onStatusChange?.({ type: 'success', message: 'Réalisation ajoutée avec succès' });
+            setShowForm(false);
+            setEditingMedia(null);
+            setVideoData(null);
+            await loadMedias();
+        } catch (error) {
+            console.error("Erreur lors de l'ajout de la réalisation:", error);
+            onStatusChange?.({
+                type: 'error',
+                message: "Erreur lors de l'ajout de la réalisation",
+            });
+        }
+    };
+
+    // Fonction pour uploader un fichier
+    const uploadFile = async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('path', 'realisations');
+        formData.append('useUuid', 'true');
+
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            throw new Error('Erreur lors du téléchargement du média');
+        }
+
+        return await response.json();
     };
 
     // Upload des médias
@@ -594,6 +699,8 @@ export default function RealisationsMediaManager({
                 format: editingMedia.format,
                 order: editingMedia.order,
                 thumbnail: thumbnailUrl,
+                isYouTube: editingMedia.isYouTube || false,
+                youtubeId: editingMedia.youtubeId || '',
             });
 
             setShowEditForm(false);
@@ -794,7 +901,33 @@ export default function RealisationsMediaManager({
                                 <div
                                     className={`relative bg-gray-100 rounded-lg overflow-hidden ${getItemSizeClass(editingMedia.format)}`}
                                 >
-                                    {editingMedia.isVideo ? (
+                                    {editingMedia.isYouTube && editingMedia.youtubeId ? (
+                                        <>
+                                            <Image
+                                                src={
+                                                    editingMedia.thumbnail ||
+                                                    getYouTubeThumbnail(editingMedia.youtubeId)
+                                                }
+                                                alt={editingMedia.title || 'Aperçu YouTube'}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <div className="bg-red-600 rounded-full p-3">
+                                                    <svg
+                                                        className="w-6 h-6 text-white"
+                                                        viewBox="0 0 24 24"
+                                                        fill="currentColor"
+                                                    >
+                                                        <path d="M8 5v14l11-7z" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-medium">
+                                                YouTube
+                                            </div>
+                                        </>
+                                    ) : editingMedia.isVideo ? (
                                         <video
                                             src={getMediaUrl(editingMedia.path)}
                                             className="w-full h-full object-contain"
@@ -832,9 +965,268 @@ export default function RealisationsMediaManager({
                 </form>
             )}
 
+            {/* Formulaire d'ajout de nouvelle réalisation */}
+            {showForm && (
+                <form
+                    onSubmit={handleSaveRealization}
+                    className="space-y-6 mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50"
+                >
+                    <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
+                        Ajouter une nouvelle réalisation
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Titre
+                                </label>
+                                <input
+                                    type="text"
+                                    value={editingMedia?.title || ''}
+                                    onChange={(e) =>
+                                        setEditingMedia((prev) =>
+                                            prev ? { ...prev, title: e.target.value } : null,
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="Titre de la réalisation"
+                                />
+                            </div>
+
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Catégorie
+                                </label>
+                                <div className="flex space-x-2">
+                                    <select
+                                        value={editingMedia?.category || ''}
+                                        onChange={(e) =>
+                                            setEditingMedia((prev) =>
+                                                prev ? { ...prev, category: e.target.value } : null,
+                                            )
+                                        }
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                    >
+                                        <option value="">Sélectionnez une catégorie</option>
+                                        {categories.map((category) => (
+                                            <option key={category} value={category}>
+                                                {category}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        type="text"
+                                        value={editingMedia?.category || ''}
+                                        onChange={(e) =>
+                                            setEditingMedia((prev) =>
+                                                prev ? { ...prev, category: e.target.value } : null,
+                                            )
+                                        }
+                                        placeholder="Ou créer une nouvelle catégorie"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Format
+                                </label>
+                                <select
+                                    value={editingMedia?.format || 'paysage'}
+                                    onChange={(e) =>
+                                        setEditingMedia((prev) =>
+                                            prev
+                                                ? {
+                                                      ...prev,
+                                                      format: e.target.value as
+                                                          | 'portrait'
+                                                          | 'paysage',
+                                                  }
+                                                : null,
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                >
+                                    <option value="paysage">Paysage (16:9)</option>
+                                    <option value="portrait">Portrait (3:4)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            {/* Composant VideoUpload pour gérer YouTube et fichiers */}
+                            <VideoUpload
+                                label="Média (Image, Vidéo ou YouTube)"
+                                value={videoData}
+                                onChange={setVideoData}
+                                placeholder="URL YouTube ou télécharger un fichier"
+                                className="mb-4"
+                            />
+
+                            {/* Champ pour les images ou médias non-vidéo */}
+                            {!videoData && (
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Image ou URL
+                                    </label>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="text"
+                                            value={editingMedia?.path || ''}
+                                            onChange={(e) =>
+                                                setEditingMedia((prev) =>
+                                                    prev ? { ...prev, path: e.target.value } : null,
+                                                )
+                                            }
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                            placeholder="URL du média"
+                                        />
+                                        <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
+                                            Parcourir
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                accept="image/*,video/*"
+                                                onChange={(e) => {
+                                                    if (e.target.files && e.target.files[0]) {
+                                                        const file = e.target.files[0];
+                                                        setVideoData({
+                                                            file,
+                                                            source: '',
+                                                            isYouTube: false,
+                                                            title: editingMedia?.title || file.name,
+                                                        });
+                                                    }
+                                                }}
+                                            />
+                                        </label>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mt-4">
+                                <h4 className="text-sm font-medium text-gray-700 mb-2">
+                                    Prévisualisation
+                                </h4>
+                                <div
+                                    className={`relative bg-gray-100 rounded-lg overflow-hidden ${getItemSizeClass(editingMedia?.format || 'paysage')}`}
+                                >
+                                    {videoData?.isYouTube && videoData.youtubeId ? (
+                                        <>
+                                            <Image
+                                                src={
+                                                    videoData.thumbnail ||
+                                                    getYouTubeThumbnail(videoData.youtubeId)
+                                                }
+                                                alt={editingMedia?.title || 'Aperçu YouTube'}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <div className="bg-red-600 rounded-full p-3">
+                                                    <svg
+                                                        className="w-6 h-6 text-white"
+                                                        viewBox="0 0 24 24"
+                                                        fill="currentColor"
+                                                    >
+                                                        <path d="M8 5v14l11-7z" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-medium">
+                                                YouTube
+                                            </div>
+                                        </>
+                                    ) : videoData?.file ? (
+                                        <div className="flex items-center justify-center h-full text-gray-600">
+                                            <span>Fichier sélectionné: {videoData.file.name}</span>
+                                        </div>
+                                    ) : editingMedia?.path ? (
+                                        <Image
+                                            src={getMediaUrl(editingMedia.path)}
+                                            alt={editingMedia.title || 'Aperçu'}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full text-gray-400">
+                                            Aucun média sélectionné
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-3">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowForm(false);
+                                setEditingMedia(null);
+                                setVideoData(null);
+                            }}
+                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                        >
+                            Annuler
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={
+                                !editingMedia?.category || (!videoData && !editingMedia?.path)
+                            }
+                            className={`px-4 py-2 rounded-md transition-colors ${
+                                editingMedia?.category && (videoData || editingMedia?.path)
+                                    ? 'bg-black text-white hover:bg-black/80'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            }`}
+                        >
+                            Ajouter la réalisation
+                        </button>
+                    </div>
+                </form>
+            )}
+
             {/* Section d'import */}
             <div className="mb-8">
-                <h3 className="text-lg font-medium mb-4">Importer des médias</h3>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium">Importer des médias</h3>
+                    <button
+                        onClick={() => {
+                            setShowForm(true);
+                            setEditingMedia({
+                                id: '',
+                                path: '',
+                                title: '',
+                                source: '',
+                                isVideo: false,
+                                format: 'paysage',
+                                order: medias.length,
+                                category: '',
+                            });
+                            setVideoData(null);
+                        }}
+                        className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors flex items-center space-x-2"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 4v16m8-8H4"
+                            />
+                        </svg>
+                        <span>Nouvelle réalisation</span>
+                    </button>
+                </div>
 
                 {/* Sélection de catégorie */}
                 <div className="mb-4">
@@ -1141,7 +1533,12 @@ export default function RealisationsMediaManager({
                                             </span>
                                         </td>
                                         <td className="px-3 py-4 whitespace-nowrap">
-                                            {media.title || 'Sans titre'}
+                                            <div
+                                                className="max-w-[200px] truncate"
+                                                title={media.title || 'Sans titre'}
+                                            >
+                                                {media.title || 'Sans titre'}
+                                            </div>
                                         </td>
                                         <td className="px-3 py-4 whitespace-nowrap">
                                             <span

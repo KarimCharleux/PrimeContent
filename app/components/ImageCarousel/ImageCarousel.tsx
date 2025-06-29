@@ -1,14 +1,19 @@
+'use client';
+
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 import { getMediaUrl } from '../../utils/mediaUrl';
+import { getYouTubeEmbedUrl } from '../../utils/youtube';
 
 import styles from './ImageCarousel.module.scss';
 
 interface MediaItem {
     src: string;
     isVideo?: boolean;
+    isYouTube?: boolean;
+    youtubeId?: string;
 }
 
 interface ImageCarouselProps {
@@ -51,10 +56,11 @@ const ImageCarousel = ({
     // Vérifier s'il y a plus d'un élément
     const hasMultipleItems = media.length > 1;
     const isVideo = currentItem?.isVideo;
+    const isYouTube = currentItem?.isYouTube;
 
-    // Fonctions de contrôle vidéo
+    // Fonctions de contrôle vidéo (uniquement pour vidéos fichiers)
     const togglePlay = useCallback(() => {
-        if (!videoRef.current) return;
+        if (!videoRef.current || isYouTube) return;
 
         if (isPlaying) {
             videoRef.current.pause();
@@ -62,17 +68,17 @@ const ImageCarousel = ({
             videoRef.current.play().catch((err) => console.error('Erreur de lecture vidéo:', err));
         }
         setIsPlaying(!isPlaying);
-    }, [isPlaying]);
+    }, [isPlaying, isYouTube]);
 
     const toggleMute = useCallback(() => {
-        if (!videoRef.current) return;
+        if (!videoRef.current || isYouTube) return;
 
         videoRef.current.muted = !videoRef.current.muted;
         setIsMuted(!isMuted);
-    }, [isMuted]);
+    }, [isMuted, isYouTube]);
 
     const toggleFullscreen = useCallback(() => {
-        if (!videoRef.current) return;
+        if (!videoRef.current || isYouTube) return;
 
         if (document.fullscreenElement) {
             document
@@ -83,17 +89,17 @@ const ImageCarousel = ({
                 .requestFullscreen()
                 .catch((err) => console.error('Erreur lors du passage en plein écran:', err));
         }
-    }, []);
+    }, [isYouTube]);
 
     const handleTimeUpdate = () => {
-        if (!videoRef.current) return;
+        if (!videoRef.current || isYouTube) return;
 
         const progress = (videoRef.current.currentTime / videoRef.current.duration) * 100;
         setVideoProgress(progress);
     };
 
     const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!videoRef.current) return;
+        if (!videoRef.current || isYouTube) return;
 
         const progressBar = e.currentTarget;
         const rect = progressBar.getBoundingClientRect();
@@ -112,14 +118,16 @@ const ImageCarousel = ({
     useEffect(() => {
         setIsPlaying(false);
 
-        if (videoRef.current) {
+        if (videoRef.current && !isYouTube) {
             videoRef.current.currentTime = 0;
             setVideoDuration(videoRef.current.duration || 0);
         }
-    }, [currentIndex]);
+    }, [currentIndex, isYouTube]);
 
     // Charger la durée vidéo une fois que les métadonnées sont disponibles
     useEffect(() => {
+        if (isYouTube) return;
+
         const handleLoadedMetadata = () => {
             if (videoRef.current) {
                 setVideoDuration(videoRef.current.duration);
@@ -136,7 +144,7 @@ const ImageCarousel = ({
                 videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
             }
         };
-    }, [currentItem]);
+    }, [currentItem, isYouTube]);
 
     // Gérer les événements touch pour le swipe
     useEffect(() => {
@@ -175,7 +183,7 @@ const ImageCarousel = ({
                 if (e.key === 'ArrowRight') onNext();
                 if (e.key === 'ArrowLeft') onPrev();
             }
-            if (isVideo) {
+            if (isVideo && !isYouTube) {
                 if (e.key === ' ' || e.key === 'k') {
                     e.preventDefault();
                     togglePlay();
@@ -197,6 +205,7 @@ const ImageCarousel = ({
         onPrev,
         hasMultipleItems,
         isVideo,
+        isYouTube,
         togglePlay,
         toggleMute,
         toggleFullscreen,
@@ -320,154 +329,176 @@ const ImageCarousel = ({
                 >
                     <div className="relative w-full h-full flex items-center justify-center">
                         {isVideo ? (
-                            <div className={styles['video-wrapper']}>
-                                <video
-                                    ref={videoRef}
-                                    src={getMediaUrl(currentItem.src)}
-                                    className={styles['carousel-video']}
-                                    onClick={togglePlay}
-                                    onTimeUpdate={handleTimeUpdate}
-                                    loop
-                                    muted={isMuted}
-                                    playsInline
-                                />
+                            isYouTube && currentItem.youtubeId ? (
+                                // Vidéo YouTube
+                                <div
+                                    className={`${styles['video-wrapper']} ${styles['youtube-wrapper']}`}
+                                >
+                                    <iframe
+                                        src={getYouTubeEmbedUrl(currentItem.youtubeId, {
+                                            autoplay: false,
+                                            controls: true,
+                                            modestBranding: true,
+                                            rel: false,
+                                            showInfo: false,
+                                        })}
+                                        className={`${styles['carousel-video']} ${styles['youtube-video']}`}
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        allowFullScreen
+                                        title="Vidéo YouTube"
+                                    />
+                                </div>
+                            ) : (
+                                // Vidéo fichier
+                                <div className={styles['video-wrapper']}>
+                                    <video
+                                        ref={videoRef}
+                                        src={getMediaUrl(currentItem.src)}
+                                        className={styles['carousel-video']}
+                                        onClick={togglePlay}
+                                        onTimeUpdate={handleTimeUpdate}
+                                        loop
+                                        muted={isMuted}
+                                        playsInline
+                                    />
 
-                                {/* Contrôles vidéo */}
-                                <div className={styles['video-controls']}>
-                                    {/* Barre de progression */}
-                                    <div
-                                        className={styles['progress-bar']}
-                                        onClick={handleProgressBarClick}
-                                    >
+                                    {/* Contrôles vidéo uniquement pour les vidéos fichiers */}
+                                    <div className={styles['video-controls']}>
+                                        {/* Barre de progression */}
                                         <div
-                                            className={styles['progress-fill']}
-                                            style={{ width: `${videoProgress}%` }}
-                                        ></div>
-                                    </div>
-
-                                    <div className={styles['controls-row']}>
-                                        {/* Bouton lecture/pause */}
-                                        <button
-                                            className={styles['control-button']}
-                                            onClick={togglePlay}
+                                            className={styles['progress-bar']}
+                                            onClick={handleProgressBarClick}
                                         >
-                                            {isPlaying ? (
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    className="h-6 w-6"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                    />
-                                                </svg>
-                                            ) : (
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    className="h-6 w-6"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                                                    />
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                    />
-                                                </svg>
-                                            )}
-                                        </button>
-
-                                        {/* Affichage du temps */}
-                                        <div className={styles['time-display']}>
-                                            {videoRef.current
-                                                ? formatTime(videoRef.current.currentTime)
-                                                : '0:00'}{' '}
-                                            / {formatTime(videoDuration)}
+                                            <div
+                                                className={styles['progress-fill']}
+                                                style={{ width: `${videoProgress}%` }}
+                                            ></div>
                                         </div>
 
-                                        <div className="flex-grow"></div>
-
-                                        {/* Bouton mute/unmute */}
-                                        <button
-                                            className={styles['control-button']}
-                                            onClick={toggleMute}
-                                        >
-                                            {isMuted ? (
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    className="h-6 w-6"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
-                                                        clipRule="evenodd"
-                                                    />
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
-                                                    />
-                                                </svg>
-                                            ) : (
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    className="h-6 w-6"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
-                                                    />
-                                                </svg>
-                                            )}
-                                        </button>
-
-                                        {/* Bouton plein écran */}
-                                        <button
-                                            className={styles['control-button']}
-                                            onClick={toggleFullscreen}
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                className="h-6 w-6"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
+                                        <div className={styles['controls-row']}>
+                                            {/* Bouton lecture/pause */}
+                                            <button
+                                                className={styles['control-button']}
+                                                onClick={togglePlay}
                                             >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"
-                                                />
-                                            </svg>
-                                        </button>
+                                                {isPlaying ? (
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-6 w-6"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                        />
+                                                    </svg>
+                                                ) : (
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-6 w-6"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                                                        />
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                        />
+                                                    </svg>
+                                                )}
+                                            </button>
+
+                                            {/* Affichage du temps */}
+                                            <div className={styles['time-display']}>
+                                                {videoRef.current
+                                                    ? formatTime(videoRef.current.currentTime)
+                                                    : '0:00'}{' '}
+                                                / {formatTime(videoDuration)}
+                                            </div>
+
+                                            <div className="flex-grow"></div>
+
+                                            {/* Bouton mute/unmute */}
+                                            <button
+                                                className={styles['control-button']}
+                                                onClick={toggleMute}
+                                            >
+                                                {isMuted ? (
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-6 w-6"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                                                            clipRule="evenodd"
+                                                        />
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+                                                        />
+                                                    </svg>
+                                                ) : (
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-6 w-6"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                                                        />
+                                                    </svg>
+                                                )}
+                                            </button>
+
+                                            {/* Bouton plein écran */}
+                                            <button
+                                                className={styles['control-button']}
+                                                onClick={toggleFullscreen}
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    className="h-6 w-6"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            )
                         ) : (
                             <Image
                                 src={getMediaUrl(currentItem.src)}
