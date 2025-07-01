@@ -15,7 +15,6 @@ interface Brand {
     id?: string;
     name: string;
     imageSrc: string;
-    href: string;
     order?: number;
 }
 
@@ -25,7 +24,6 @@ interface Client {
     domain: string;
     imageSrc: string;
     imageBackground: string;
-    href: string;
     order?: number;
 }
 
@@ -333,7 +331,6 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                 await updateDoc(doc(db, 'brands', editingBrand.id), {
                     name: data.name,
                     imageSrc: data.imageSrc,
-                    href: data.href,
                     order: editingBrand.order || 0,
                 });
 
@@ -354,7 +351,6 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                 const docRef = await addDoc(collection(db, 'brands'), {
                     name: data.name,
                     imageSrc: data.imageSrc,
-                    href: data.href,
                     order: maxOrder,
                 });
 
@@ -368,7 +364,7 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                 });
             }
 
-            resetBrand({ name: '', imageSrc: '', href: '' });
+            resetBrand({ name: '', imageSrc: '' });
             setEditingBrand(null);
             setPreviewBrandImage(null);
         } catch (error) {
@@ -416,7 +412,7 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
     // Annuler l'édition d'une marque
     const cancelEditBrand = () => {
         setEditingBrand(null);
-        resetBrand({ name: '', imageSrc: '', href: '' });
+        resetBrand({ name: '', imageSrc: '' });
         setPreviewBrandImage(null);
     };
 
@@ -430,7 +426,6 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                     domain: data.domain,
                     imageSrc: data.imageSrc,
                     imageBackground: data.imageBackground,
-                    href: data.href,
                     order: editingClient.order || 0,
                 });
 
@@ -453,7 +448,6 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                     domain: data.domain,
                     imageSrc: data.imageSrc,
                     imageBackground: data.imageBackground,
-                    href: data.href,
                     order: maxOrder,
                 });
 
@@ -469,7 +463,6 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                 domain: '',
                 imageSrc: '',
                 imageBackground: '',
-                href: '',
             });
             setEditingClient(null);
             setPreviewClientImage(null);
@@ -533,7 +526,6 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
             domain: '',
             imageSrc: '',
             imageBackground: '',
-            href: '',
         });
         setPreviewClientImage(null);
         setPreviewClientBgImage(null);
@@ -583,24 +575,6 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                                         {errorsBrand.name && (
                                             <p className="mt-1 text-sm text-red-600">
                                                 {errorsBrand.name.message}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Lien (href)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            {...registerBrand('href', {
-                                                required: 'Le lien est requis',
-                                            })}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        />
-                                        {errorsBrand.href && (
-                                            <p className="mt-1 text-sm text-red-600">
-                                                {errorsBrand.href.message}
                                             </p>
                                         )}
                                     </div>
@@ -707,9 +681,6 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                                                     Logo
                                                 </th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Lien
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Actions
                                                 </th>
                                             </tr>
@@ -728,11 +699,6 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                                                                 fill
                                                                 className="object-contain"
                                                             />
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="max-w-xs truncate">
-                                                            {brand.href}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap space-x-2">
@@ -817,24 +783,6 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                                         {errorsClient.domain && (
                                             <p className="mt-1 text-sm text-red-600">
                                                 {errorsClient.domain.message}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Lien (href)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            {...registerClient('href', {
-                                                required: 'Le lien est requis',
-                                            })}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        />
-                                        {errorsClient.href && (
-                                            <p className="mt-1 text-sm text-red-600">
-                                                {errorsClient.href.message}
                                             </p>
                                         )}
                                     </div>
