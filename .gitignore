@@ -49,3 +49,6 @@ next-env.d.ts
 # temp
 temp/
 *.tar.gz
+
+# IntelliJ
+.idea/
