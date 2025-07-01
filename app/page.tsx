@@ -35,7 +35,6 @@ interface Brand {
     id?: string;
     name: string;
     imageSrc: string;
-    href: string;
     order?: number;
 }
 
@@ -46,7 +45,6 @@ interface Client {
     domain: string;
     imageSrc: string;
     imageBackground: string;
-    href: string;
     order?: number;
 }
 
@@ -684,7 +682,6 @@ export default function Page() {
                                             <BrandLogo
                                                 name={brand.name}
                                                 imageSrc={brand.imageSrc}
-                                                href={brand.href}
                                             />
                                         </div>
                                     ))}
@@ -707,7 +704,6 @@ export default function Page() {
                                             <BrandLogo
                                                 name={brand.name}
                                                 imageSrc={brand.imageSrc}
-                                                href={brand.href}
                                             />
                                         </div>
                                     ))}
@@ -728,7 +724,6 @@ export default function Page() {
                                                 domain={client.domain}
                                                 imageSrc={client.imageSrc}
                                                 imageBackground={client.imageBackground}
-                                                href={client.href}
                                                 className="h-full"
                                             />
                                         </div>
@@ -746,7 +741,6 @@ export default function Page() {
                                                 domain={client.domain}
                                                 imageSrc={client.imageSrc}
                                                 imageBackground={client.imageBackground}
-                                                href={client.href}
                                                 className="h-full"
                                             />
                                         </div>
@@ -767,7 +761,6 @@ export default function Page() {
                                             domain={client.domain}
                                             imageSrc={client.imageSrc}
                                             imageBackground={client.imageBackground}
-                                            href={client.href}
                                             className="h-full"
                                         />
                                     </div>
@@ -788,7 +781,6 @@ export default function Page() {
                                             <BrandLogo
                                                 name={brand.name}
                                                 imageSrc={brand.imageSrc}
-                                                href={brand.href}
                                             />
                                         </div>
                                     ))}
@@ -816,7 +808,6 @@ export default function Page() {
                                             <BrandLogo
                                                 name={brand.name}
                                                 imageSrc={brand.imageSrc}
-                                                href={brand.href}
                                             />
                                         </div>
                                     ))}
@@ -932,6 +923,7 @@ export default function Page() {
                             <PortfolioGrid
                                 projects={projects.filter((p) => !p.isLatest)}
                                 showFilter={true}
+                                showGradientOverlay={true}
                             />
                             <div className="mt-16 mx-auto w-fit">
                                 <PrimaryButton
