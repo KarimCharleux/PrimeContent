@@ -63,7 +63,7 @@ export default function RealisationsPage() {
                 photosSnapshot.forEach((doc) => {
                     const data = doc.data();
                     allRealisations.push({
-                        category: data.category || 'Non classé',
+                        category: data.category || '',
                         source: data.url || '',
                         format: data.format || 'paysage',
                         title: data.title || '',
@@ -76,7 +76,7 @@ export default function RealisationsPage() {
                 videosSnapshot.forEach((doc) => {
                     const data = doc.data();
                     allRealisations.push({
-                        category: data.category || 'Non classé',
+                        category: data.category || '',
                         source: data.url || '',
                         format: data.format || 'paysage',
                         title: data.title || '',

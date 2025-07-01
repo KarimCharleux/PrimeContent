@@ -120,7 +120,7 @@ function ClientPageContent() {
                     // Convertir chaque média en projet
                     mediaFiles.forEach((media, index) => {
                         brandProjects.push({
-                            title: `${brand.name} - ${media.name}`,
+                            title: brand.name,
                             category: 'Marque',
                             source: `${media.path}/${media.name}`,
                             isVideo: media.type === 'video',
@@ -141,7 +141,7 @@ function ClientPageContent() {
                     // Convertir chaque média en projet
                     mediaFiles.forEach((media, index) => {
                         clientProjects.push({
-                            title: `${client.name} - ${media.name}`,
+                            title: client.name,
                             category: 'Célébrité',
                             source: `${media.path}/${media.name}`,
                             isVideo: media.type === 'video',

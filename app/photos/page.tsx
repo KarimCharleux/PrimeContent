@@ -54,7 +54,7 @@ export default function PhotosPage() {
                     const fetchedPhotos = photosSnapshot.docs.map((doc) => {
                         const data = doc.data();
                         return {
-                            category: data.category || 'Non classé',
+                            category: data.category || '',
                             source: data.source || '',
                             format: data.format || 'portrait',
                             title: data.title || '',
