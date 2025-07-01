@@ -33,6 +33,27 @@ Le projet est divisé en deux parties distinctes :
   - Composants : AboutUsSection, Gallery, CustomerReviews, TeamCard
   - Données : Expertise, projets, équipe, avis clients
 
+#### 🎬 **Composants Clés de la Page d'Accueil**
+
+##### **SplashScreen.tsx - Écran de Chargement Interactif**
+Le `SplashScreen` est un composant sophistiqué qui gère l'expérience de chargement initial :
+
+**🔧 Fonctionnalités Principales :**
+- **Animation du Logo SVG** : Affichage progressif du texte "Prime content." avec animations CSS
+  - Lettres apparaissent une par une avec effet de tracé (`stroke-dasharray`)
+  - Remplissage progressif des lettres (`fill-in` animation)
+  - Rotation 3D du logo avec Framer Motion (`rotateX`, `rotateY`, `z`)
+
+##### **Gallery.tsx - Galerie 3D Défilante**
+La `Gallery` est un composant d'affichage visuel immersif qui utilise les images préchargées :
+
+**🔄 Flux de Données :**
+1. Le `SplashScreen` précharge et stocke les images dans `imageStore`
+2. La `Gallery` récupère les images via `useImageStore`
+3. Calcul et répartition des images en 3 lignes
+4. Rendu avec dimensions calculées et animations CSS
+
+
 - **`/mariages`** - Services mariages
   - Fichiers : `app/mariages/page.tsx`, `app/mariages/layout.tsx`, `app/mariages/mariages.scss`
   - Données : Forfaits mariage, galerie spécialisée
@@ -318,10 +339,6 @@ const Button = ({ className, ...props }) => (
 );
 ```
 
-### Composants UI
-- Créer des composants composables
-- Utiliser des variants avec `cva` (class-variance-authority)
-
 ## 🔧 Performance & Optimisation
 
 ### Next.js
@@ -329,18 +346,6 @@ const Button = ({ className, ...props }) => (
 - Utiliser les Client Components uniquement si nécessaire
 - Optimiser les images avec `next/image`
 - Utiliser le cache approprié pour les données
-
-### Code Splitting
-- Utiliser le lazy loading pour les composants lourds
-- Implémenter le dynamic import pour les pages
-- Optimiser les bundles avec des imports conditionnels
-
-```typescript
-const HeavyComponent = dynamic(() => import('./HeavyComponent'), {
-  loading: () => <Skeleton />,
-  ssr: false
-});
-```
 
 ### Animations
 - Utiliser Framer Motion pour les animations complexes
@@ -390,10 +395,6 @@ type User = z.infer<typeof UserSchema>;
 ## 🔐 Authentification & Autorisation
 
 ### Backoffice
-- Implémenter un système d'authentification robuste
-- Utiliser des guards pour protéger les routes admin
-- Gérer les sessions et tokens d'accès
-- Implémenter la déconnexion automatique
 
 ```typescript
 // Exemple de guard d'authentification
@@ -413,9 +414,4 @@ const AuthGuard = ({ children }) => {
 2. **Sécurité** : Protection des données et accès admin
 3. **Maintenabilité** : Code propre et bien documenté
 4. **UX** : Expérience utilisateur fluide et intuitive
-5. **Accessibilité** : Rendre l'application accessible à tous
-
----
-
-**Note** : Ces règles doivent être suivies pour maintenir la qualité et la cohérence du code dans tout le projet.
- 
+5. **Accessibilité** : Rendre l'application accessible à tous 
