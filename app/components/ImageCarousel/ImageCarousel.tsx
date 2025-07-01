@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
+import { useSafeEventListener } from '../../hooks/useSafeStorage';
 import { getMediaUrl } from '../../utils/mediaUrl';
 import { getYouTubeEmbedUrl } from '../../utils/youtube';
 
@@ -126,7 +127,7 @@ const ImageCarousel = ({
 
     // Charger la durée vidéo une fois que les métadonnées sont disponibles
     useEffect(() => {
-        if (isYouTube) return;
+        if (isYouTube || !videoRef.current) return;
 
         const handleLoadedMetadata = () => {
             if (videoRef.current) {
@@ -135,81 +136,95 @@ const ImageCarousel = ({
         };
 
         const videoElement = videoRef.current;
-        if (videoElement) {
-            videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
-        }
 
-        return () => {
-            if (videoElement) {
-                videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
-            }
-        };
+        // Utiliser l'event listener sécurisé
+        try {
+            videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
+
+            return () => {
+                try {
+                    videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
+                } catch (error) {
+                    console.warn("Erreur lors de la suppression de l'event listener video:", error);
+                }
+            };
+        } catch (error) {
+            console.warn("Erreur lors de l'ajout de l'event listener video:", error);
+        }
     }, [currentItem, isYouTube]);
 
-    // Gérer les événements touch pour le swipe
+    // Gérer les événements touch pour le swipe avec gestion sécurisée
     useEffect(() => {
         const element = swipeRef.current;
         if (!element || !hasMultipleItems) return;
 
         const handleTouchStart = (e: TouchEvent) => {
-            startXRef.current = e.touches[0].clientX;
+            try {
+                startXRef.current = e.touches[0].clientX;
+            } catch (error) {
+                console.warn('Erreur lors du touchstart:', error);
+            }
         };
 
         const handleTouchEnd = (e: TouchEvent) => {
-            const diffX = e.changedTouches[0].clientX - startXRef.current;
-            if (diffX > 50) {
-                // Swipe droite
-                onPrev();
-            } else if (diffX < -50) {
-                // Swipe gauche
-                onNext();
+            try {
+                const diffX = e.changedTouches[0].clientX - startXRef.current;
+                if (diffX > 50) {
+                    // Swipe droite
+                    onPrev();
+                } else if (diffX < -50) {
+                    // Swipe gauche
+                    onNext();
+                }
+            } catch (error) {
+                console.warn('Erreur lors du touchend:', error);
             }
         };
 
-        element.addEventListener('touchstart', handleTouchStart);
-        element.addEventListener('touchend', handleTouchEnd);
+        try {
+            element.addEventListener('touchstart', handleTouchStart, { passive: true });
+            element.addEventListener('touchend', handleTouchEnd, { passive: true });
 
-        return () => {
-            element.removeEventListener('touchstart', handleTouchStart);
-            element.removeEventListener('touchend', handleTouchEnd);
-        };
+            return () => {
+                try {
+                    element.removeEventListener('touchstart', handleTouchStart);
+                    element.removeEventListener('touchend', handleTouchEnd);
+                } catch (error) {
+                    console.warn('Erreur lors de la suppression des event listeners touch:', error);
+                }
+            };
+        } catch (error) {
+            console.warn("Erreur lors de l'ajout des event listeners touch:", error);
+        }
     }, [onNext, onPrev, hasMultipleItems]);
 
-    // Gérer les touches clavier pour la navigation
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
+    // Gérer les touches clavier pour la navigation avec hook sécurisé
+    const handleKeyDown = (e: Event) => {
+        try {
+            const keyEvent = e as KeyboardEvent;
+            if (keyEvent.key === 'Escape') onClose();
             if (hasMultipleItems) {
-                if (e.key === 'ArrowRight') onNext();
-                if (e.key === 'ArrowLeft') onPrev();
+                if (keyEvent.key === 'ArrowRight') onNext();
+                if (keyEvent.key === 'ArrowLeft') onPrev();
             }
             if (isVideo && !isYouTube) {
-                if (e.key === ' ' || e.key === 'k') {
-                    e.preventDefault();
+                if (keyEvent.key === ' ' || keyEvent.key === 'k') {
+                    keyEvent.preventDefault();
                     togglePlay();
                 }
-                if (e.key === 'm') {
+                if (keyEvent.key === 'm') {
                     toggleMute();
                 }
-                if (e.key === 'f') {
+                if (keyEvent.key === 'f') {
                     toggleFullscreen();
                 }
             }
-        };
+        } catch (error) {
+            console.warn('Erreur lors de la gestion du clavier:', error);
+        }
+    };
 
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [
-        onClose,
-        onNext,
-        onPrev,
-        hasMultipleItems,
-        isVideo,
-        isYouTube,
-        togglePlay,
-        toggleMute,
-        toggleFullscreen,
-    ]);
+    useSafeEventListener('keydown', handleKeyDown);
 
     return (
         <motion.div

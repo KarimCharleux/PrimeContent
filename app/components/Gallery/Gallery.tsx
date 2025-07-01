@@ -7,6 +7,13 @@ import { useImageStore } from '../../store/imageStore';
 
 import styles from './gallery.module.scss';
 
+interface GalleryImage {
+    id: string;
+    url: string;
+    width?: number;
+    height?: number;
+}
+
 /**
  * Galerie d'images 3D défilante, 3 lignes fixes, effet infini, alternance de direction.
  */
@@ -14,6 +21,7 @@ export default function Gallery() {
     const preloadedImages = useImageStore((state) => state.preloadedImages);
     const galleryContainerRef = useRef<HTMLDivElement>(null);
     const [isReady, setIsReady] = useState(false);
+    const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
 
     // 3 lignes fixes
     const ROWS = 3;
@@ -23,19 +31,109 @@ export default function Gallery() {
         imageMargin: IMAGE_MARGIN,
         imageHeight: 0,
     });
-    const [imageRows, setImageRows] = useState<HTMLImageElement[][]>([]);
+    const [imageRows, setImageRows] = useState<GalleryImage[][]>([]);
+
+    // Charger les images de la galerie avec leurs vraies dimensions
+    const loadGalleryImages = useCallback(async () => {
+        try {
+            const response = await fetch('/api/gallery-images?path=home/gallery');
+            const data = await response.json();
+
+            if (data.media && data.media.length > 0) {
+                const imageItems = data.media
+                    .filter((item: any) => item.type === 'image')
+                    .slice(0, 18); // Charger plus d'images pour assurer un bon remplissage
+
+                // Charger chaque image pour obtenir ses vraies dimensions
+                const imagesWithDimensions: GalleryImage[] = [];
+
+                for (const item of imageItems) {
+                    try {
+                        const img = await new Promise<GalleryImage>((resolve, reject) => {
+                            const image = new window.Image();
+                            image.onload = () => {
+                                resolve({
+                                    id: item.id || `img-${Date.now()}-${Math.random()}`,
+                                    url: item.url,
+                                    width: image.naturalWidth,
+                                    height: image.naturalHeight,
+                                });
+                            };
+                            image.onerror = () => {
+                                reject(new Error(`Failed to load image: ${item.url}`));
+                            };
+                            image.src = item.url;
+                        });
+
+                        imagesWithDimensions.push(img);
+                    } catch (error) {
+                        console.warn(`Image skipped due to loading error: ${item.url}`);
+                        // Continue with next image instead of adding failed ones
+                    }
+                }
+
+                // Dupliquer les images si on n'en a pas assez pour remplir 3 lignes correctement
+                let finalImages = [...imagesWithDimensions];
+                const minImagesPerRow = 6;
+                const minTotalImages = minImagesPerRow * 3;
+
+                while (finalImages.length < minTotalImages) {
+                    finalImages = [...finalImages, ...imagesWithDimensions];
+                }
+
+                setGalleryImages(finalImages.slice(0, 21)); // Garder 21 images (7 par ligne)
+            }
+        } catch (error) {
+            console.error('Erreur lors du chargement des images:', error);
+        }
+    }, []);
 
     // Préparer la galerie (3 lignes fixes, images réparties équitablement)
     const prepareGallery = useCallback(() => {
-        if (!preloadedImages || preloadedImages.length === 0) return;
+        if (!galleryImages || galleryImages.length === 0) return;
+
         // Hauteur de ligne : 90% de la hauteur de la galerie divisée par 3
         const galleryHeight = galleryContainerRef.current?.offsetHeight || 350;
         const rowHeight = (galleryHeight * 0.9) / ROWS;
+
         // Répartir les images équitablement dans 3 lignes
-        const distributedRows: HTMLImageElement[][] = [[], [], []];
-        preloadedImages.forEach((img, i) => {
-            distributedRows[i % ROWS].push(img);
+        const distributedRows: GalleryImage[][] = [[], [], []];
+
+        // Distribution séquentielle simple pour garantir l'équilibre
+        galleryImages.forEach((img, i) => {
+            const rowIndex = i % ROWS;
+            distributedRows[rowIndex].push(img);
         });
+
+        console.log(
+            'Distribution initiale:',
+            distributedRows.map((row, i) => `Ligne ${i}: ${row.length} images`),
+        );
+
+        // S'assurer que chaque ligne a au moins 7 images pour un bon effet de défilement
+        distributedRows.forEach((row, rowIndex) => {
+            const targetCount = 7; // Nombre cible d'images par ligne
+            let duplicateCounter = 0;
+
+            while (row.length < targetCount && galleryImages.length > 0) {
+                // Prendre une image de façon cyclique depuis toutes les images disponibles
+                const sourceIndex = duplicateCounter % galleryImages.length;
+                const imgToAdd = galleryImages[sourceIndex];
+
+                row.push({
+                    ...imgToAdd,
+                    id: `${imgToAdd.id}-row-${rowIndex}-dup-${duplicateCounter}`, // ID unique par ligne
+                });
+
+                duplicateCounter++;
+
+                // Sécurité pour éviter les boucles infinies
+                if (duplicateCounter > galleryImages.length * 3) break;
+            }
+
+            console.log(`Ligne ${rowIndex}: ${row.length} images`);
+        });
+
         setGalleryConfig({
             rowsNumber: ROWS,
             imageMargin: IMAGE_MARGIN,
@@ -43,30 +141,34 @@ export default function Gallery() {
         });
         setImageRows(distributedRows);
         setIsReady(true);
-    }, [preloadedImages]);
+    }, [galleryImages]);
 
     useEffect(() => {
-        if (preloadedImages && preloadedImages.length > 0) {
+        loadGalleryImages();
+    }, [loadGalleryImages]);
+
+    useEffect(() => {
+        if (galleryImages.length > 0) {
             prepareGallery();
         }
-    }, [preloadedImages, prepareGallery]);
+    }, [galleryImages, prepareGallery]);
 
     // Rendu d'une image dans une ligne
-    const renderImageInRow = (img: HTMLImageElement, index: number) => {
-        if (!img || !img.naturalWidth) return null;
-        const imgRatio = img.naturalWidth / img.naturalHeight;
+    const renderImageInRow = (img: GalleryImage, index: number) => {
+        if (!img || !img.width || !img.height) return null;
+        const imgRatio = img.width / img.height;
         const imgWidth = galleryConfig.imageHeight * imgRatio;
         return (
             <div
                 className={styles['gallery-image-container']}
-                key={`${index}-${img.src}`}
+                key={`${index}-${img.url}`}
                 style={{ margin: `0 ${galleryConfig.imageMargin / 2}px` }}
             >
                 <Image
-                    src={img.src}
+                    src={img.url}
                     alt=""
-                    width={img.naturalWidth}
-                    height={img.naturalHeight}
+                    width={img.width}
+                    height={img.height}
                     className={styles['gallery-image']}
                     style={{
                         height: `${galleryConfig.imageHeight}px`,

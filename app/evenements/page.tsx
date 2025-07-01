@@ -74,31 +74,12 @@ export default function EvenementsPage() {
 
         fetchEvenements();
 
-        // Vérifier si le SplashScreen est terminé ou si on vient d'une autre page
-        const checkSplashScreen = () => {
-            const splashScreenComplete = localStorage.getItem('splashScreenComplete');
+        // Activer les animations après un délai
+        const animationTimer = setTimeout(() => {
+            setShouldStartAnimations(true);
+        }, 100);
 
-            // Si on vient du SplashScreen
-            if (splashScreenComplete === 'true') {
-                setShouldStartAnimations(true);
-                localStorage.removeItem('splashScreenComplete');
-                // Réinitialiser la position de défilement à 0
-                window.scrollTo(0, 0);
-            }
-            // Si on vient d'une autre page (pas de SplashScreen)
-            else if (splashScreenComplete !== 'waiting') {
-                // On active les animations après un petit délai pour laisser la page se charger
-                setTimeout(() => {
-                    setShouldStartAnimations(true);
-                }, 100);
-            }
-        };
-
-        // Vérifie immédiatement et toutes les 100ms si le splash screen est terminé
-        checkSplashScreen();
-        const interval = setInterval(checkSplashScreen, 100);
-
-        return () => clearInterval(interval);
+        return () => clearTimeout(animationTimer);
     }, []);
 
     const formatDate = (dateString: string | undefined) => {

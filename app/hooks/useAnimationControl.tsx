@@ -2,47 +2,27 @@
 
 import { useState, useEffect } from 'react';
 
+import { useSafeStorage } from './useSafeStorage';
+import { useSplashScreenManager } from './useSplashScreenManager';
+
 export const useAnimationControl = () => {
     const [shouldAnimate, setShouldAnimate] = useState(false);
 
     useEffect(() => {
-        // Vérifier si l'animation a déjà été activée dans cette session
-        const animationActivated = sessionStorage.getItem('headerAnimationActivated');
-
-        if (animationActivated === 'true') {
-            // Si l'animation a déjà été activée dans cette session, l'activer immédiatement
-            setShouldAnimate(true);
-            return;
-        }
-
         // Vérifier si nous sommes sur la page d'accueil
         const isHomePage = typeof window !== 'undefined' && window.location.pathname === '/';
 
-        // Si nous ne sommes pas sur la page d'accueil, animer immédiatement
         if (!isHomePage) {
+            // Pas sur la page d'accueil, animer immédiatement
             setShouldAnimate(true);
-            // Mémoriser que l'animation a été activée
-            sessionStorage.setItem('headerAnimationActivated', 'true');
-            return;
-        }
-
-        // Sur la page d'accueil, vérifier le statut du splash screen
-        const checkSplashScreen = () => {
-            const splashScreenComplete = localStorage.getItem('splashScreenComplete');
-            if (splashScreenComplete === 'true') {
+        } else {
+            // Sur la page d'accueil, synchroniser avec les animations de la page
+            const timer = setTimeout(() => {
                 setShouldAnimate(true);
-                // Mémoriser que l'animation a été activée
-                sessionStorage.setItem('headerAnimationActivated', 'true');
-            }
-        };
+            }, 100); // Délai court pour que le Header s'anime avec les autres éléments
 
-        // Vérifie immédiatement au montage du composant
-        checkSplashScreen();
-
-        // Continue de vérifier périodiquement
-        const interval = setInterval(checkSplashScreen, 100);
-
-        return () => clearInterval(interval);
+            return () => clearTimeout(timer);
+        }
     }, []);
 
     return shouldAnimate;

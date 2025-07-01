@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
 import { useAnimationControl } from '../../hooks/useAnimationControl';
+import { useSafeEventListener } from '../../hooks/useSafeStorage';
 
 export default function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -24,14 +25,19 @@ export default function Header() {
         };
     }, [mobileMenuOpen]);
 
-    useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 50);
-        };
+    // Gérer le scroll de manière sécurisée
+    const handleScroll = () => {
+        try {
+            if (typeof window !== 'undefined') {
+                setIsScrolled(window.scrollY > 50);
+            }
+        } catch (error) {
+            console.warn('Erreur lors de la gestion du scroll:', error);
+        }
+    };
 
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+    // Utiliser l'event listener sécurisé
+    useSafeEventListener('scroll', handleScroll);
 
     const toggleMobileMenu = () => {
         setMobileMenuOpen(!mobileMenuOpen);

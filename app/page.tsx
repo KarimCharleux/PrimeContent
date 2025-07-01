@@ -373,31 +373,12 @@ export default function Page() {
     }, []);
 
     useEffect(() => {
-        // Vérifie si le splash screen est terminé via le localStorage
-        const checkSplashScreen = () => {
-            const splashScreenComplete = localStorage.getItem('splashScreenComplete');
+        // Délai simple pour activer les animations
+        const timer = setTimeout(() => {
+            setShouldStartAnimations(true);
+        }, 200);
 
-            // Si on vient du SplashScreen
-            if (splashScreenComplete === 'true') {
-                setShouldStartAnimations(true);
-                localStorage.removeItem('splashScreenComplete');
-                // Réinitialiser la position de défilement à 0
-                window.scrollTo(0, 0);
-            }
-            // Si on vient d'une autre page (pas de SplashScreen)
-            else if (splashScreenComplete !== 'waiting') {
-                // On active les animations après un petit délai pour laisser la page se charger
-                setTimeout(() => {
-                    setShouldStartAnimations(true);
-                }, 100);
-            }
-        };
-
-        // Vérifie immédiatement et toutes les 100ms si le splash screen est terminé
-        checkSplashScreen();
-        const interval = setInterval(checkSplashScreen, 100);
-
-        return () => clearInterval(interval);
+        return () => clearTimeout(timer);
     }, []);
 
     useEffect(() => {
@@ -619,7 +600,7 @@ export default function Page() {
                             }
                         }}
                         animateOnMount={true}
-                        delay={1.2} // Délai augmenté pour s'assurer que le bouton apparaît après les autres éléments
+                        delay={0.8} // Délai réduit pour une meilleure synchronisation avec le Header
                     />
                 </div>
             </section>

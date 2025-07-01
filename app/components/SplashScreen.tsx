@@ -1,8 +1,10 @@
 'use client';
 
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
+import { useIOSDetection } from '../hooks/useSafeStorage';
+import { useSplashScreenManager } from '../hooks/useSplashScreenManager';
 import { useImageStore } from '../store/imageStore';
 import { getMediaUrl } from '../utils/mediaUrl';
 
@@ -17,19 +19,30 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
 
+    // Ref pour gérer le nettoyage des images
+    const imagesRef = useRef<HTMLImageElement[]>([]);
+    const isMountedRef = useRef(true);
+
     // Store pour les images préchargées
     const setPreloadedImages = useImageStore((state) => state.setPreloadedImages);
 
+    // Gestionnaire de SplashScreen sécurisé
+    const { setSplashScreenWaiting, setSplashScreenComplete } = useSplashScreenManager();
+
+    // Détection iOS pour optimisations spécifiques
+    const { isIOS } = useIOSDetection();
+
     // Définir l'état d'attente du SplashScreen au démarrage
     useEffect(() => {
-        // Indiquer que le SplashScreen est en attente
-        localStorage.setItem('splashScreenComplete', 'waiting');
-    }, []);
+        setSplashScreenWaiting();
 
-    // Préchargement des images
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, [setSplashScreenWaiting]);
+
+    // Préchargement des images optimisé pour iOS
     useEffect(() => {
-        let isMounted = true;
-
         // Vérifier si nous sommes sur une page admin via l'URL
         const isAdminPage =
             typeof window !== 'undefined' && window.location.pathname.startsWith('/backoffice');
@@ -40,9 +53,22 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
             return;
         }
 
+        // Sur iOS, on simplifie drastiquement le préchargement
+        if (isIOS) {
+            const timer = setTimeout(() => {
+                if (isMountedRef.current) {
+                    setLoadingProgress(100);
+                    setImagesLoaded(true);
+                }
+            }, 1500);
+
+            return () => clearTimeout(timer);
+        }
+
+        // Préchargement normal pour les autres navigateurs
         const preloadImages = async () => {
             try {
-                if (!isMounted) return;
+                if (!isMountedRef.current) return;
 
                 const response = await fetch('/api/gallery-images?path=home/gallery');
                 const data = await response.json();
@@ -50,82 +76,111 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                 // Vérifier si nous avons des images à charger
                 if (!data.media || data.media.length === 0) {
                     console.warn('Aucune image trouvée dans la galerie');
-                    if (isMounted) {
+                    if (isMountedRef.current) {
                         setImagesLoaded(true);
                     }
                     return;
                 }
 
-                const totalImages = data.media.length;
+                const imageItems = data.media.filter((item: any) => item.type === 'image');
+                const imagesToLoad = imageItems.slice(0, 20); // Limiter à 20 images max
+                const totalImages = imagesToLoad.length;
                 let loadedCount = 0;
 
-                const loadImage = (mediaItem: any): Promise<HTMLImageElement> =>
-                    new Promise((resolve, reject) => {
+                // Charger les images séquentiellement pour éviter la surcharge
+                for (const mediaItem of imagesToLoad) {
+                    if (!isMountedRef.current) break;
+
+                    try {
                         const img = new Image();
-                        img.onload = () => {
-                            if (!isMounted) return;
+                        imagesRef.current.push(img);
 
-                            loadedCount++;
-                            setLoadingProgress(Math.round((loadedCount / totalImages) * 100));
-                            resolve(img);
-                        };
-                        img.onerror = (error) => {
-                            console.warn(
-                                `Erreur lors du chargement de l'image: ${mediaItem.url}`,
-                                error,
-                            );
-                            // Continuer même si une image échoue
-                            if (!isMounted) return;
-                            loadedCount++;
-                            setLoadingProgress(Math.round((loadedCount / totalImages) * 100));
-                            resolve(img);
-                        };
-                        img.src = getMediaUrl(mediaItem.url);
-                    });
+                        await new Promise<void>((resolve) => {
+                            const handleComplete = () => {
+                                if (!isMountedRef.current) return;
+                                loadedCount++;
+                                setLoadingProgress(Math.round((loadedCount / totalImages) * 100));
+                                resolve();
+                            };
 
-                const loadedImages = await Promise.all(
-                    data.media.filter((item: any) => item.type === 'image').map(loadImage),
-                );
-                if (isMounted) {
-                    setPreloadedImages(loadedImages);
+                            img.onload = handleComplete;
+                            img.onerror = handleComplete;
+                            img.src = getMediaUrl(mediaItem.url);
+
+                            // Timeout de sécurité
+                            setTimeout(handleComplete, 3000);
+                        });
+                    } catch (error) {
+                        console.warn(`Erreur chargement image: ${mediaItem.url}`);
+                        loadedCount++;
+                        setLoadingProgress(Math.round((loadedCount / totalImages) * 100));
+                    }
+                }
+
+                if (isMountedRef.current) {
                     setImagesLoaded(true);
                 }
             } catch (error) {
                 console.error('Erreur lors du chargement des images:', error);
-                if (isMounted) {
-                    setImagesLoaded(true); // On continue même en cas d'erreur
+                if (isMountedRef.current) {
+                    setImagesLoaded(true);
                 }
             }
         };
 
         preloadImages();
 
+        // Nettoyage des images au démontage
         return () => {
-            isMounted = false;
+            imagesRef.current.forEach((img) => {
+                try {
+                    img.onload = null;
+                    img.onerror = null;
+                    img.src = '';
+                } catch (error) {
+                    // Ignorer les erreurs de nettoyage
+                }
+            });
+            imagesRef.current = [];
         };
-    }, [setPreloadedImages]);
+    }, [setPreloadedImages, isIOS]);
 
     // Gestion de la fin du chargement et transition
     useEffect(() => {
-        if (imagesLoaded) {
-            // Attendre un peu pour que l'utilisateur puisse voir l'animation du logo
-            const timer = setTimeout(() => {
-                setIsAnimationComplete(true);
-                setTimeout(() => {
-                    setIsVisible(false);
-                    // S'assurer que la page est positionnée tout en haut
-                    if (typeof window !== 'undefined') {
-                        window.scrollTo(0, 0);
-                    }
-                    // Définir que le SplashScreen est terminé
-                    localStorage.setItem('splashScreenComplete', 'true');
-                    onLoadingComplete();
-                }, 600);
-            }, 1500);
+        if (imagesLoaded && isMountedRef.current) {
+            // Délai minimal pour iOS pour éviter les conflits
+            const timer = setTimeout(
+                () => {
+                    if (!isMountedRef.current) return;
+
+                    setIsAnimationComplete(true);
+
+                    // Transition de sortie plus rapide sur iOS
+                    const exitTimer = setTimeout(
+                        () => {
+                            if (!isMountedRef.current) return;
+
+                            // Marquer le SplashScreen comme terminé AVANT de le cacher
+                            setSplashScreenComplete();
+
+                            // Petit délai pour que le gestionnaire puisse traiter le changement d'état
+                            setTimeout(() => {
+                                if (!isMountedRef.current) return;
+                                setIsVisible(false);
+                                onLoadingComplete();
+                            }, 100);
+                        },
+                        isIOS ? 300 : 600,
+                    ); // Transition plus rapide sur iOS
+
+                    return () => clearTimeout(exitTimer);
+                },
+                isIOS ? 500 : 1000,
+            );
 
             return () => clearTimeout(timer);
         }
-    }, [imagesLoaded, onLoadingComplete]);
+    }, [imagesLoaded, onLoadingComplete, setSplashScreenComplete, isIOS]);
 
     // Animations
     const progressContainerVariants: Variants = {
@@ -205,6 +260,19 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                         transition: { duration: 0.8, ease: 'easeInOut' },
                     }}
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black overflow-hidden"
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        overscrollBehavior: 'none',
+                        touchAction: 'none',
+                        userSelect: 'none',
+                        WebkitOverflowScrolling: 'touch',
+                    }}
+                    onTouchMove={(e) => e.preventDefault()}
+                    onScroll={(e) => e.preventDefault()}
                 >
                     <div className="relative flex flex-col items-center justify-center h-full">
                         <motion.div
