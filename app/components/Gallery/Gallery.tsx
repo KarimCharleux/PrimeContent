@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 import { useImageStore } from '../../store/imageStore';
 
@@ -18,6 +18,8 @@ export default function Gallery() {
     // 3 lignes fixes
     const ROWS = 3;
     const IMAGE_MARGIN = 10;
+
+    // Mémoriser la configuration pour éviter les re-calculs inutiles
     const [galleryConfig, setGalleryConfig] = useState({
         rowsNumber: ROWS,
         imageMargin: IMAGE_MARGIN,
@@ -25,65 +27,101 @@ export default function Gallery() {
     });
     const [imageRows, setImageRows] = useState<HTMLImageElement[][]>([]);
 
+    // Mémoriser les images valides pour éviter les re-calculs
+    const validImages = useMemo(() => {
+        return preloadedImages?.filter((img) => img && img.naturalWidth && img.naturalHeight) || [];
+    }, [preloadedImages]);
+
     // Préparer la galerie (3 lignes fixes, images réparties équitablement)
     const prepareGallery = useCallback(() => {
-        if (!preloadedImages || preloadedImages.length === 0) return;
+        if (!validImages || validImages.length === 0) {
+            setIsReady(false);
+            return;
+        }
+
         // Hauteur de ligne : 90% de la hauteur de la galerie divisée par 3
         const galleryHeight = galleryContainerRef.current?.offsetHeight || 350;
         const rowHeight = (galleryHeight * 0.9) / ROWS;
+
         // Répartir les images équitablement dans 3 lignes
         const distributedRows: HTMLImageElement[][] = [[], [], []];
-        preloadedImages.forEach((img, i) => {
+        validImages.forEach((img, i) => {
             distributedRows[i % ROWS].push(img);
         });
-        setGalleryConfig({
+
+        const newConfig = {
             rowsNumber: ROWS,
             imageMargin: IMAGE_MARGIN,
             imageHeight: rowHeight,
-        });
-        setImageRows(distributedRows);
-        setIsReady(true);
-    }, [preloadedImages]);
+        };
 
+        // Vérifier si la configuration a changé pour éviter les updates inutiles
+        if (
+            galleryConfig.imageHeight !== newConfig.imageHeight ||
+            imageRows.length === 0 ||
+            imageRows.some((row, index) => row.length !== distributedRows[index].length)
+        ) {
+            setGalleryConfig(newConfig);
+            setImageRows(distributedRows);
+            setIsReady(true);
+        }
+    }, [validImages, galleryConfig.imageHeight, imageRows.length, ROWS, IMAGE_MARGIN]);
+
+    // Effect pour initialiser la galerie une seule fois quand les images sont disponibles
     useEffect(() => {
-        if (preloadedImages && preloadedImages.length > 0) {
+        if (validImages.length > 0 && !isReady) {
             prepareGallery();
         }
-    }, [preloadedImages, prepareGallery]);
+    }, [validImages.length, isReady, prepareGallery]);
+
+    // Effect séparé pour gérer le resize de la fenêtre
+    useEffect(() => {
+        const handleResize = () => {
+            if (isReady && validImages.length > 0) {
+                prepareGallery();
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [isReady, validImages.length, prepareGallery]);
 
     // Rendu d'une image dans une ligne
-    const renderImageInRow = (img: HTMLImageElement, index: number) => {
-        if (!img || !img.naturalWidth) return null;
-        const imgRatio = img.naturalWidth / img.naturalHeight;
-        const imgWidth = galleryConfig.imageHeight * imgRatio;
-        return (
-            <div
-                className={styles['gallery-image-container']}
-                key={`${index}-${img.src}`}
-                style={{ margin: `0 ${galleryConfig.imageMargin / 2}px` }}
-            >
-                <Image
-                    src={img.src}
-                    alt=""
-                    width={img.naturalWidth}
-                    height={img.naturalHeight}
-                    className={styles['gallery-image']}
-                    style={{
-                        height: `${galleryConfig.imageHeight}px`,
-                        width: `${imgWidth}px`,
-                        objectFit: 'cover',
-                        borderRadius: '7px',
-                    }}
-                />
-            </div>
-        );
-    };
+    const renderImageInRow = useCallback(
+        (img: HTMLImageElement, index: number) => {
+            if (!img || !img.naturalWidth) return null;
+            const imgRatio = img.naturalWidth / img.naturalHeight;
+            const imgWidth = galleryConfig.imageHeight * imgRatio;
+            return (
+                <div
+                    className={styles['gallery-image-container']}
+                    key={`${index}-${img.src}`}
+                    style={{ margin: `0 ${galleryConfig.imageMargin / 2}px` }}
+                >
+                    <Image
+                        src={img.src}
+                        alt=""
+                        width={img.naturalWidth}
+                        height={img.naturalHeight}
+                        className={styles['gallery-image']}
+                        style={{
+                            height: `${galleryConfig.imageHeight}px`,
+                            width: `${imgWidth}px`,
+                            objectFit: 'cover',
+                            borderRadius: '7px',
+                        }}
+                    />
+                </div>
+            );
+        },
+        [galleryConfig.imageHeight, galleryConfig.imageMargin],
+    );
 
     // Direction : lignes 0 et 2 → left, ligne 1 → right
-    const getScrollContainerClass = (rowIndex: number) => {
+    const getScrollContainerClass = useCallback((rowIndex: number) => {
         const direction = rowIndex === 1 ? 'right' : 'left';
         return `${styles['gallery-scroll']} ${styles[direction]} ${styles['speed']}`;
-    };
+    }, []);
 
     return (
         <div className={styles['gallery-section']}>
@@ -91,10 +129,11 @@ export default function Gallery() {
                 className={styles['gallery-3d-container']}
                 ref={galleryContainerRef}
                 style={{
-                    opacity: 1,
+                    opacity: isReady ? 1 : 0,
                     transform:
                         'perspective(1200px) rotateX(36deg) rotateY(-3deg) scale(1.2) translateY(-2%)',
                     boxShadow: '0 30px 80px -30px rgba(0,0,0,0.45)',
+                    transition: 'opacity 0.8s ease-in-out',
                 }}
             >
                 <div className={styles['gallery-inner']}>
@@ -122,7 +161,7 @@ export default function Gallery() {
                             </div>
                         ))
                     ) : (
-                        <div></div>
+                        <div style={{ opacity: 0 }}></div>
                     )}
                 </div>
             </div>
