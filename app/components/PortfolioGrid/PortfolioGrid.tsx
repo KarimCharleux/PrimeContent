@@ -360,9 +360,8 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                         <Image
                                             src={getProjectThumbnail(project)}
                                             alt={project.title ?? ''}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                             fill
-                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                            sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw"
                                             style={{ objectFit: 'cover' }}
                                         />
                                         <div
@@ -401,9 +400,8 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                         <Image
                                             src={getMediaUrl(project.source)}
                                             alt={project.title ?? ''}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                             fill
-                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                            sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw"
                                             style={{ objectFit: 'cover' }}
                                         />
                                     </div>

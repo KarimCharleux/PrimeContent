@@ -55,12 +55,12 @@
 
     @media (max-width: 768px) {
         grid-template-columns: repeat(6, 1fr);
-        gap: 12px;
+        gap: 14px;
     }
 
     @media (max-width: 480px) {
         grid-template-columns: repeat(2, 1fr);
-        gap: 8px;
+        gap: 16px; // Augmenté pour plus d'espace entre les éléments
     }
 }
 
@@ -86,6 +86,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: center;
             transition: transform 0.5s ease;
         }
 
@@ -101,7 +102,7 @@
         }
     }
 
-    // Format paysage (6x4) - même hauteur que le portrait (300px)
+    // Format paysage (6x4) - plus large
     &.portfolioItemPaysage {
         grid-column: span 6;
         height: 300px;
@@ -112,12 +113,12 @@
         }
 
         @media (max-width: 480px) {
-            grid-column: span 2;
-            height: 150px;
+            grid-column: span 2; // Prend toute la largeur sur mobile
+            height: 160px; // Hauteur réduite pour format paysage mobile
         }
     }
 
-    // Format portrait (3x4) - même hauteur que le paysage (300px)
+    // Format portrait (3x4) - plus haut
     &.portfolioItemPortrait {
         grid-column: span 3;
         height: 300px;
@@ -128,8 +129,8 @@
         }
 
         @media (max-width: 480px) {
-            grid-column: span 2;
-            height: 150px;
+            grid-column: span 1; // Prend 1 colonne sur mobile (2 portraits par ligne)
+            height: 240px; // Hauteur ajustée pour format portrait mobile
         }
     }
 
@@ -139,6 +140,16 @@
         width: 100%;
         height: 100%;
         cursor: zoom-in;
+        overflow: hidden;
+        border-radius: inherit;
+
+        // S'assurer que l'image Next.js respecte les contraintes
+        > span {
+            display: block !important;
+            width: 100% !important;
+            height: 100% !important;
+            position: relative !important;
+        }
     }
 
     // Effet de brillance au survol

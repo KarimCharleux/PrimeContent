@@ -325,7 +325,6 @@ const ImageCarousel = ({
                         damping: 30,
                         delay: 0.15,
                     }}
-                    onClick={(e) => e.stopPropagation()}
                 >
                     <div className="relative w-full h-full flex items-center justify-center">
                         {isVideo ? (
@@ -333,6 +332,7 @@ const ImageCarousel = ({
                                 // Vidéo YouTube
                                 <div
                                     className={`${styles['video-wrapper']} ${styles['youtube-wrapper']}`}
+                                    onClick={(e) => e.stopPropagation()}
                                 >
                                     <iframe
                                         src={getYouTubeEmbedUrl(currentItem.youtubeId, {
@@ -355,7 +355,10 @@ const ImageCarousel = ({
                                         ref={videoRef}
                                         src={getMediaUrl(currentItem.src)}
                                         className={styles['carousel-video']}
-                                        onClick={togglePlay}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            togglePlay();
+                                        }}
                                         onTimeUpdate={handleTimeUpdate}
                                         loop
                                         muted={isMuted}
@@ -363,11 +366,17 @@ const ImageCarousel = ({
                                     />
 
                                     {/* Contrôles vidéo uniquement pour les vidéos fichiers */}
-                                    <div className={styles['video-controls']}>
+                                    <div
+                                        className={styles['video-controls']}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
                                         {/* Barre de progression */}
                                         <div
                                             className={styles['progress-bar']}
-                                            onClick={handleProgressBarClick}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleProgressBarClick(e);
+                                            }}
                                         >
                                             <div
                                                 className={styles['progress-fill']}
@@ -379,7 +388,10 @@ const ImageCarousel = ({
                                             {/* Bouton lecture/pause */}
                                             <button
                                                 className={styles['control-button']}
-                                                onClick={togglePlay}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    togglePlay();
+                                                }}
                                             >
                                                 {isPlaying ? (
                                                     <svg
@@ -433,7 +445,10 @@ const ImageCarousel = ({
                                             {/* Bouton mute/unmute */}
                                             <button
                                                 className={styles['control-button']}
-                                                onClick={toggleMute}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleMute();
+                                                }}
                                             >
                                                 {isMuted ? (
                                                     <svg
@@ -478,7 +493,10 @@ const ImageCarousel = ({
                                             {/* Bouton plein écran */}
                                             <button
                                                 className={styles['control-button']}
-                                                onClick={toggleFullscreen}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleFullscreen();
+                                                }}
                                             >
                                                 <svg
                                                     xmlns="http://www.w3.org/2000/svg"
@@ -503,6 +521,7 @@ const ImageCarousel = ({
                             <Image
                                 src={getMediaUrl(currentItem.src)}
                                 alt={`Média ${currentIndex + 1}`}
+                                onClick={(e) => e.stopPropagation()}
                                 className={styles['carousel-image']}
                                 width={1200}
                                 height={800}
