@@ -84,6 +84,25 @@ export default function Footer({ hideCTA = false }: FooterProps) {
                     </a>
                 </div>
             </div>
+
+            {/* Section Copyright */}
+            <div className={styles['copyright-section']}>
+                <div className={styles['copyright-content']}>
+                    <div className={styles['brand-name']}>
+                        <span className="primecontent-title">
+                            Prime<span className="text-gray-400">content.</span>
+                        </span>
+                    </div>
+                    <div className={styles['copyright-links']}>
+                        <span className={styles['copyright-text']}>
+                            © {new Date().getFullYear()} Prime Content. Tous droits réservés.
+                        </span>
+                        <Link href="/mentions-legales" className={styles['legal-link']}>
+                            Mentions légales
+                        </Link>
+                    </div>
+                </div>
+            </div>
         </footer>
     );
 }

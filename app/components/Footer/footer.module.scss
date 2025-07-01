@@ -211,9 +211,47 @@
             font-weight: 700;
         }
 
+        .copyright-links {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+
+            @media (max-width: 768px) {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
         .copyright-text {
             color: #a0a0a0;
             font-size: 0.875rem;
+        }
+
+        .legal-link {
+            color: #a0a0a0;
+            font-size: 0.875rem;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            position: relative;
+
+            &::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                bottom: -2px;
+                width: 0;
+                height: 1px;
+                background-color: #0084ff;
+                transition: width 0.3s ease;
+            }
+
+            &:hover {
+                color: #0084ff;
+
+                &::before {
+                    width: 100%;
+                }
+            }
         }
     }
 }

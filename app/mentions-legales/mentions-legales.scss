@@ -1,0 +1,136 @@
+// Styles pour la page Mentions Légales
+.title-container {
+    text-align: center;
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.description {
+    max-width: 800px;
+    margin: 0 auto 3rem;
+    text-align: center;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    opacity: 0;
+    transform: translateY(20px);
+
+    &.animated {
+        opacity: 1;
+        transform: translateY(0);
+        transition: all 0.8s ease;
+        transition-delay: 0.3s;
+    }
+}
+
+// Contenu des mentions légales
+.legal-content {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.legal-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+}
+
+.legal-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+    }
+
+    h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: #fff;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 0.5rem;
+    }
+}
+
+.legal-item {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+
+    strong {
+        color: #fff;
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+
+    p {
+        margin-bottom: 1rem;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+
+.legal-link {
+    color: #60a5fa;
+    text-decoration: none;
+    margin-left: 0.5rem;
+    transition: color 0.3s ease;
+
+    &:hover {
+        color: #93c5fd;
+        text-decoration: underline;
+    }
+}
+
+// Animation de chargement
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        border-left-color: #fff;
+        animation: spin 1s linear infinite;
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+// Responsive
+@media (max-width: 768px) {
+    .legal-section {
+        padding: 1.5rem;
+
+        h2 {
+            font-size: 1.3rem;
+        }
+    }
+
+    .legal-sections {
+        gap: 2rem;
+    }
+}
