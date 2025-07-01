@@ -309,11 +309,7 @@ const ImageCarousel = ({
                 </button>
             )}
 
-            <div
-                ref={swipeRef}
-                className={styles['carousel-container']}
-                onClick={isVideo ? undefined : onClose}
-            >
+            <div ref={swipeRef} className={styles['carousel-container']} onClick={onClose}>
                 <motion.div
                     className="relative max-w-full max-h-[90vh] w-full h-full flex items-center justify-center"
                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
