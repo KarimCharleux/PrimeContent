@@ -345,9 +345,9 @@ export default function Sidebar() {
     const navigation = [
         { name: 'Tableau de bord', href: '/backoffice/dashboard', icon: DashboardIcon },
         { name: "Page d'accueil", href: '/backoffice/home', icon: HomeIcon },
-        { name: 'Réalisations', href: '/backoffice/realisations', icon: PortfolioIcon },
-        { name: 'Galerie photos', href: '/backoffice/photos', icon: GalleryIcon },
-        { name: 'Galerie vidéos', href: '/backoffice/videos', icon: VideoIcon },
+        { name: 'Page réalisations', href: '/backoffice/realisations', icon: PortfolioIcon },
+        { name: 'Page photos', href: '/backoffice/photos', icon: GalleryIcon },
+        { name: 'Page vidéos', href: '/backoffice/videos', icon: VideoIcon },
         { name: 'Événements', href: '/backoffice/evenements', icon: EventsIcon },
         { name: 'Mariages', href: '/backoffice/mariages', icon: WeddingsIcon },
         { name: 'Réseaux sociaux', href: '/backoffice/reseaux-sociaux', icon: SocialMediaIcon },
