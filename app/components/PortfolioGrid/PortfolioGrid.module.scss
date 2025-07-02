@@ -418,17 +418,15 @@
         width: 2rem;
         height: 2rem;
         border-radius: 50%;
-        border: 2px solid rgba(255, 255, 255, 0.4);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        background-color: #ffffff2b;
 
         .filterBtnWithImage:hover & {
             transform: scale(1.05);
-            border-color: rgba(255, 255, 255, 0.8);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         }
 
         .filterBtnWithImage.active & {
-            border-color: white;
             box-shadow:
                 0 0 0 1px rgba(255, 255, 255, 0.5),
                 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -437,25 +435,19 @@
 
     // Style pour les marques - logo carré/rectangulaire
     &.filterImageLogo {
-        height: 1.75rem;
+        height: 2rem;
         width: auto;
-        max-width: 3rem;
+        max-width: 3.5rem;
         border-radius: 4px;
-        background: rgba(255, 255, 255, 0.95);
-        padding: 0.25rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        filter: brightness(0) invert(1);
+        transition: all 0.3s ease;
 
         .filterBtnWithImage:hover & {
             transform: scale(1.05);
-            background: white;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
 
         .filterBtnWithImage.active & {
-            background: white;
-            box-shadow:
-                0 0 0 1px rgba(255, 255, 255, 0.5),
-                0 4px 8px rgba(0, 0, 0, 0.3);
+            transform: scale(1.02);
         }
     }
 }
