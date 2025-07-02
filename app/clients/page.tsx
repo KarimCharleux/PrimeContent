@@ -83,6 +83,41 @@ function ClientPageContent() {
         }
     };
 
+    // Charger les vidéos YouTube d'un client
+    const loadClientVideos = async (
+        clientType: 'brand' | 'celebrity',
+        clientId: string,
+    ): Promise<any[]> => {
+        try {
+            const { collection, getDocs, query, where } = await import('firebase/firestore');
+
+            const videosCollection = collection(db, 'client-videos');
+            const q = query(
+                videosCollection,
+                where('clientType', '==', clientType),
+                where('clientId', '==', clientId),
+            );
+            const videosSnapshot = await getDocs(q);
+
+            const videos: any[] = [];
+            videosSnapshot.forEach((doc) => {
+                const data = doc.data();
+                videos.push({
+                    id: doc.id,
+                    title: data.title,
+                    youtubeUrl: data.youtubeUrl,
+                    youtubeId: data.youtubeId,
+                    order: data.order || 0,
+                });
+            });
+
+            return videos.sort((a, b) => a.order - b.order);
+        } catch (error) {
+            console.error(`Erreur lors du chargement des vidéos YouTube pour ${clientId}:`, error);
+            return [];
+        }
+    };
+
     // Charger les données depuis Firebase et les médias
     useEffect(() => {
         const fetchData = async () => {
@@ -130,6 +165,24 @@ function ClientPageContent() {
                             thumbnail: media.thumbnail,
                         });
                     });
+
+                    // Charger les vidéos YouTube pour cette marque
+                    if (brand.id) {
+                        const youtubeVideos = await loadClientVideos('brand', brand.id);
+                        youtubeVideos.forEach((video) => {
+                            brandProjects.push({
+                                title: `${brand.name} - ${video.title}`,
+                                category: 'Marque',
+                                source: video.youtubeUrl,
+                                isVideo: true,
+                                isYouTube: true,
+                                youtubeId: video.youtubeId,
+                                format: 'paysage',
+                                clientType: 'marque',
+                                clientName: brandName,
+                            });
+                        });
+                    }
                 }
 
                 // Charger les médias pour toutes les célébrités
@@ -151,6 +204,24 @@ function ClientPageContent() {
                             thumbnail: media.thumbnail,
                         });
                     });
+
+                    // Charger les vidéos YouTube pour cette célébrité
+                    if (client.id) {
+                        const youtubeVideos = await loadClientVideos('celebrity', client.id);
+                        youtubeVideos.forEach((video) => {
+                            clientProjects.push({
+                                title: `${client.name} - ${video.title}`,
+                                category: 'Célébrité',
+                                source: video.youtubeUrl,
+                                isVideo: true,
+                                isYouTube: true,
+                                youtubeId: video.youtubeId,
+                                format: 'paysage',
+                                clientType: 'celebrite',
+                                clientName: clientName,
+                            });
+                        });
+                    }
                 }
 
                 setProjects([...brandProjects, ...clientProjects]);
