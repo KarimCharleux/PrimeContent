@@ -419,13 +419,35 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                 >
                                     {project.isVideo ? (
                                         <div className={styles.portfolioImageContainer}>
-                                            <Image
-                                                src={getProjectThumbnail(project)}
-                                                alt={project.title ?? ''}
-                                                fill
-                                                sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw"
-                                                style={{ objectFit: 'cover' }}
-                                            />
+                                            {/* Si on a une miniature ou c'est YouTube, utiliser Image */}
+                                            {project.thumbnail || project.isYouTube ? (
+                                                <Image
+                                                    src={getProjectThumbnail(project)}
+                                                    alt={project.title ?? ''}
+                                                    fill
+                                                    sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw"
+                                                    style={{ objectFit: 'cover' }}
+                                                />
+                                            ) : (
+                                                // Sinon, utiliser la vidéo comme miniature
+                                                <video
+                                                    src={getMediaUrl(project.source)}
+                                                    muted
+                                                    loop
+                                                    playsInline
+                                                    style={{
+                                                        position: 'absolute',
+                                                        height: '100%',
+                                                        width: '100%',
+                                                        inset: '0px',
+                                                        objectFit: 'cover',
+                                                    }}
+                                                    onLoadedData={(e) => {
+                                                        const video = e.target as HTMLVideoElement;
+                                                        video.currentTime = 1; // Aller à 1 seconde pour éviter le noir
+                                                    }}
+                                                />
+                                            )}
                                             <div
                                                 className={`${styles.videoPlayBtn} ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
                                             >
