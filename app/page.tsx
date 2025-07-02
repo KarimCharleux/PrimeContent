@@ -371,6 +371,11 @@ export default function Page() {
     }, []);
 
     useEffect(() => {
+        // Import des utilitaires de détection d'appareils
+        const { isIOSSafari, getOptimizedLimits, deviceLog } = require('./utils/deviceDetection');
+
+        const limits = getOptimizedLimits();
+
         // Vérifie si le splash screen est terminé via le localStorage
         const checkSplashScreen = () => {
             const splashScreenComplete = localStorage.getItem('splashScreenComplete');
@@ -381,21 +386,43 @@ export default function Page() {
                 localStorage.removeItem('splashScreenComplete');
                 // Réinitialiser la position de défilement à 0
                 window.scrollTo(0, 0);
+                deviceLog('Animations activées après SplashScreen');
             }
             // Si on vient d'une autre page (pas de SplashScreen)
             else if (splashScreenComplete !== 'waiting') {
-                // On active les animations après un petit délai pour laisser la page se charger
-                setTimeout(() => {
+                // Vérification pour éviter les boucles sur iOS
+                const hasVisited = sessionStorage.getItem('hasVisitedHome');
+                if (!hasVisited) {
+                    sessionStorage.setItem('hasVisitedHome', 'true');
+                    setTimeout(() => {
+                        setShouldStartAnimations(true);
+                        deviceLog('Animations activées - première visite');
+                    }, 100);
+                } else {
+                    // Si déjà visité, activer immédiatement
                     setShouldStartAnimations(true);
-                }, 100);
+                    deviceLog('Animations activées - visite répétée');
+                }
             }
         };
 
-        // Vérifie immédiatement et toutes les 100ms si le splash screen est terminé
+        // Vérifie immédiatement
         checkSplashScreen();
-        const interval = setInterval(checkSplashScreen, 100);
 
-        return () => clearInterval(interval);
+        // Utilisation des intervalles optimisés
+        const interval = setInterval(checkSplashScreen, limits.checkInterval);
+
+        // Timeout de sécurité optimisé
+        const safetyTimeout = setTimeout(() => {
+            deviceLog('Timeout de sécurité - activation des animations');
+            setShouldStartAnimations(true);
+            clearInterval(interval);
+        }, limits.safetyTimeout);
+
+        return () => {
+            clearInterval(interval);
+            clearTimeout(safetyTimeout);
+        };
     }, []);
 
     useEffect(() => {

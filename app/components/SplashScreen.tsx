@@ -4,6 +4,12 @@ import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 import { useImageStore } from '../store/imageStore';
+import {
+    isIOSSafari,
+    getOptimizedLimits,
+    deviceLog,
+    cleanupImages,
+} from '../utils/deviceDetection';
 import { getMediaUrl } from '../utils/mediaUrl';
 
 interface SplashScreenProps {
@@ -16,6 +22,7 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
     const [isAnimationComplete, setIsAnimationComplete] = useState(false);
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
+    const [hasError, setHasError] = useState(false);
 
     // Store pour les images préchargées
     const setPreloadedImages = useImageStore((state) => state.setPreloadedImages);
@@ -26,9 +33,10 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
         localStorage.setItem('splashScreenComplete', 'waiting');
     }, []);
 
-    // Préchargement des images
+    // Préchargement des images optimisé pour iOS
     useEffect(() => {
         let isMounted = true;
+        let loadedImages: HTMLImageElement[] = [];
 
         // Vérifier si nous sommes sur une page admin via l'URL
         const isAdminPage =
@@ -56,44 +64,95 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                     return;
                 }
 
-                const totalImages = data.media.length;
+                const imageItems = data.media.filter((item: any) => item.type === 'image');
+                const totalImages = imageItems.length;
                 let loadedCount = 0;
 
-                const loadImage = (mediaItem: any): Promise<HTMLImageElement> =>
-                    new Promise((resolve, reject) => {
+                // Optimisations spécifiques selon l'appareil
+                const limits = getOptimizedLimits();
+                const maxImages = Math.min(limits.maxImages, totalImages);
+
+                deviceLog(
+                    `Chargement de ${maxImages} images par lots de ${limits.maxConcurrentRequests}`,
+                );
+
+                // Fonction de chargement d'une image avec timeout
+                const loadImage = (mediaItem: any): Promise<HTMLImageElement | null> =>
+                    new Promise((resolve) => {
                         const img = new Image();
+                        const timer = setTimeout(() => {
+                            console.warn(`⏰ Timeout pour l'image: ${mediaItem.url}`);
+                            resolve(null);
+                        }, limits.timeoutDuration);
+
                         img.onload = () => {
+                            clearTimeout(timer);
                             if (!isMounted) return;
 
                             loadedCount++;
-                            setLoadingProgress(Math.round((loadedCount / totalImages) * 100));
+                            setLoadingProgress(Math.round((loadedCount / maxImages) * 100));
                             resolve(img);
                         };
+
                         img.onerror = (error) => {
-                            console.warn(
-                                `Erreur lors du chargement de l'image: ${mediaItem.url}`,
-                                error,
-                            );
-                            // Continuer même si une image échoue
+                            clearTimeout(timer);
+                            console.warn(`❌ Erreur pour l'image: ${mediaItem.url}`, error);
                             if (!isMounted) return;
+
                             loadedCount++;
-                            setLoadingProgress(Math.round((loadedCount / totalImages) * 100));
-                            resolve(img);
+                            setLoadingProgress(Math.round((loadedCount / maxImages) * 100));
+                            resolve(null);
                         };
+
                         img.src = getMediaUrl(mediaItem.url);
                     });
 
-                const loadedImages = await Promise.all(
-                    data.media.filter((item: any) => item.type === 'image').map(loadImage),
-                );
+                // Chargement par lots pour éviter la surcharge mémoire
+                const loadInBatches = async (items: any[], batchSize: number) => {
+                    const results: HTMLImageElement[] = [];
+
+                    for (let i = 0; i < Math.min(items.length, maxImages); i += batchSize) {
+                        if (!isMounted) break;
+
+                        const batch = items.slice(i, i + batchSize);
+                        deviceLog(
+                            `Lot ${Math.floor(i / batchSize) + 1}/${Math.ceil(Math.min(items.length, maxImages) / batchSize)} (${batch.length} images)`,
+                        );
+
+                        const batchResults = await Promise.allSettled(
+                            batch.map((item) => loadImage(item)),
+                        );
+
+                        batchResults.forEach((result) => {
+                            if (result.status === 'fulfilled' && result.value) {
+                                results.push(result.value);
+                            }
+                        });
+
+                        // Pause entre les lots sur iOS pour éviter la surcharge mémoire
+                        if (isIOSSafari() && i + batchSize < Math.min(items.length, maxImages)) {
+                            await new Promise((resolve) => setTimeout(resolve, 200));
+                        }
+                    }
+
+                    return results;
+                };
+
+                loadedImages = await loadInBatches(imageItems, limits.maxConcurrentRequests);
+
                 if (isMounted) {
                     setPreloadedImages(loadedImages);
                     setImagesLoaded(true);
+                    deviceLog(
+                        `✅ ${loadedImages.length} images chargées avec succès sur ${totalImages} disponibles`,
+                    );
                 }
             } catch (error) {
-                console.error('Erreur lors du chargement des images:', error);
+                console.error('❌ Erreur lors du chargement des images:', error);
+                setHasError(true);
                 if (isMounted) {
-                    setImagesLoaded(true); // On continue même en cas d'erreur
+                    // On continue même en cas d'erreur pour éviter les blocages
+                    setImagesLoaded(true);
                 }
             }
         };
@@ -102,12 +161,20 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
 
         return () => {
             isMounted = false;
+            // Nettoyage mémoire optimisé pour iOS
+            cleanupImages(loadedImages);
         };
     }, [setPreloadedImages]);
 
     // Gestion de la fin du chargement et transition
     useEffect(() => {
         if (imagesLoaded) {
+            // Utilisation des délais optimisés selon l'appareil
+            const limits = getOptimizedLimits();
+            const delay = hasError ? limits.animationDelay / 2 : limits.animationDelay;
+
+            deviceLog(`Fin du chargement - transition dans ${delay}ms`);
+
             // Attendre un peu pour que l'utilisateur puisse voir l'animation du logo
             const timer = setTimeout(() => {
                 setIsAnimationComplete(true);
@@ -121,11 +188,11 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                     localStorage.setItem('splashScreenComplete', 'true');
                     onLoadingComplete();
                 }, 600);
-            }, 1500);
+            }, delay);
 
             return () => clearTimeout(timer);
         }
-    }, [imagesLoaded, onLoadingComplete]);
+    }, [imagesLoaded, onLoadingComplete, hasError]);
 
     // Animations
     const progressContainerVariants: Variants = {

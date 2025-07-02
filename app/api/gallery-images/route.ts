@@ -33,9 +33,16 @@ export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const requestedPath = searchParams.get('path');
+        const limitParam = searchParams.get('limit');
 
         // Si aucun chemin n'est spécifié, utiliser le chemin par défaut
         const targetPath = requestedPath || 'home/gallery';
+
+        // Limite pour iOS (détection via User-Agent)
+        const userAgent = request.headers.get('user-agent') || '';
+        const isIOSDevice = /iPad|iPhone|iPod/.test(userAgent);
+        const defaultLimit = isIOSDevice ? 15 : 50; // Limite drastique sur iOS
+        const limit = limitParam ? parseInt(limitParam, 10) : defaultLimit;
 
         // Sécurité : vérifier que le chemin ne contient pas de traversée de répertoire
         if (targetPath.includes('..') || targetPath.startsWith('/')) {
@@ -47,13 +54,17 @@ export async function GET(request: Request) {
 
         // Vérifier si le dossier existe
         if (!fs.existsSync(targetDir)) {
-            console.warn(`Dossier non trouvé: ${targetDir}`);
-            return NextResponse.json({
+            console.warn(`📁 Dossier non trouvé: ${targetDir}`);
+            const response = NextResponse.json({
                 images: [],
                 media: [],
                 count: 0,
                 message: 'Dossier non trouvé',
             });
+
+            // Headers de cache même pour les erreurs (évite les appels répétés)
+            response.headers.set('Cache-Control', 'public, max-age=300'); // 5 min
+            return response;
         }
 
         // Lire le contenu du dossier
@@ -102,18 +113,48 @@ export async function GET(request: Request) {
             (a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime(),
         );
 
-        // Retourner la liste des médias
-        return NextResponse.json({
-            images: mediaObjects, // Gardé pour compatibilité
-            media: mediaObjects,
-            count: mediaObjects.length,
+        // Appliquer la limite (important pour iOS)
+        const limitedMediaObjects = mediaObjects.slice(0, limit);
+
+        console.log(
+            `📱 ${isIOSDevice ? 'iOS' : 'Autre'} - Envoi de ${limitedMediaObjects.length}/${mediaObjects.length} médias pour ${targetPath}`,
+        );
+
+        // Retourner la liste des médias avec headers optimisés
+        const response = NextResponse.json({
+            images: limitedMediaObjects, // Gardé pour compatibilité
+            media: limitedMediaObjects,
+            count: limitedMediaObjects.length,
+            totalCount: mediaObjects.length,
             path: targetPath,
+            isLimited: limitedMediaObjects.length < mediaObjects.length,
         });
+
+        // Headers de cache optimisés pour iOS
+        response.headers.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+        response.headers.set('ETag', `"${targetPath}-${mediaObjects.length}-${limit}"`);
+
+        // Headers pour iOS Safari
+        response.headers.set('Vary', 'User-Agent');
+        response.headers.set('X-Content-Type-Options', 'nosniff');
+
+        return response;
     } catch (error) {
-        console.error('Erreur lors de la lecture du dossier:', error);
-        return NextResponse.json(
-            { error: 'Erreur lors de la récupération des médias' },
+        console.error('❌ Erreur lors de la lecture du dossier:', error);
+        const response = NextResponse.json(
+            {
+                error: 'Erreur lors de la récupération des médias',
+                images: [], // Fallback pour éviter les erreurs côté client
+                media: [],
+                count: 0,
+            },
             { status: 500 },
         );
+
+        // Headers pour éviter les appels répétés en cas d'erreur
+        response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        response.headers.set('Retry-After', '30'); // Retry dans 30 secondes
+
+        return response;
     }
 }
