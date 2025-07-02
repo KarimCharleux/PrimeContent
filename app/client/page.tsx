@@ -8,7 +8,7 @@ import { useEffect, useState, useRef, Suspense } from 'react';
 import { db } from '../backoffice/lib/firebase-client';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
-import PortfolioGrid, { Project } from '../components/PortfolioGrid/PortfolioGrid';
+import PortfolioGrid, { Project, ClientData } from '../components/PortfolioGrid/PortfolioGrid';
 
 import './client.scss';
 
@@ -244,6 +244,33 @@ function ClientPageContent() {
 
     const customFilters = getAvailableFilters();
 
+    // Créer les données client pour les filtres avec images
+    const createClientData = (): { [key: string]: ClientData } => {
+        const clientData: { [key: string]: ClientData } = {};
+
+        if (activeType === 'marques') {
+            brands.forEach((brand) => {
+                const key = brand.name.toLowerCase().replace(/\s+/g, '-');
+                clientData[key] = {
+                    name: brand.name,
+                    imageSrc: brand.imageSrc,
+                    type: 'brand',
+                };
+            });
+        } else {
+            clients.forEach((client) => {
+                const key = client.name.toLowerCase().replace(/\s+/g, '-');
+                clientData[key] = {
+                    name: client.name,
+                    imageSrc: client.imageSrc,
+                    type: 'celebrity',
+                };
+            });
+        }
+
+        return clientData;
+    };
+
     if (loading) {
         return (
             <main className="client-page global-main-page">
@@ -312,6 +339,9 @@ function ClientPageContent() {
                                     }
                                     router.push(`/client?${params.toString()}`, { scroll: false });
                                 }}
+                                filterWithImages={true}
+                                clientData={createClientData()}
+                                activeClientType={activeType}
                             />
                         ) : (
                             <div className="text-center py-16">

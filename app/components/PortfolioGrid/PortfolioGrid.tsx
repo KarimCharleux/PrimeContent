@@ -37,6 +37,13 @@ interface CustomFilter {
     label: string;
 }
 
+// Interface pour les données des clients/marques (pour l'affichage avec images)
+export interface ClientData {
+    name: string;
+    imageSrc: string;
+    type: 'brand' | 'celebrity';
+}
+
 interface PortfolioGridProps {
     projects: Project[];
     showFilter?: boolean;
@@ -51,6 +58,10 @@ interface PortfolioGridProps {
     onFilterChange?: (filter: string) => void;
     // Option pour afficher un dégradé en bas pour inciter à voir plus
     showGradientOverlay?: boolean;
+    // Nouvelles options pour l'affichage avec images (page client)
+    filterWithImages?: boolean;
+    clientData?: { [key: string]: ClientData };
+    activeClientType?: 'marques' | 'celebrites';
 }
 
 const PortfolioGrid: React.FC<PortfolioGridProps> = ({
@@ -64,6 +75,9 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
     activeFilter: externalActiveFilter,
     onFilterChange,
     showGradientOverlay = false,
+    filterWithImages = false,
+    clientData,
+    activeClientType,
 }) => {
     // État pour le filtre actif
     const [internalActiveFilter, setInternalActiveFilter] = useState('Tout');
@@ -317,17 +331,58 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                 {/* Filtres de catégories */}
                 {showFilter && categories.length > 1 && (
                     <div className={styles.filterContainer}>
-                        {categories.map((category) => (
-                            <button
-                                key={category}
-                                className={`${styles.filterBtn} ${
-                                    activeFilter === category ? styles.active : styles.inactive
-                                }`}
-                                onClick={() => handleFilterChange(category)}
-                            >
-                                {customFilters ? categoryLabels[category] || category : category}
-                            </button>
-                        ))}
+                        {categories.map((category) => {
+                            // Si filterWithImages est activé et qu'on a des données client
+                            if (filterWithImages && clientData && category !== 'Tout') {
+                                const clientInfo = clientData[category];
+                                if (clientInfo) {
+                                    return (
+                                        <button
+                                            key={category}
+                                            className={`${styles.filterBtn} ${styles.filterBtnWithImage} ${
+                                                activeFilter === category
+                                                    ? styles.active
+                                                    : styles.inactive
+                                            }`}
+                                            onClick={() => handleFilterChange(category)}
+                                        >
+                                            <div className={styles.filterImageContainer}>
+                                                <img
+                                                    src={getMediaUrl(clientInfo.imageSrc)}
+                                                    alt={clientInfo.name}
+                                                    className={`${styles.filterImage} ${
+                                                        clientInfo.type === 'celebrity'
+                                                            ? styles.filterImageRound
+                                                            : styles.filterImageLogo
+                                                    }`}
+                                                />
+                                                {/* Afficher le nom seulement pour les célébrités */}
+                                                {clientInfo.type === 'celebrity' && (
+                                                    <span className={styles.filterImageLabel}>
+                                                        {clientInfo.name}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                }
+                            }
+
+                            // Rendu normal pour les autres cas
+                            return (
+                                <button
+                                    key={category}
+                                    className={`${styles.filterBtn} ${
+                                        activeFilter === category ? styles.active : styles.inactive
+                                    }`}
+                                    onClick={() => handleFilterChange(category)}
+                                >
+                                    {customFilters
+                                        ? categoryLabels[category] || category
+                                        : category}
+                                </button>
+                            );
+                        })}
                     </div>
                 )}
 
