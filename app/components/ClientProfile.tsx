@@ -33,7 +33,7 @@ export default function ClientProfile({
 
         // Créer l'URL vers la page client avec le filtre de la célébrité
         const filterName = name.toLowerCase().replace(/\s+/g, '-');
-        return `/client?type=celebrites&filter=${filterName}`;
+        return `/clients?type=celebrites&filter=${filterName}`;
     };
 
     // Effet de parallaxe au survol

@@ -22,7 +22,7 @@ export default function BrandLogo({ name, imageSrc, href }: BrandLogoProps) {
 
         // Créer l'URL vers la page client avec le filtre de la marque
         const filterName = name.toLowerCase().replace(/\s+/g, '-');
-        return `/client?type=marques&filter=${filterName}`;
+        return `/clients?type=marques&filter=${filterName}`;
     };
 
     const content = (

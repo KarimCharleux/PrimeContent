@@ -10,7 +10,7 @@ import Footer from '../components/Footer';
 import Header from '../components/Header';
 import PortfolioGrid, { Project, ClientData } from '../components/PortfolioGrid/PortfolioGrid';
 
-import './client.scss';
+import './clients.scss';
 
 interface Brand {
     id?: string;
@@ -200,7 +200,7 @@ function ClientPageContent() {
             params.set('filter', urlFilter);
         }
 
-        router.push(`/client?${params.toString()}`, { scroll: false });
+        router.push(`/clients?${params.toString()}`, { scroll: false });
     };
 
     // Générer les filtres personnalisés basés sur les clients qui ont des médias
@@ -337,7 +337,7 @@ function ClientPageContent() {
                                     if (filter !== 'Tout') {
                                         params.set('filter', filter);
                                     }
-                                    router.push(`/client?${params.toString()}`, { scroll: false });
+                                    router.push(`/clients?${params.toString()}`, { scroll: false });
                                 }}
                                 filterWithImages={true}
                                 clientData={createClientData()}

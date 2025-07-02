@@ -819,7 +819,7 @@ export default function Page() {
                     <div className="mt-16 mx-auto w-fit">
                         <PrimaryButton
                             text="Explorez plus"
-                            href="/client"
+                            href="/clients"
                             animateOnMount={true}
                             delay={0.5}
                         />
