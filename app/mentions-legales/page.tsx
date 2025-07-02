@@ -162,9 +162,9 @@ export default function MentionsLegalesPage() {
                             <div className="legal-sections">
                                 {/* Identification de l'entreprise */}
                                 <motion.section variants={fadeInUp} className="legal-section">
-                                    <h2>1. Identification de l'entreprise</h2>
+                                    <h2>1. Identification de l&apos;entreprise</h2>
                                     <div className="legal-item">
-                                        <strong>Nom de l'entreprise :</strong>{' '}
+                                        <strong>Nom de l&apos;entreprise :</strong>{' '}
                                         {legalMentions.nomEntreprise}
                                     </div>
                                     <div className="legal-item">
@@ -262,13 +262,13 @@ export default function MentionsLegalesPage() {
                                         <p>
                                             Conformément au Règlement Général sur la Protection des
                                             Données (RGPD) et à la loi « Informatique et Libertés »,
-                                            vous disposez d'un droit d'accès, de rectification, de
-                                            suppression et de portabilité de vos données
-                                            personnelles.
+                                            vous disposez d&apos;un droit d&apos;accès, de
+                                            rectification, de suppression et de portabilité de vos
+                                            données personnelles.
                                         </p>
                                         <p>
                                             Pour exercer ces droits, vous pouvez nous contacter à
-                                            l'adresse :
+                                            l&apos;adresse :
                                             <a
                                                 href={`mailto:${legalMentions.coordonneesContact.email}`}
                                                 className="legal-link"
@@ -285,7 +285,7 @@ export default function MentionsLegalesPage() {
                                     <div className="legal-item">
                                         <p>
                                             Ce site utilise Google Analytics pour analyser
-                                            l'audience et améliorer nos services. Ces outils
+                                            l&apos;audience et améliorer nos services. Ces outils
                                             déposent des cookies sur votre appareil. Vous pouvez
                                             désactiver ces cookies dans les paramètres de votre
                                             navigateur.

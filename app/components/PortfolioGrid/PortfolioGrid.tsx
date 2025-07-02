@@ -347,9 +347,11 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                             onClick={() => handleFilterChange(category)}
                                         >
                                             <div className={styles.filterImageContainer}>
-                                                <img
+                                                <Image
                                                     src={getMediaUrl(clientInfo.imageSrc)}
                                                     alt={clientInfo.name}
+                                                    width={32}
+                                                    height={32}
                                                     className={`${styles.filterImage} ${
                                                         clientInfo.type === 'celebrity'
                                                             ? styles.filterImageRound

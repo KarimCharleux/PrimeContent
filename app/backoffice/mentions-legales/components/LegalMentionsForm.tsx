@@ -147,14 +147,16 @@ export default function LegalMentionsForm({
             )}
 
             <div className="bg-white shadow-md rounded-lg p-6">
-                <h2 className="text-lg font-semibold mb-4 text-gray-900">Texte d'introduction</h2>
+                <h2 className="text-lg font-semibold mb-4 text-gray-900">
+                    Texte d&apos;introduction
+                </h2>
                 <div className="space-y-4">
                     <div>
                         <label
                             htmlFor="textIntroduction"
                             className="block text-sm font-medium text-gray-700 mb-2"
                         >
-                            Texte d'introduction (optionnel)
+                            Texte d&apos;introduction (optionnel)
                         </label>
                         <textarea
                             id="textIntroduction"
@@ -171,7 +173,7 @@ export default function LegalMentionsForm({
 
             <div className="bg-white shadow-md rounded-lg p-6">
                 <h2 className="text-lg font-semibold mb-4 text-gray-900">
-                    Identification de l'entreprise
+                    Identification de l&apos;entreprise
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -179,7 +181,7 @@ export default function LegalMentionsForm({
                             htmlFor="nomEntreprise"
                             className="block text-sm font-medium text-gray-700 mb-2"
                         >
-                            Nom de l'entreprise *
+                            Nom de l&apos;entreprise *
                         </label>
                         <input
                             type="text"
@@ -359,7 +361,7 @@ export default function LegalMentionsForm({
                             htmlFor="hebergeur.nom"
                             className="block text-sm font-medium text-gray-700 mb-2"
                         >
-                            Nom de l'hébergeur *
+                            Nom de l&apos;hébergeur *
                         </label>
                         <input
                             type="text"
@@ -376,7 +378,7 @@ export default function LegalMentionsForm({
                             htmlFor="hebergeur.adresse"
                             className="block text-sm font-medium text-gray-700 mb-2"
                         >
-                            Adresse de l'hébergeur *
+                            Adresse de l&apos;hébergeur *
                         </label>
                         <input
                             type="text"
@@ -393,7 +395,7 @@ export default function LegalMentionsForm({
                             htmlFor="hebergeur.contact"
                             className="block text-sm font-medium text-gray-700 mb-2"
                         >
-                            Contact de l'hébergeur (email ou téléphone) *
+                            Contact de l&apos;hébergeur (email ou téléphone) *
                         </label>
                         <input
                             type="text"

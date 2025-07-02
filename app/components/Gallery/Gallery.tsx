@@ -65,7 +65,7 @@ export default function Gallery() {
             setImageRows(distributedRows);
             setIsReady(true);
         }
-    }, [validImages, galleryConfig.imageHeight, imageRows.length, ROWS, IMAGE_MARGIN]);
+    }, [validImages, galleryConfig.imageHeight, imageRows, ROWS, IMAGE_MARGIN]);
 
     // Effect pour initialiser la galerie une seule fois quand les images sont disponibles
     useEffect(() => {
