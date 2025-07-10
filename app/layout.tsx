@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import { Metadata, Viewport } from 'next';
 import './globals.css';
 import './styles/fonts.css';
 
@@ -8,21 +8,21 @@ export const metadata: Metadata = {
     title: 'Primecontent | Création vidéo & photo professionnelle',
     description:
         'Créateur de contenu professionnel pour mariages, événements et entreprises basé à Paris',
-    viewport: {
-        width: 'device-width',
-        initialScale: 1,
-        maximumScale: 1,
-        userScalable: false, // Empêche le zoom accidentel
-        viewportFit: 'cover',
-    },
     other: {
         // Empêche le pull-to-refresh sur Chrome mobile
         'format-detection': 'telephone=no',
         // Empêche la sélection et le zoom sur iOS
         'apple-mobile-web-app-capable': 'yes',
         'apple-mobile-web-app-status-bar-style': 'black-translucent',
-        'apple-touch-fullscreen': 'yes',
-    },
+    } as Record<string, string>,
+};
+
+export const viewport: Viewport = {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false, // Empêche le zoom accidentel
+    viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
