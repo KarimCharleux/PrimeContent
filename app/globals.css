@@ -93,34 +93,8 @@
     * {
         @apply border-border;
     }
-
-    /* Corrections pour le scroll bounce et overscroll sur mobile */
-    html {
-        overscroll-behavior: none;
-        -webkit-overflow-scrolling: touch;
-        touch-action: manipulation;
-        /* Empêche le zoom sur double tap */
-        -webkit-text-size-adjust: 100%;
-        -webkit-touch-callout: none;
-    }
-
     body {
         @apply bg-background text-foreground;
-        /* Corrections pour mobile */
-        overscroll-behavior: none;
-        overscroll-behavior-x: none;
-        overscroll-behavior-y: none;
-        /* Empêche le pull-to-refresh sur mobile */
-        overflow-x: hidden;
-        /* Support iOS */
-        -webkit-overflow-scrolling: touch;
-        /* Empêche la sélection accidentelle */
-        -webkit-user-select: none;
-        -webkit-tap-highlight-color: transparent;
-        /* Position fixe pour éviter les rebonds */
-        position: relative;
-        min-height: 100vh;
-        min-height: 100dvh; /* Support pour les nouveaux navigateurs */
     }
 }
 
@@ -171,97 +145,12 @@ h6 {
     padding-top: 80px;
     background: linear-gradient(to bottom, #111827, #000000);
     min-height: 100vh;
-    min-height: 100dvh; /* Support pour les nouveaux navigateurs */
     color: white;
     overflow-x: hidden;
-    /* Corrections pour mobile */
-    overscroll-behavior: none;
-    touch-action: manipulation;
-    position: relative;
-    /* Empêche le glissement horizontal sur mobile */
-    max-width: 100vw;
-}
-
-/* Styles spécifiques pour empêcher le scroll bounce sur mobile */
-* {
-    overscroll-behavior: none;
-    /* Empêche la sélection de texte accidentelle sur mobile */
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
-
-/* Réactive la sélection pour les éléments de texte nécessaires */
-input,
-textarea,
-[contenteditable] {
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
-    user-select: text;
-}
-
-/* Styles pour les sections principales */
-main,
-section,
-div[class*='container'] {
-    overscroll-behavior: none;
-    touch-action: manipulation;
-    position: relative;
-}
-
-/* Corrections spécifiques pour iOS Safari */
-@supports (-webkit-overflow-scrolling: touch) {
-    body {
-        /* Force le hardware acceleration sur iOS */
-        -webkit-transform: translate3d(0, 0, 0);
-        transform: translate3d(0, 0, 0);
-        /* Empêche le scroll élastique */
-        overscroll-behavior-y: none;
-    }
-
-    /* Empêche le glissement sur tous les conteneurs */
-    * {
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior: none;
-    }
 }
 
 @media (max-width: 768px) {
     .page-title {
         font-size: 2.5rem;
-    }
-
-    /* Styles mobile supplémentaires pour empêcher le scroll bounce */
-    html,
-    body {
-        /* Force la largeur sur mobile */
-        width: 100%;
-        max-width: 100vw;
-        /* Empêche le zoom accidentel */
-        -webkit-text-size-adjust: none;
-        -ms-text-size-adjust: none;
-        text-size-adjust: none;
-    }
-
-    /* Empêche tout déplacement sur mobile */
-    body {
-        /* Lock la position pour éviter les glissements */
-        overscroll-behavior: none;
-        overscroll-behavior-x: none;
-        overscroll-behavior-y: none;
-        /* Empêche le pull-to-refresh */
-        -webkit-overflow-scrolling: auto;
-    }
-
-    /* Corrections pour les sections principales sur mobile */
-    main {
-        /* Empêche le glissement horizontal */
-        overflow-x: hidden;
-        max-width: 100vw;
-        /* Force le comportement sans rebond */
-        overscroll-behavior: none;
-        touch-action: pan-y; /* Permet seulement le scroll vertical */
     }
 }

@@ -5,17 +5,12 @@ import Script from 'next/script';
 import { useState, useEffect } from 'react';
 import TagManager from 'react-gtm-module';
 
-import { useMobileOptimization } from '../hooks/usePreventScrollBounce';
-
 import SplashScreen from './SplashScreen';
 
 export default function ClientLayout({ children }: Readonly<{ children: React.ReactNode }>) {
     const [isLoading, setIsLoading] = useState(true);
     const pathname = usePathname();
     const isAdminPage = pathname?.startsWith('/backoffice');
-
-    // Hook pour empêcher le scroll bounce sur mobile
-    useMobileOptimization();
 
     // Si nous sommes sur une page admin, désactiver immédiatement le chargement
     useEffect(() => {
@@ -49,14 +44,6 @@ export default function ClientLayout({ children }: Readonly<{ children: React.Re
                 style={{
                     opacity: isLoading && !isAdminPage ? 0 : 1,
                     transition: 'opacity 0.5s ease-in-out',
-                    // Corrections pour empêcher le scroll bounce
-                    overscrollBehavior: 'none',
-                    touchAction: 'manipulation',
-                    overflowX: 'hidden',
-                    position: 'relative',
-                    minHeight: '100vh',
-                    width: '100%',
-                    maxWidth: '100vw',
                 }}
             >
                 {children}

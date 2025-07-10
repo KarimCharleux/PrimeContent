@@ -27,24 +27,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
     return (
-        <html
-            lang="fr"
-            suppressHydrationWarning={true}
-            className="font-sora"
-            style={{
-                overscrollBehavior: 'none',
-                touchAction: 'manipulation',
-                WebkitOverflowScrolling: 'touch',
-            }}
-        >
-            <body
-                className="font-sora"
-                style={{
-                    overscrollBehavior: 'none',
-                    overflowX: 'hidden',
-                    touchAction: 'manipulation',
-                }}
-            >
+        <html lang="fr" suppressHydrationWarning={true} className="font-sora">
+            <body className="font-sora">
                 <ClientLayout>{children}</ClientLayout>
             </body>
         </html>
