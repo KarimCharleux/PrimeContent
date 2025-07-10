@@ -196,7 +196,7 @@ export default function ClientProfile({
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
 
             {/* Texte avec styles renforcés */}
-            <div className="client-text absolute bottom-0 left-0 w-full p-6 transition-transform duration-200 ease-out text-center z-10">
+            <div className="client-text absolute bottom-0 left-0 w-full p-6 max-sm:p-3 transition-transform duration-200 ease-out text-center z-10">
                 <h3
                     className="text-2xl font-bold !text-white mb-1 max-md:text-lg"
                     style={{ color: 'white' }}
