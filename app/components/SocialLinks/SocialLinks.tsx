@@ -51,6 +51,28 @@ const SOCIAL_ICONS: Record<string, string> = {
            </svg>`,
 };
 
+// Fonction utilitaire pour formater correctement les URLs des réseaux sociaux
+const formatSocialUrl = (url: string): string => {
+    if (!url) return '#';
+
+    // Si l'URL commence déjà par http:// ou https://, on la retourne telle quelle
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+    }
+
+    // Si l'URL commence par www., on ajoute https://
+    if (url.startsWith('www.')) {
+        return `https://${url}`;
+    }
+
+    // Si c'est juste un nom de domaine ou un chemin, on ajoute https://
+    if (!url.includes('://')) {
+        return `https://${url}`;
+    }
+
+    return url;
+};
+
 export default function SocialLinks({ socialNetworks = [], className }: SocialLinksProps) {
     if (!Array.isArray(socialNetworks) || socialNetworks.length === 0) {
         return null;
@@ -60,11 +82,12 @@ export default function SocialLinks({ socialNetworks = [], className }: SocialLi
         <div className={`${styles['social-links']} ${className || ''}`}>
             {socialNetworks.map((network) => {
                 const icon = SOCIAL_ICONS[network.type] || SOCIAL_ICONS.other;
+                const formattedUrl = formatSocialUrl(network.url);
 
                 return (
                     <span key={network.id} className={styles.social}>
-                        <Link
-                            href={network.url}
+                        <a
+                            href={formattedUrl}
                             className="flex items-center gap-2"
                             aria-label={network.name}
                             target="_blank"
@@ -75,7 +98,7 @@ export default function SocialLinks({ socialNetworks = [], className }: SocialLi
                                 dangerouslySetInnerHTML={{ __html: icon }}
                             />
                             {network.displayName}
-                        </Link>
+                        </a>
                     </span>
                 );
             })}
