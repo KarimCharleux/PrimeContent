@@ -721,7 +721,7 @@ export default function Page() {
 
                             {/* Première moitié des marques en haut - visible uniquement sur mobile */}
                             {firstHalfBrands.length > 0 && (
-                                <div className="flex flex-wrap justify-center gap-4 2xl:hidden max-sm:grid max-sm:grid-cols-3 max-sm:gap-2">
+                                <div className="flex flex-wrap justify-center gap-4 2xl:hidden max-sm:grid max-sm:grid-cols-4 max-sm:gap-2">
                                     {firstHalfBrands.map((brand, index) => (
                                         <div
                                             key={brand.id || brand.name}
@@ -776,11 +776,11 @@ export default function Page() {
                             </div>
 
                             {/* Profils des clients au centre sur mobile */}
-                            <div className="flex flex-wrap justify-center gap-4 2xl:hidden max-sm:grid max-sm:grid-cols-3 max-sm:gap-2">
+                            <div className="flex flex-wrap justify-center gap-4 2xl:hidden max-sm:grid max-sm:grid-cols-4 max-sm:gap-4">
                                 {clients.map((client, index) => (
                                     <div
                                         key={client.id || `${client.name}-${index}`}
-                                        className={`h-[180px] md:h-[300px] max-sm:w-full ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                        className={`h-[180px] md:h-[300px] max-sm:h-auto max-sm:w-full ${!shouldStartAnimations ? 'opacity-0' : ''}`}
                                         ref={(el) => addClientRef(el, index + clients.length)}
                                     >
                                         <ClientProfile
@@ -788,7 +788,7 @@ export default function Page() {
                                             domain={client.domain}
                                             imageSrc={client.imageSrc}
                                             imageBackground={client.imageBackground}
-                                            className="h-full"
+                                            className="h-full max-sm:h-auto"
                                         />
                                     </div>
                                 ))}
@@ -820,7 +820,7 @@ export default function Page() {
 
                             {/* Deuxième moitié des marques en bas - visible uniquement sur mobile */}
                             {secondHalfBrands.length > 0 && (
-                                <div className="flex flex-wrap justify-center gap-4 2xl:hidden max-sm:grid max-sm:grid-cols-3 max-sm:gap-2">
+                                <div className="flex flex-wrap justify-center gap-4 2xl:hidden max-sm:grid max-sm:grid-cols-4 max-sm:gap-2">
                                     {secondHalfBrands.map((brand, index) => (
                                         <div
                                             key={brand.id || brand.name}
@@ -857,9 +857,9 @@ export default function Page() {
             {keyFigures.length > 0 && (
                 <>
                     {/* Section PRIMECONTENT EN CHIFFRES */}
-                    <section className="py-16 bg-black stats-section">
+                    <section className="py-16 max-sm:py-8 bg-black stats-section">
                         <div className="mx-auto px-4">
-                            <div className="text-center mb-16">
+                            <div className="text-center mb-16 max-sm:mb-8">
                                 <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
                                     NOS CHIFFRES
                                 </h2>
@@ -887,7 +887,7 @@ export default function Page() {
                                     </div>
 
                                     {/* Affichage mobile - 2 lignes */}
-                                    <div className="md:hidden flex flex-col gap-6 w-full">
+                                    <div className="md:hidden flex flex-col gap-6 w-full max-sm:gap-0">
                                         {/* Première ligne - 3 chiffres */}
                                         <div className="grid grid-cols-3 gap-4">
                                             {keyFigures.slice(0, 3).map((figure, index) => (
@@ -934,9 +934,9 @@ export default function Page() {
             )}
 
             {/* Section NOS RÉALISATIONS */}
-            <section className="py-16 bg-gradient-to-b from-black via-gray-900 to-black">
+            <section className="py-16 max-sm:py-8 bg-gradient-to-b from-black via-gray-900 to-black">
                 <div className="max-w-7xl mx-auto px-4">
-                    <div className="text-center mb-16">
+                    <div className="text-center mb-16 max-sm:mb-8">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
                             NOS RÉALISATIONS
                         </h2>
