@@ -59,7 +59,7 @@
     }
 
     @media (max-width: 480px) {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 16px; // Augmenté pour plus d'espace entre les éléments
     }
 }
@@ -130,7 +130,7 @@
 
         @media (max-width: 480px) {
             grid-column: span 1; // Prend 1 colonne sur mobile (2 portraits par ligne)
-            height: 240px; // Hauteur ajustée pour format portrait mobile
+            height: 160px; // Hauteur ajustée pour format portrait mobile
         }
     }
 

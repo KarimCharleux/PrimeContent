@@ -5,13 +5,24 @@ import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 import { getMediaUrl } from '../../utils/mediaUrl';
-import { getYouTubeEmbedUrl } from '../../utils/youtube';
+import {
+    VideoProvider,
+    getVideoProvider,
+    getVideoEmbedUrl,
+    isExternalVideo,
+} from '../../utils/videoManager';
 
 import styles from './ImageCarousel.module.scss';
 
 interface MediaItem {
     src: string;
     isVideo?: boolean;
+    provider?: VideoProvider; // 'youtube' | 'dailymotion' | 'local'
+    videoId?: string; // ID de la vidéo externe
+    embedUrl?: string; // URL d'embed
+    watchUrl?: string; // URL de visionnage
+    thumbnail?: string; // URL de la miniature sauvegardée
+    // Propriétés de rétrocompatibilité
     isYouTube?: boolean;
     youtubeId?: string;
 }
@@ -56,11 +67,14 @@ const ImageCarousel = ({
     // Vérifier s'il y a plus d'un élément
     const hasMultipleItems = media.length > 1;
     const isVideo = currentItem?.isVideo;
-    const isYouTube = currentItem?.isYouTube;
+    const isExternalVideoSource = currentItem && isExternalVideo(currentItem.src);
+    const isYouTube = currentItem?.isYouTube || currentItem?.provider === 'youtube';
+    const isDailymotion = currentItem?.provider === 'dailymotion';
+    const isExternalVid = isExternalVideoSource || isYouTube || isDailymotion;
 
-    // Fonctions de contrôle vidéo (uniquement pour vidéos fichiers)
+    // Fonctions de contrôle vidéo (uniquement pour vidéos fichiers locaux)
     const togglePlay = useCallback(() => {
-        if (!videoRef.current || isYouTube) return;
+        if (!videoRef.current || isExternalVid) return;
 
         if (isPlaying) {
             videoRef.current.pause();
@@ -68,17 +82,17 @@ const ImageCarousel = ({
             videoRef.current.play().catch((err) => console.error('Erreur de lecture vidéo:', err));
         }
         setIsPlaying(!isPlaying);
-    }, [isPlaying, isYouTube]);
+    }, [isPlaying, isExternalVid]);
 
     const toggleMute = useCallback(() => {
-        if (!videoRef.current || isYouTube) return;
+        if (!videoRef.current || isExternalVid) return;
 
         videoRef.current.muted = !videoRef.current.muted;
         setIsMuted(!isMuted);
-    }, [isMuted, isYouTube]);
+    }, [isMuted, isExternalVid]);
 
     const toggleFullscreen = useCallback(() => {
-        if (!videoRef.current || isYouTube) return;
+        if (!videoRef.current || isExternalVid) return;
 
         if (document.fullscreenElement) {
             document
@@ -89,17 +103,17 @@ const ImageCarousel = ({
                 .requestFullscreen()
                 .catch((err) => console.error('Erreur lors du passage en plein écran:', err));
         }
-    }, [isYouTube]);
+    }, [isExternalVid]);
 
     const handleTimeUpdate = () => {
-        if (!videoRef.current || isYouTube) return;
+        if (!videoRef.current || isExternalVid) return;
 
         const progress = (videoRef.current.currentTime / videoRef.current.duration) * 100;
         setVideoProgress(progress);
     };
 
     const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!videoRef.current || isYouTube) return;
+        if (!videoRef.current || isExternalVid) return;
 
         const progressBar = e.currentTarget;
         const rect = progressBar.getBoundingClientRect();
@@ -118,15 +132,15 @@ const ImageCarousel = ({
     useEffect(() => {
         setIsPlaying(false);
 
-        if (videoRef.current && !isYouTube) {
+        if (videoRef.current && !isExternalVid) {
             videoRef.current.currentTime = 0;
             setVideoDuration(videoRef.current.duration || 0);
         }
-    }, [currentIndex, isYouTube]);
+    }, [currentIndex, isExternalVid]);
 
     // Charger la durée vidéo une fois que les métadonnées sont disponibles
     useEffect(() => {
-        if (isYouTube) return;
+        if (isExternalVid) return;
 
         const handleLoadedMetadata = () => {
             if (videoRef.current) {
@@ -144,7 +158,7 @@ const ImageCarousel = ({
                 videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
             }
         };
-    }, [currentItem, isYouTube]);
+    }, [currentItem, isExternalVid]);
 
     // Gérer les événements touch pour le swipe
     useEffect(() => {
@@ -183,7 +197,7 @@ const ImageCarousel = ({
                 if (e.key === 'ArrowRight') onNext();
                 if (e.key === 'ArrowLeft') onPrev();
             }
-            if (isVideo && !isYouTube) {
+            if (isVideo && !isExternalVid) {
                 if (e.key === ' ' || e.key === 'k') {
                     e.preventDefault();
                     togglePlay();
@@ -205,7 +219,7 @@ const ImageCarousel = ({
         onPrev,
         hasMultipleItems,
         isVideo,
-        isYouTube,
+        isExternalVid,
         togglePlay,
         toggleMute,
         toggleFullscreen,
@@ -324,24 +338,32 @@ const ImageCarousel = ({
                 >
                     <div className="relative w-full h-full flex items-center justify-center">
                         {isVideo ? (
-                            isYouTube && currentItem.youtubeId ? (
-                                // Vidéo YouTube
+                            isExternalVid && currentItem.videoId ? (
+                                // Vidéo externe (YouTube, Dailymotion)
                                 <div
-                                    className={`${styles['video-wrapper']} ${styles['youtube-wrapper']}`}
+                                    className={styles['youtube-wrapper']}
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <iframe
-                                        src={getYouTubeEmbedUrl(currentItem.youtubeId, {
-                                            autoplay: false,
-                                            controls: true,
-                                            modestBranding: true,
-                                            rel: false,
-                                            showInfo: false,
-                                        })}
-                                        className={`${styles['carousel-video']} ${styles['youtube-video']}`}
+                                        src={
+                                            currentItem.embedUrl ||
+                                            getVideoEmbedUrl(
+                                                currentItem.videoId,
+                                                currentItem.provider || 'youtube',
+                                                {
+                                                    autoplay: false,
+                                                    controls: true,
+                                                    modestBranding: true,
+                                                    rel: false,
+                                                    showInfo: false,
+                                                },
+                                            ) ||
+                                            undefined
+                                        }
+                                        className={styles['youtube-video']}
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         allowFullScreen
-                                        title="Vidéo YouTube"
+                                        title="Lecteur vidéo"
                                     />
                                 </div>
                             ) : (

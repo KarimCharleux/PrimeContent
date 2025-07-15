@@ -13,10 +13,13 @@ export type MediaItem = {
 };
 
 export type VideoItem = MediaItem & {
-    type: 'youtube' | 'vimeo' | 'uploaded';
-    videoId?: string; // ID de la vidéo pour YouTube/Vimeo
+    type: 'youtube' | 'dailymotion' | 'uploaded';
+    videoId?: string; // ID de la vidéo pour YouTube/Dailymotion
     duration?: number;
     thumbnail?: string;
+    provider?: 'youtube' | 'dailymotion' | 'local';
+    embedUrl?: string;
+    watchUrl?: string;
 };
 
 // Types pour la page d'accueil

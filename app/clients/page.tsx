@@ -83,13 +83,14 @@ function ClientPageContent() {
         }
     };
 
-    // Charger les vidéos YouTube d'un client
+    // Charger les vidéos (YouTube, Dailymotion, etc.) d'un client
     const loadClientVideos = async (
         clientType: 'brand' | 'celebrity',
         clientId: string,
     ): Promise<any[]> => {
         try {
             const { collection, getDocs, query, where } = await import('firebase/firestore');
+            const { getVideoProvider, extractVideoId } = await import('../utils/videoManager');
 
             const videosCollection = collection(db, 'client-videos');
             const q = query(
@@ -102,18 +103,37 @@ function ClientPageContent() {
             const videos: any[] = [];
             videosSnapshot.forEach((doc) => {
                 const data = doc.data();
+
+                // Support de rétrocompatibilité avec l'ancien format
+                let provider = data.provider || 'youtube';
+                let source = data.source || data.youtubeUrl || '';
+                let videoId = data.videoId || data.youtubeId;
+
+                // Si pas de provider défini, essayer de le détecter
+                if (!data.provider && source) {
+                    provider = getVideoProvider(source);
+                    videoId = extractVideoId(source, provider);
+                }
+
                 videos.push({
                     id: doc.id,
                     title: data.title,
+                    source,
+                    provider,
+                    videoId,
+                    embedUrl: data.embedUrl,
+                    watchUrl: data.watchUrl,
+                    format: data.format, // ✅ Récupérer le format
+                    order: data.order || 0,
+                    // Propriétés de rétrocompatibilité
                     youtubeUrl: data.youtubeUrl,
                     youtubeId: data.youtubeId,
-                    order: data.order || 0,
                 });
             });
 
             return videos.sort((a, b) => a.order - b.order);
         } catch (error) {
-            console.error(`Erreur lors du chargement des vidéos YouTube pour ${clientId}:`, error);
+            console.error(`Erreur lors du chargement des vidéos pour ${clientId}:`, error);
             return [];
         }
     };
@@ -166,20 +186,26 @@ function ClientPageContent() {
                         });
                     });
 
-                    // Charger les vidéos YouTube pour cette marque
+                    // Charger les vidéos (YouTube, Dailymotion, etc.) pour cette marque
                     if (brand.id) {
-                        const youtubeVideos = await loadClientVideos('brand', brand.id);
-                        youtubeVideos.forEach((video) => {
+                        const videos = await loadClientVideos('brand', brand.id);
+                        videos.forEach((video) => {
                             brandProjects.push({
                                 title: `${brand.name} - ${video.title}`,
                                 category: 'Marque',
-                                source: video.youtubeUrl,
+                                source: video.source,
                                 isVideo: true,
-                                isYouTube: true,
-                                youtubeId: video.youtubeId,
-                                format: 'paysage',
+                                format: video.format || 'paysage', // ✅ Utiliser le format de la base de données
+                                provider: video.provider,
+                                videoId: video.videoId,
+                                embedUrl: video.embedUrl,
+                                watchUrl: video.watchUrl,
+                                thumbnail: video.thumbnail, // ✅ Passer la miniature sauvegardée
                                 clientType: 'marque',
                                 clientName: brandName,
+                                // Propriétés de rétrocompatibilité
+                                isYouTube: video.provider === 'youtube',
+                                youtubeId: video.provider === 'youtube' ? video.videoId : undefined,
                             });
                         });
                     }
@@ -205,20 +231,26 @@ function ClientPageContent() {
                         });
                     });
 
-                    // Charger les vidéos YouTube pour cette célébrité
+                    // Charger les vidéos (YouTube, Dailymotion, etc.) pour cette célébrité
                     if (client.id) {
-                        const youtubeVideos = await loadClientVideos('celebrity', client.id);
-                        youtubeVideos.forEach((video) => {
+                        const videos = await loadClientVideos('celebrity', client.id);
+                        videos.forEach((video) => {
                             clientProjects.push({
                                 title: `${client.name} - ${video.title}`,
                                 category: 'Célébrité',
-                                source: video.youtubeUrl,
+                                source: video.source,
                                 isVideo: true,
-                                isYouTube: true,
-                                youtubeId: video.youtubeId,
-                                format: 'paysage',
+                                format: video.format || 'paysage', // ✅ Utiliser le format de la base de données
+                                provider: video.provider,
+                                videoId: video.videoId,
+                                embedUrl: video.embedUrl,
+                                watchUrl: video.watchUrl,
+                                thumbnail: video.thumbnail, // ✅ Passer la miniature sauvegardée
                                 clientType: 'celebrite',
                                 clientName: clientName,
+                                // Propriétés de rétrocompatibilité
+                                isYouTube: video.provider === 'youtube',
+                                youtubeId: video.provider === 'youtube' ? video.videoId : undefined,
                             });
                         });
                     }

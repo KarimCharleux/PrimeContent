@@ -5,19 +5,33 @@ import Image from 'next/image';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import VideoUpload, { VideoData } from '../../../components/VideoUpload';
-import { extractYouTubeId, getYouTubeThumbnail, isYouTubeVideo } from '../../../utils/youtube';
+import {
+    VideoProvider,
+    getVideoProvider,
+    extractVideoId,
+    getVideoThumbnail,
+    isExternalVideo,
+} from '../../../utils/videoManager';
 import { db } from '../../lib/firebase-client';
 
 export interface ClientVideo {
     id: string;
     title: string;
-    youtubeUrl: string;
-    youtubeId: string;
+    source: string; // URL générique (YouTube, Dailymotion, etc.)
+    provider: VideoProvider; // 'youtube' | 'dailymotion' | 'local'
+    videoId?: string; // ID de la vidéo externe
+    embedUrl?: string; // URL d'embed
+    watchUrl?: string; // URL de visionnage
+    thumbnail?: string; // URL de la miniature
+    format?: 'portrait' | 'paysage'; // Format de la vidéo
     clientType: 'brand' | 'celebrity';
     clientId: string;
     clientName: string;
     order: number;
     createdAt: Date;
+    // Propriétés de rétrocompatibilité
+    youtubeUrl?: string;
+    youtubeId?: string;
 }
 
 interface ClientVideosManagerProps {
@@ -53,16 +67,35 @@ export default function ClientVideosManager({
             videosSnapshot.forEach((doc) => {
                 const data = doc.data();
                 if (data.clientId === clientId && data.clientType === clientType) {
+                    // Support de rétrocompatibilité avec l'ancien format
+                    let provider: VideoProvider = data.provider || 'youtube';
+                    let source = data.source || data.youtubeUrl || '';
+                    let videoId = data.videoId || data.youtubeId;
+
+                    // Si pas de provider défini, essayer de le détecter
+                    if (!data.provider && source) {
+                        provider = getVideoProvider(source);
+                        videoId = extractVideoId(source, provider);
+                    }
+
                     clientVideos.push({
                         id: doc.id,
                         title: data.title,
-                        youtubeUrl: data.youtubeUrl,
-                        youtubeId: data.youtubeId,
+                        source,
+                        provider,
+                        videoId,
+                        embedUrl: data.embedUrl,
+                        watchUrl: data.watchUrl,
+                        thumbnail: data.thumbnail, // ✅ Charger la miniature
+                        format: data.format, // ✅ Charger le format
                         clientType: data.clientType,
                         clientId: data.clientId,
                         clientName: data.clientName,
                         order: data.order || 0,
                         createdAt: data.createdAt?.toDate() || new Date(),
+                        // Rétrocompatibilité
+                        youtubeUrl: data.youtubeUrl,
+                        youtubeId: data.youtubeId,
                     });
                 }
             });
@@ -90,7 +123,7 @@ export default function ClientVideosManager({
         if (!videoData || !videoData.source) {
             onStatusChange?.({
                 type: 'error',
-                message: 'Veuillez renseigner une URL YouTube valide',
+                message: 'Veuillez renseigner une URL vidéo valide',
             });
             return;
         }
@@ -98,17 +131,22 @@ export default function ClientVideosManager({
         try {
             setSaving(true);
 
-            if (!isYouTubeVideo(videoData.source)) {
+            if (!isExternalVideo(videoData.source)) {
                 onStatusChange?.({
                     type: 'error',
-                    message: 'Veuillez renseigner une URL YouTube valide',
+                    message: 'Veuillez renseigner une URL YouTube ou Dailymotion valide',
                 });
                 return;
             }
 
-            const youtubeId = extractYouTubeId(videoData.source);
-            if (!youtubeId) {
-                onStatusChange?.({ type: 'error', message: "Impossible d'extraire l'ID YouTube" });
+            const provider = getVideoProvider(videoData.source);
+            const videoId = extractVideoId(videoData.source, provider);
+
+            if (!videoId) {
+                onStatusChange?.({
+                    type: 'error',
+                    message: 'URL de vidéo invalide. Vérifiez le lien fourni.',
+                });
                 return;
             }
 
@@ -116,14 +154,24 @@ export default function ClientVideosManager({
 
             const videoDoc = {
                 title: videoData.title || 'Vidéo sans titre',
-                youtubeUrl: videoData.source,
-                youtubeId,
+                source: videoData.source,
+                provider,
+                videoId,
+                embedUrl: videoData.embedUrl,
+                watchUrl: videoData.watchUrl,
+                thumbnail: videoData.thumbnail, // ✅ Sauvegarder la miniature
+                format: videoData.format, // ✅ Sauvegarder le format
                 clientType,
                 clientId,
                 clientName,
                 order: editingVideo ? editingVideo.order : nextOrder,
                 createdAt: editingVideo ? editingVideo.createdAt : new Date(),
                 updatedAt: new Date(),
+                // Rétrocompatibilité pour YouTube
+                ...(provider === 'youtube' && {
+                    youtubeUrl: videoData.source,
+                    youtubeId: videoId,
+                }),
             };
 
             if (editingVideo) {
@@ -169,9 +217,18 @@ export default function ClientVideosManager({
         setEditingVideo(video);
         setVideoData({
             title: video.title,
-            source: video.youtubeUrl,
-            isYouTube: true,
-            youtubeId: video.youtubeId,
+            source: video.source,
+            provider: video.provider,
+            videoId: video.videoId,
+            embedUrl: video.embedUrl,
+            watchUrl: video.watchUrl,
+            thumbnail: video.thumbnail, // ✅ Inclure la miniature
+            format: video.format, // ✅ Inclure le format
+            // Propriétés de rétrocompatibilité
+            isYouTube: video.provider === 'youtube',
+            youtubeId: video.provider === 'youtube' ? video.videoId : undefined,
+            isDailymotion: video.provider === 'dailymotion',
+            dailymotionId: video.provider === 'dailymotion' ? video.videoId : undefined,
         });
         setShowForm(true);
     };
@@ -226,7 +283,7 @@ export default function ClientVideosManager({
         <div className="space-y-6">
             {/* En-tête avec bouton d'ajout */}
             <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium text-gray-900">Vidéos YouTube - {clientName}</h3>
+                <h3 className="text-lg font-medium text-gray-900">Vidéos - {clientName}</h3>
                 <button
                     onClick={() => {
                         setEditingVideo(null);
@@ -243,20 +300,22 @@ export default function ClientVideosManager({
             {showForm && (
                 <div className="bg-white border rounded-lg p-6">
                     <h4 className="text-md font-medium text-gray-900 mb-4">
-                        {editingVideo ? 'Modifier la vidéo' : 'Ajouter une vidéo YouTube'}
+                        {editingVideo ? 'Modifier la vidéo' : 'Ajouter une vidéo'}
                     </h4>
 
                     <VideoUpload
                         value={videoData}
                         onChange={setVideoData}
-                        label="URL YouTube"
-                        placeholder="https://www.youtube.com/watch?v=..."
+                        label="Vidéo"
+                        placeholder="URL YouTube, Dailymotion ou télécharger un fichier"
                     />
 
                     <div className="flex gap-3 mt-6">
                         <button
                             onClick={handleSaveVideo}
-                            disabled={saving || !videoData?.source || !videoData?.isYouTube}
+                            disabled={
+                                saving || !videoData?.source || !isExternalVideo(videoData.source)
+                            }
                             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {saving ? 'Enregistrement...' : editingVideo ? 'Modifier' : 'Ajouter'}
@@ -280,23 +339,35 @@ export default function ClientVideosManager({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {videos.map((video, index) => (
                         <div key={video.id} className="bg-white border rounded-lg overflow-hidden">
-                            {/* Miniature YouTube */}
+                            {/* Miniature */}
                             <div className="relative aspect-video">
                                 <Image
-                                    src={getYouTubeThumbnail(video.youtubeId)}
+                                    src={
+                                        video.thumbnail ||
+                                        getVideoThumbnail(video.videoId || '', video.provider) ||
+                                        '/placeholder-photo.png'
+                                    }
                                     alt={video.title}
                                     fill
                                     className="object-cover"
                                 />
-                                {/* Icône YouTube */}
+                                {/* Icône de lecture */}
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="bg-red-600 rounded-full p-2">
+                                    <div
+                                        className={`rounded-full p-2 ${
+                                            video.provider === 'youtube'
+                                                ? 'bg-red-600'
+                                                : video.provider === 'dailymotion'
+                                                  ? 'bg-blue-600'
+                                                  : 'bg-gray-600'
+                                        }`}
+                                    >
                                         <svg
                                             className="w-6 h-6 text-white"
                                             fill="currentColor"
                                             viewBox="0 0 24 24"
                                         >
-                                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                                            <path d="M8 5v14l11-7z" />
                                         </svg>
                                     </div>
                                 </div>
@@ -307,6 +378,44 @@ export default function ClientVideosManager({
                                 <h4 className="font-medium text-gray-900 mb-2 line-clamp-2">
                                     {video.title}
                                 </h4>
+
+                                {/* Format de la vidéo */}
+                                {video.format && (
+                                    <div className="mb-2">
+                                        <span
+                                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                                video.format === 'portrait'
+                                                    ? 'bg-purple-100 text-purple-800'
+                                                    : 'bg-green-100 text-green-800'
+                                            }`}
+                                        >
+                                            <svg
+                                                className="w-3 h-3 mr-1"
+                                                fill="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                {video.format === 'portrait' ? (
+                                                    <rect
+                                                        x="9"
+                                                        y="2"
+                                                        width="6"
+                                                        height="20"
+                                                        rx="1"
+                                                    />
+                                                ) : (
+                                                    <rect
+                                                        x="2"
+                                                        y="9"
+                                                        width="20"
+                                                        height="6"
+                                                        rx="1"
+                                                    />
+                                                )}
+                                            </svg>
+                                            {video.format === 'portrait' ? 'Portrait' : 'Paysage'}
+                                        </span>
+                                    </div>
+                                )}
 
                                 {/* Actions */}
                                 <div className="flex justify-between items-center">
@@ -418,7 +527,7 @@ export default function ClientVideosManager({
                         />
                     </svg>
                     <p>
-                        Aucune vidéo YouTube ajoutée pour ce{' '}
+                        Aucune vidéo ajoutée pour ce{' '}
                         {clientType === 'brand' ? 'marque' : 'célébrité'}.
                     </p>
                 </div>

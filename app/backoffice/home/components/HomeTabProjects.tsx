@@ -15,7 +15,9 @@ import { useEffect, useState, useCallback } from 'react';
 
 import VideoUpload, { VideoData } from '../../../components/VideoUpload';
 import { getMediaUrl } from '../../../utils/mediaUrl';
-import { extractYouTubeId, getYouTubeThumbnail, isYouTubeVideo } from '../../../utils/youtube';
+import { getVideoThumbnail } from '../../../utils/videoManager';
+import { extractYouTubeId, isYouTubeVideo } from '../../../utils/youtube';
+import MediaForm, { MediaFormData } from '../../components/MediaForm';
 import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
 
@@ -31,6 +33,11 @@ interface Project {
     order: number;
     isLatest?: boolean;
     thumbnail?: string; // Miniature optionnelle pour les vidéos
+    // Champs pour les vidéos externes
+    provider?: 'youtube' | 'dailymotion' | 'local';
+    videoId?: string;
+    embedUrl?: string;
+    watchUrl?: string;
 }
 
 interface ProjectStats {
@@ -66,13 +73,12 @@ export default function HomeTabProjects() {
         videosSize: 0,
         averageLoadTime: 0,
     });
-    const [formData, setFormData] = useState<Partial<Project>>({
+    const [formData, setFormData] = useState<MediaFormData>({
         title: '',
         category: '',
         source: '',
         format: 'portrait',
         order: 0,
-        isLatest: false,
         thumbnail: '',
         isYouTube: false,
         youtubeId: '',
@@ -175,7 +181,6 @@ export default function HomeTabProjects() {
             source: '',
             format: 'portrait',
             order: 0,
-            isLatest: false,
             thumbnail: '',
             isYouTube: false,
             youtubeId: '',
@@ -214,51 +219,29 @@ export default function HomeTabProjects() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            let projectData: Partial<Project>;
+            // Déterminer automatiquement si c'est une vidéo (même logique que RealisationsMediaManager)
+            const isExternalVideo =
+                formData.provider === 'youtube' || formData.provider === 'dailymotion';
+            const isVideoFromFile = formData.isVideo || false;
+            const isVideo = isExternalVideo || isVideoFromFile;
 
-            if (videoData) {
-                // Données provenant du composant VideoUpload
-                if (videoData.isYouTube) {
-                    projectData = {
-                        ...formData,
-                        source: videoData.source,
-                        isVideo: true,
-                        isYouTube: true,
-                        youtubeId: videoData.youtubeId,
-                        thumbnail: videoData.thumbnail,
-                    };
-                } else {
-                    // Fichier vidéo - il faut d'abord l'uploader
-                    if (videoData.file) {
-                        const uploadedData = await uploadFile(videoData.file);
-                        projectData = {
-                            ...formData,
-                            source: uploadedData.fileUrl,
-                            isVideo: true,
-                            isYouTube: false,
-                            thumbnail: formData.thumbnail || '',
-                        };
-                    } else {
-                        projectData = {
-                            ...formData,
-                            source: formData.source || '',
-                            isVideo: formData.source
-                                ? formData.source.match(/\.(mp4|webm|ogg)$/i) !== null
-                                : false,
-                            isYouTube: false,
-                        };
-                    }
-                }
-            } else {
-                // Données classiques du formulaire
-                projectData = {
-                    ...formData,
-                    isVideo: formData.source
-                        ? formData.source.match(/\.(mp4|webm|ogg)$/i) !== null
-                        : false,
-                    isYouTube: false,
-                };
-            }
+            // Construire les données du projet avec la logique simplifiée
+            const projectData: Partial<Project> = {
+                title: formData.title || '',
+                category: formData.category || '',
+                source: formData.source,
+                format: formData.format,
+                order: formData.order,
+                thumbnail: formData.thumbnail || '',
+                isVideo: isVideo,
+                isYouTube: formData.isYouTube || false,
+                youtubeId: formData.youtubeId || '',
+                // Champs pour les vidéos externes
+                provider: formData.provider || 'local',
+                videoId: formData.videoId || '',
+                embedUrl: formData.embedUrl || '',
+                watchUrl: formData.watchUrl || '',
+            };
 
             if (editingProject?.id) {
                 const projectRef = doc(db, 'projects', editingProject.id);
@@ -268,6 +251,7 @@ export default function HomeTabProjects() {
                 const newProject = {
                     ...projectData,
                     order: projects.length,
+                    isLatest: activeTab === 'latest', // Ajouter isLatest selon l'onglet actif
                 };
                 await addDoc(collection(db, 'projects'), newProject);
                 setStatusMessage({
@@ -283,7 +267,6 @@ export default function HomeTabProjects() {
                 source: '',
                 format: 'portrait',
                 order: 0,
-                isLatest: false,
                 thumbnail: '',
                 isYouTube: false,
                 youtubeId: '',
@@ -566,28 +549,27 @@ export default function HomeTabProjects() {
 
     const handleEdit = (project: Project) => {
         setEditingProject(project);
-        setFormData(project);
+        setFormData({
+            title: project.title,
+            category: project.category,
+            source: project.source,
+            format: project.format,
+            order: project.order,
+            thumbnail: project.thumbnail || '',
+            isVideo: project.isVideo || false,
+            isYouTube: project.isYouTube || false,
+            youtubeId: project.youtubeId || '',
+            // Champs pour les vidéos externes
+            provider: project.provider || 'local',
+            videoId: project.videoId || '',
+            embedUrl: project.embedUrl || '',
+            watchUrl: project.watchUrl || '',
+        });
         setPreviewImage(project.source);
 
-        // Configurer VideoData si c'est une vidéo YouTube
-        if (project.isYouTube && project.youtubeId) {
-            setVideoData({
-                source: project.source,
-                isYouTube: true,
-                youtubeId: project.youtubeId,
-                thumbnail: project.thumbnail,
-                title: project.title,
-            });
-        } else if (project.isVideo) {
-            setVideoData({
-                source: project.source,
-                isYouTube: false,
-                title: project.title,
-            });
-        } else {
-            setVideoData(null);
-        }
-
+        // Simplifier la gestion des vidéos - plus besoin de videoData
+        // Le MediaForm gère tout directement via formData
+        setVideoData(null);
         setShowForm(true);
 
         // Faire défiler la page jusqu'au formulaire
@@ -660,7 +642,6 @@ export default function HomeTabProjects() {
             source: '',
             format: 'portrait',
             order: 0,
-            isLatest: false,
             thumbnail: '',
             isYouTube: false,
             youtubeId: '',
@@ -686,10 +667,16 @@ export default function HomeTabProjects() {
 
     // Fonction pour déterminer l'icône selon le type de média
     const getMediaIcon = (project: Project) => {
-        if (project.isYouTube) {
+        if (project.provider === 'youtube' || project.isYouTube) {
             return (
                 <svg className="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                </svg>
+            );
+        } else if (project.provider === 'dailymotion') {
+            return (
+                <svg className="w-4 h-4 text-orange-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13.551 11.485c-1.945 0-3.315 1.505-3.315 3.615s1.37 3.615 3.315 3.615c1.945 0 3.315-1.505 3.315-3.615s-1.37-3.615-3.315-3.615zm6.449-8.485h-5.676v4.615h5.676v-4.615zm-16 0v16h4.615v-16h-4.615z" />
                 </svg>
             );
         } else if (project.isVideo) {
@@ -729,8 +716,17 @@ export default function HomeTabProjects() {
 
     // Fonction pour obtenir la miniature d'aperçu
     const getPreviewThumbnail = (project: Project) => {
-        if (project.isYouTube && project.youtubeId) {
-            return getYouTubeThumbnail(project.youtubeId);
+        if (project.provider === 'youtube' || project.isYouTube) {
+            if (project.youtubeId) {
+                return (
+                    getVideoThumbnail(project.youtubeId, 'youtube') ||
+                    project.thumbnail ||
+                    project.source
+                );
+            }
+        } else if (project.provider === 'dailymotion') {
+            // Pour Dailymotion, utiliser la miniature stockée
+            return project.thumbnail || project.source;
         }
         return project.thumbnail || project.source;
     };
@@ -972,270 +968,17 @@ export default function HomeTabProjects() {
                     </div>
 
                     {showForm && (
-                        <form onSubmit={handleSubmit} className="space-y-6 mb-8">
-                            <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
-                                {editingProject
-                                    ? `Modifier: ${editingProject.title}`
-                                    : 'Ajouter une nouvelle réalisation'}
-                            </h3>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Titre
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.title}
-                                            onChange={(e) =>
-                                                setFormData({ ...formData, title: e.target.value })
-                                            }
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        />
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Catégorie (optionnel)
-                                        </label>
-                                        <div className="flex space-x-2">
-                                            <select
-                                                value={formData.category}
-                                                onChange={(e) =>
-                                                    setFormData({
-                                                        ...formData,
-                                                        category: e.target.value,
-                                                    })
-                                                }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                            >
-                                                <option value="">
-                                                    Sélectionner une catégorie existante
-                                                </option>
-                                                {categories.map((category) => (
-                                                    <option key={category} value={category}>
-                                                        {category}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <input
-                                                type="text"
-                                                value={formData.category}
-                                                onChange={(e) =>
-                                                    setFormData({
-                                                        ...formData,
-                                                        category: e.target.value,
-                                                    })
-                                                }
-                                                placeholder="Ou créer une nouvelle catégorie"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                            />
-                                        </div>
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            La catégorie est utilisée pour former les filtres dans
-                                            la galerie
-                                        </p>
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Format
-                                        </label>
-                                        <select
-                                            value={formData.format}
-                                            onChange={(e) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    format: e.target.value as
-                                                        | 'portrait'
-                                                        | 'paysage',
-                                                })
-                                            }
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                            required
-                                        >
-                                            <option value="portrait">Portrait</option>
-                                            <option value="paysage">Paysage</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    {/* Composant VideoUpload pour gérer YouTube et fichiers */}
-                                    <VideoUpload
-                                        label="Média (Image ou Vidéo)"
-                                        value={videoData}
-                                        onChange={setVideoData}
-                                        placeholder="URL YouTube ou télécharger un fichier"
-                                        className="mb-4"
-                                    />
-
-                                    {/* Champ pour les images ou médias non-vidéo */}
-                                    {!videoData && (
-                                        <div className="mb-4">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Image ou URL
-                                            </label>
-                                            <div className="flex items-center space-x-2">
-                                                <input
-                                                    type="text"
-                                                    value={formData.source}
-                                                    onChange={(e) =>
-                                                        setFormData({
-                                                            ...formData,
-                                                            source: e.target.value,
-                                                        })
-                                                    }
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                    placeholder="URL du média"
-                                                />
-                                                <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
-                                                    Parcourir
-                                                    <input
-                                                        type="file"
-                                                        className="hidden"
-                                                        accept="image/*,video/*"
-                                                        onChange={(e) =>
-                                                            e.target.files &&
-                                                            handleFileUpload(e.target.files)
-                                                        }
-                                                    />
-                                                </label>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Champ pour la miniature personnalisée (vidéos non-YouTube) */}
-                                    {videoData && !videoData.isYouTube && (
-                                        <div className="mb-4">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Miniature personnalisée (optionnel)
-                                            </label>
-                                            <div className="flex items-center space-x-2">
-                                                <input
-                                                    type="text"
-                                                    value={formData.thumbnail || ''}
-                                                    onChange={(e) =>
-                                                        setFormData({
-                                                            ...formData,
-                                                            thumbnail: e.target.value,
-                                                        })
-                                                    }
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                    placeholder="URL de la miniature"
-                                                />
-                                                <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
-                                                    Parcourir
-                                                    <input
-                                                        type="file"
-                                                        className="hidden"
-                                                        accept="image/*"
-                                                        onChange={(e) =>
-                                                            e.target.files &&
-                                                            handleThumbnailUpload(e.target.files)
-                                                        }
-                                                    />
-                                                </label>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="mt-4">
-                                        <h4 className="text-sm font-medium text-gray-700 mb-2">
-                                            Prévisualisation
-                                        </h4>
-                                        <div
-                                            className={`w-full max-w-[400px] mx-auto relative bg-gray-100 rounded-lg overflow-hidden group ${getItemSizeClass(formData.format || 'paysage')}`}
-                                        >
-                                            {videoData?.source || formData.source ? (
-                                                <>
-                                                    {videoData?.isYouTube ? (
-                                                        <>
-                                                            <Image
-                                                                src={videoData.thumbnail || ''}
-                                                                alt="Aperçu YouTube"
-                                                                fill
-                                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                                            />
-                                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                                <div className="bg-red-600 rounded-full p-3">
-                                                                    <svg
-                                                                        className="w-6 h-6 text-white"
-                                                                        viewBox="0 0 24 24"
-                                                                        fill="currentColor"
-                                                                    >
-                                                                        <path d="M8 5v14l11-7z" />
-                                                                    </svg>
-                                                                </div>
-                                                            </div>
-                                                            <div className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-medium">
-                                                                YouTube
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                          videoData?.source || formData.source
-                                                      )?.match(/\.(mp4|webm|ogg)$/i) ? (
-                                                        <video
-                                                            src={getMediaUrl(
-                                                                videoData?.source ||
-                                                                    formData.source ||
-                                                                    '',
-                                                            )}
-                                                            controls
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <Image
-                                                            src={getMediaUrl(
-                                                                videoData?.source ||
-                                                                    formData.source ||
-                                                                    '',
-                                                            )}
-                                                            alt="Prévisualisation"
-                                                            fill
-                                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                                        />
-                                                    )}
-                                                    {formData.category && (
-                                                        <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
-                                                            {formData.category}
-                                                        </div>
-                                                    )}
-                                                    {formData.title && (
-                                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                            <h3 className="text-white text-lg font-medium">
-                                                                {formData.title}
-                                                            </h3>
-                                                        </div>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <div className="flex items-center justify-center h-full text-gray-400">
-                                                    Aucun média sélectionné
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex justify-end space-x-3">
-                                <button
-                                    type="button"
-                                    onClick={cancelEdit}
-                                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-                                >
-                                    Annuler
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors"
-                                >
-                                    {editingProject ? 'Mettre à jour' : 'Ajouter'}
-                                </button>
-                            </div>
-                        </form>
+                        <MediaForm
+                            formData={formData}
+                            setFormData={setFormData}
+                            onSubmit={handleSubmit}
+                            onCancel={cancelEdit}
+                            categories={categories}
+                            uploading={uploading}
+                            previewImage={previewImage}
+                            setPreviewImage={setPreviewImage}
+                            editingMode={!!editingProject}
+                        />
                     )}
 
                     <div className="mt-8">
@@ -1312,7 +1055,9 @@ export default function HomeTabProjects() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="h-10 w-10 relative overflow-hidden rounded flex items-center justify-center">
-                                                        {project.isYouTube ? (
+                                                        {project.provider === 'youtube' ||
+                                                        project.provider === 'dailymotion' ||
+                                                        project.isYouTube ? (
                                                             <Image
                                                                 src={getPreviewThumbnail(project)}
                                                                 alt={project.title}
@@ -1340,11 +1085,18 @@ export default function HomeTabProjects() {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    {(project.isVideo || project.isYouTube) && (
+                                                    {(project.isVideo ||
+                                                        project.isYouTube ||
+                                                        project.provider === 'youtube' ||
+                                                        project.provider === 'dailymotion') && (
                                                         <div className="h-10 w-10 relative overflow-hidden rounded">
                                                             {project.thumbnail ? (
                                                                 <Image
                                                                     src={
+                                                                        project.provider ===
+                                                                            'youtube' ||
+                                                                        project.provider ===
+                                                                            'dailymotion' ||
                                                                         project.isYouTube
                                                                             ? project.thumbnail
                                                                             : getMediaUrl(
@@ -1389,13 +1141,16 @@ export default function HomeTabProjects() {
                                                     <div className="flex items-center space-x-1">
                                                         {getMediaIcon(project)}
                                                         <span>
-                                                            {project.isYouTube
+                                                            {project.provider === 'youtube' ||
+                                                            project.isYouTube
                                                                 ? 'YouTube'
-                                                                : project.source.match(
-                                                                        /\.(mp4|webm|ogg)$/i,
-                                                                    )
-                                                                  ? 'Vidéo'
-                                                                  : 'Image'}
+                                                                : project.provider === 'dailymotion'
+                                                                  ? 'Dailymotion'
+                                                                  : project.source.match(
+                                                                          /\.(mp4|webm|ogg)$/i,
+                                                                      )
+                                                                    ? 'Vidéo'
+                                                                    : 'Image'}
                                                         </span>
                                                     </div>
                                                 </td>

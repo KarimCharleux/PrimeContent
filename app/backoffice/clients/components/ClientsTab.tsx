@@ -55,6 +55,10 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
         message: string;
     } | null>(null);
 
+    // États de visibilité des formulaires
+    const [showBrandForm, setShowBrandForm] = useState(false);
+    const [showClientForm, setShowClientForm] = useState(false);
+
     // Formulaires React Hook Form
     const {
         register: registerBrand,
@@ -367,6 +371,7 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
             resetBrand({ name: '', imageSrc: '' });
             setEditingBrand(null);
             setPreviewBrandImage(null);
+            setShowBrandForm(false);
         } catch (error) {
             console.error('Erreur lors de la sauvegarde:', error);
             setStatusMessage({ type: 'error', message: 'Erreur lors de la sauvegarde' });
@@ -380,6 +385,7 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
         setEditingBrand(brand);
         resetBrand(brand);
         setPreviewBrandImage(brand.imageSrc);
+        setShowBrandForm(true);
     };
 
     // Suppression d'une marque
@@ -467,6 +473,7 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
             setEditingClient(null);
             setPreviewClientImage(null);
             setPreviewClientBgImage(null);
+            setShowClientForm(false);
         } catch (error) {
             console.error('Erreur lors de la sauvegarde:', error);
             setStatusMessage({ type: 'error', message: 'Erreur lors de la sauvegarde' });
@@ -481,6 +488,7 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
         resetClient(client);
         setPreviewClientImage(client.imageSrc);
         setPreviewClientBgImage(client.imageBackground);
+        setShowClientForm(true);
     };
 
     // Suppression d'un client
@@ -549,187 +557,258 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                 {/* Section Marques */}
                 {activeTab === 'brands' && (
                     <>
-                        <form
-                            onSubmit={handleSubmitBrand(onSubmitBrand)}
-                            className="space-y-6 mb-8"
-                        >
-                            <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
-                                {editingBrand
-                                    ? `Modifier: ${editingBrand.name}`
-                                    : 'Ajouter une nouvelle marque'}
-                            </h3>
+                        {(showBrandForm || editingBrand) && (
+                            <form
+                                onSubmit={handleSubmitBrand(onSubmitBrand)}
+                                className="bg-white rounded-lg shadow border border-gray-200 p-6 mb-8"
+                            >
+                                <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
+                                    {editingBrand
+                                        ? `Modifier: ${editingBrand.name}`
+                                        : 'Ajouter une nouvelle marque'}
+                                </h3>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Nom de la marque
-                                        </label>
-                                        <input
-                                            type="text"
-                                            {...registerBrand('name', {
-                                                required: 'Le nom est requis',
-                                            })}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        />
-                                        {errorsBrand.name && (
-                                            <p className="mt-1 text-sm text-red-600">
-                                                {errorsBrand.name.message}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Logo de la marque
-                                        </label>
-                                        <div className="flex items-center space-x-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Nom de la marque
+                                            </label>
                                             <input
                                                 type="text"
-                                                {...registerBrand('imageSrc', {
-                                                    required: "L'URL de l'image est requise",
+                                                {...registerBrand('name', {
+                                                    required: 'Le nom est requis',
                                                 })}
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                placeholder="URL de l'image"
                                             />
-                                            <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
-                                                Parcourir
-                                                <input
-                                                    type="file"
-                                                    className="hidden"
-                                                    accept="image/*"
-                                                    onChange={handleBrandImageUpload}
-                                                />
-                                            </label>
-                                        </div>
-                                        {errorsBrand.imageSrc && (
-                                            <p className="mt-1 text-sm text-red-600">
-                                                {errorsBrand.imageSrc.message}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="mt-4">
-                                        <h4 className="text-sm font-medium text-gray-700 mb-2">
-                                            Prévisualisation du logo
-                                        </h4>
-                                        <div className="h-40 w-full flex items-center justify-center bg-gray-700 rounded-md">
-                                            {previewBrandImage ? (
-                                                <div className="relative h-32 w-32">
-                                                    <Image
-                                                        src={getMediaUrl(previewBrandImage)}
-                                                        alt="Prévisualisation"
-                                                        fill
-                                                        className="object-contain"
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <p className="text-gray-400">
-                                                    Aucune image sélectionnée
+                                            {errorsBrand.name && (
+                                                <p className="mt-1 text-sm text-red-600">
+                                                    {errorsBrand.name.message}
                                                 </p>
                                             )}
                                         </div>
                                     </div>
-                                </div>
-                            </div>
 
-                            <div className="flex justify-end space-x-3">
-                                {editingBrand && (
-                                    <button
-                                        type="button"
-                                        onClick={cancelEditBrand}
-                                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-                                    >
-                                        Annuler
-                                    </button>
-                                )}
-                                <button
-                                    type="submit"
-                                    disabled={savingBrand}
-                                    className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors disabled:opacity-50"
-                                >
-                                    {savingBrand ? (
-                                        <Spinner small white />
-                                    ) : editingBrand ? (
-                                        'Mettre à jour'
-                                    ) : (
-                                        'Ajouter'
+                                    <div>
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Logo de la marque
+                                            </label>
+                                            <div className="flex items-center space-x-2">
+                                                <input
+                                                    type="text"
+                                                    {...registerBrand('imageSrc', {
+                                                        required: "L'URL de l'image est requise",
+                                                    })}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                    placeholder="URL de l'image"
+                                                />
+                                                <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
+                                                    Parcourir
+                                                    <input
+                                                        type="file"
+                                                        className="hidden"
+                                                        accept="image/*"
+                                                        onChange={handleBrandImageUpload}
+                                                    />
+                                                </label>
+                                            </div>
+                                            {errorsBrand.imageSrc && (
+                                                <p className="mt-1 text-sm text-red-600">
+                                                    {errorsBrand.imageSrc.message}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div className="mt-4">
+                                            <h4 className="text-sm font-medium text-gray-700 mb-2">
+                                                Prévisualisation du logo
+                                            </h4>
+                                            <div className="h-40 w-full flex items-center justify-center bg-gray-700 rounded-md">
+                                                {previewBrandImage ? (
+                                                    <div className="relative h-32 w-32">
+                                                        <Image
+                                                            src={getMediaUrl(previewBrandImage)}
+                                                            alt="Prévisualisation"
+                                                            fill
+                                                            className="object-contain"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-gray-400">
+                                                        Aucune image sélectionnée
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end space-x-3">
+                                    {editingBrand && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                cancelEditBrand();
+                                                setShowBrandForm(false);
+                                            }}
+                                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                                        >
+                                            Annuler
+                                        </button>
                                     )}
-                                </button>
-                            </div>
-                        </form>
+                                    <button
+                                        type="submit"
+                                        disabled={savingBrand}
+                                        className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors disabled:opacity-50"
+                                    >
+                                        {savingBrand ? (
+                                            <Spinner small white />
+                                        ) : editingBrand ? (
+                                            'Mettre à jour'
+                                        ) : (
+                                            'Ajouter'
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
 
                         <div className="mt-8">
-                            <h3 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4">
-                                Marques existantes
-                            </h3>
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-lg font-medium text-gray-900">
+                                    Marques existantes ({brands.length})
+                                </h3>
+                                <button
+                                    onClick={() => {
+                                        setEditingBrand(null);
+                                        resetBrand();
+                                        setPreviewBrandImage(null);
+                                        setShowBrandForm(true);
+                                    }}
+                                    className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors flex items-center space-x-2"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-5 w-5"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M12 4v16m8-8H4"
+                                        />
+                                    </svg>
+                                    <span>Nouvelle marque</span>
+                                </button>
+                            </div>
+
                             {loadingBrands ? (
                                 <div className="flex justify-center py-10">
                                     <Spinner />
                                 </div>
+                            ) : brands.length === 0 ? (
+                                <div className="text-center py-12 bg-gray-50 rounded-lg">
+                                    <div className="text-gray-400 mb-4">
+                                        <svg
+                                            className="mx-auto h-12 w-12"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={1}
+                                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                        Aucune marque
+                                    </h3>
+                                    <p className="text-gray-500 mb-4">
+                                        Commencez par ajouter votre première marque
+                                    </p>
+                                </div>
                             ) : (
-                                <div className="overflow-auto">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50">
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Nom
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Logo
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Actions
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {brands.map((brand) => (
-                                                <tr key={brand.id}>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        {brand.name}
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="h-10 w-24 relative bg-gray-200 rounded-md">
-                                                            <Image
-                                                                src={getMediaUrl(brand.imageSrc)}
-                                                                alt={brand.name}
-                                                                fill
-                                                                className="object-contain"
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {brands.map((brand) => (
+                                        <div
+                                            key={brand.id}
+                                            className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden"
+                                        >
+                                            <div className="aspect-w-16 aspect-h-9 bg-gray-200">
+                                                <div className="relative h-32 bg-gray-700 flex items-center justify-center">
+                                                    <Image
+                                                        src={getMediaUrl(brand.imageSrc)}
+                                                        alt={brand.name}
+                                                        fill
+                                                        className="object-contain"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="p-4">
+                                                <h4 className="font-medium text-gray-900 mb-3">
+                                                    {brand.name}
+                                                </h4>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            handleManageMedia('brand', brand)
+                                                        }
+                                                        className="flex-1 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium"
+                                                    >
+                                                        📁 Médias
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleEditBrand(brand)}
+                                                        className="px-3 py-2 bg-gray-50 text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
+                                                        title="Modifier"
+                                                    >
+                                                        <svg
+                                                            className="h-4 w-4"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                                             />
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleManageMedia('brand', brand)
-                                                            }
-                                                            className="text-blue-600 hover:text-blue-900"
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteBrand(brand)}
+                                                        className="px-3 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors"
+                                                        title="Supprimer"
+                                                    >
+                                                        <svg
+                                                            className="h-4 w-4"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
                                                         >
-                                                            Gérer médias
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleEditBrand(brand)}
-                                                            className="text-indigo-600 hover:text-indigo-900"
-                                                        >
-                                                            Modifier
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleDeleteBrand(brand)}
-                                                            className="text-red-600 hover:text-red-900"
-                                                        >
-                                                            Supprimer
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </div>
@@ -739,281 +818,343 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                 {/* Section Clients */}
                 {activeTab === 'clients' && (
                     <>
-                        <form
-                            onSubmit={handleSubmitClient(onSubmitClient)}
-                            className="space-y-6 mb-8"
-                        >
-                            <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
-                                {editingClient
-                                    ? `Modifier: ${editingClient.name}`
-                                    : 'Ajouter un nouveau client'}
-                            </h3>
+                        {(showClientForm || editingClient) && (
+                            <form
+                                onSubmit={handleSubmitClient(onSubmitClient)}
+                                className="bg-white rounded-lg shadow border border-gray-200 p-6 mb-8"
+                            >
+                                <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
+                                    {editingClient
+                                        ? `Modifier: ${editingClient.name}`
+                                        : 'Ajouter un nouveau client'}
+                                </h3>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Nom du client
-                                        </label>
-                                        <input
-                                            type="text"
-                                            {...registerClient('name', {
-                                                required: 'Le nom est requis',
-                                            })}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        />
-                                        {errorsClient.name && (
-                                            <p className="mt-1 text-sm text-red-600">
-                                                {errorsClient.name.message}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Domaine / Métier
-                                        </label>
-                                        <input
-                                            type="text"
-                                            {...registerClient('domain', {
-                                                required: 'Le domaine est requis',
-                                            })}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        />
-                                        {errorsClient.domain && (
-                                            <p className="mt-1 text-sm text-red-600">
-                                                {errorsClient.domain.message}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Photo du client (PNG)
-                                        </label>
-                                        <div className="flex items-center space-x-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Nom du client
+                                            </label>
                                             <input
                                                 type="text"
-                                                {...registerClient('imageSrc', {
-                                                    required: "L'URL de l'image est requise",
+                                                {...registerClient('name', {
+                                                    required: 'Le nom est requis',
                                                 })}
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                placeholder="URL de l'image"
                                             />
-                                            <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
-                                                Parcourir
-                                                <input
-                                                    type="file"
-                                                    className="hidden"
-                                                    accept="image/*"
-                                                    onChange={handleClientImageUpload}
-                                                />
-                                            </label>
+                                            {errorsClient.name && (
+                                                <p className="mt-1 text-sm text-red-600">
+                                                    {errorsClient.name.message}
+                                                </p>
+                                            )}
                                         </div>
-                                        {errorsClient.imageSrc && (
-                                            <p className="mt-1 text-sm text-red-600">
-                                                {errorsClient.imageSrc.message}
-                                            </p>
-                                        )}
-                                    </div>
 
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Image d&apos;arrière-plan
-                                        </label>
-                                        <div className="flex items-center space-x-2">
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Domaine / Métier
+                                            </label>
                                             <input
                                                 type="text"
-                                                {...registerClient('imageBackground', {
-                                                    required:
-                                                        "L'URL de l'image d'arrière-plan est requise",
+                                                {...registerClient('domain', {
+                                                    required: 'Le domaine est requis',
                                                 })}
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                placeholder="URL de l'image d'arrière-plan"
                                             />
-                                            <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
-                                                Parcourir
-                                                <input
-                                                    type="file"
-                                                    className="hidden"
-                                                    accept="image/*"
-                                                    onChange={handleClientBgImageUpload}
-                                                />
-                                            </label>
+                                            {errorsClient.domain && (
+                                                <p className="mt-1 text-sm text-red-600">
+                                                    {errorsClient.domain.message}
+                                                </p>
+                                            )}
                                         </div>
-                                        {errorsClient.imageBackground && (
-                                            <p className="mt-1 text-sm text-red-600">
-                                                {errorsClient.imageBackground.message}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
 
-                                <div>
-                                    <div className="mb-4">
-                                        <h4 className="text-sm font-medium text-gray-700 mb-2">
-                                            Prévisualisation de la photo
-                                        </h4>
-                                        <div className="h-40 w-full flex items-center justify-center bg-gray-100 rounded-md">
-                                            {previewClientImage ? (
-                                                <div className="relative h-32 w-32">
-                                                    <Image
-                                                        src={getMediaUrl(previewClientImage)}
-                                                        alt="Prévisualisation"
-                                                        fill
-                                                        className="object-contain"
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Photo du client (PNG)
+                                            </label>
+                                            <div className="flex items-center space-x-2">
+                                                <input
+                                                    type="text"
+                                                    {...registerClient('imageSrc', {
+                                                        required: "L'URL de l'image est requise",
+                                                    })}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                    placeholder="URL de l'image"
+                                                />
+                                                <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
+                                                    Parcourir
+                                                    <input
+                                                        type="file"
+                                                        className="hidden"
+                                                        accept="image/*"
+                                                        onChange={handleClientImageUpload}
                                                     />
-                                                </div>
-                                            ) : (
-                                                <p className="text-gray-400">
-                                                    Aucune image sélectionnée
+                                                </label>
+                                            </div>
+                                            {errorsClient.imageSrc && (
+                                                <p className="mt-1 text-sm text-red-600">
+                                                    {errorsClient.imageSrc.message}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Image d&apos;arrière-plan
+                                            </label>
+                                            <div className="flex items-center space-x-2">
+                                                <input
+                                                    type="text"
+                                                    {...registerClient('imageBackground', {
+                                                        required:
+                                                            "L'URL de l'image d'arrière-plan est requise",
+                                                    })}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                    placeholder="URL de l'image d'arrière-plan"
+                                                />
+                                                <label className="px-3 py-2 bg-gray-200 text-sm font-medium text-gray-700 rounded-md cursor-pointer hover:bg-gray-300">
+                                                    Parcourir
+                                                    <input
+                                                        type="file"
+                                                        className="hidden"
+                                                        accept="image/*"
+                                                        onChange={handleClientBgImageUpload}
+                                                    />
+                                                </label>
+                                            </div>
+                                            {errorsClient.imageBackground && (
+                                                <p className="mt-1 text-sm text-red-600">
+                                                    {errorsClient.imageBackground.message}
                                                 </p>
                                             )}
                                         </div>
                                     </div>
 
-                                    <div className="mb-4">
-                                        <h4 className="text-sm font-medium text-gray-700 mb-2">
-                                            Prévisualisation de l&apos;arrière-plan
-                                        </h4>
-                                        <div className="h-40 w-full flex items-center justify-center bg-gray-100 rounded-md overflow-hidden">
-                                            {previewClientBgImage ? (
-                                                <div className="relative h-full w-full">
-                                                    <Image
-                                                        src={getMediaUrl(previewClientBgImage)}
-                                                        alt="Prévisualisation de l'arrière-plan"
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <p className="text-gray-400">
-                                                    Aucune image d&apos;arrière-plan sélectionnée
-                                                </p>
-                                            )}
+                                    <div>
+                                        <div className="mb-4">
+                                            <h4 className="text-sm font-medium text-gray-700 mb-2">
+                                                Prévisualisation de la photo
+                                            </h4>
+                                            <div className="h-40 w-full flex items-center justify-center bg-gray-100 rounded-md">
+                                                {previewClientImage ? (
+                                                    <div className="relative h-32 w-32">
+                                                        <Image
+                                                            src={getMediaUrl(previewClientImage)}
+                                                            alt="Prévisualisation"
+                                                            fill
+                                                            className="object-contain"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-gray-400">
+                                                        Aucune image sélectionnée
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="mb-4">
+                                            <h4 className="text-sm font-medium text-gray-700 mb-2">
+                                                Prévisualisation de l&apos;arrière-plan
+                                            </h4>
+                                            <div className="h-40 w-full flex items-center justify-center bg-gray-100 rounded-md overflow-hidden">
+                                                {previewClientBgImage ? (
+                                                    <div className="relative h-full w-full">
+                                                        <Image
+                                                            src={getMediaUrl(previewClientBgImage)}
+                                                            alt="Prévisualisation de l'arrière-plan"
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-gray-400">
+                                                        Aucune image d&apos;arrière-plan
+                                                        sélectionnée
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="flex justify-end space-x-3">
-                                {editingClient && (
-                                    <button
-                                        type="button"
-                                        onClick={cancelEditClient}
-                                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-                                    >
-                                        Annuler
-                                    </button>
-                                )}
-                                <button
-                                    type="submit"
-                                    disabled={savingClient}
-                                    className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors disabled:opacity-50"
-                                >
-                                    {savingClient ? (
-                                        <Spinner small white />
-                                    ) : editingClient ? (
-                                        'Mettre à jour'
-                                    ) : (
-                                        'Ajouter'
+                                <div className="flex justify-end space-x-3">
+                                    {editingClient && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                cancelEditClient();
+                                                setShowClientForm(false);
+                                            }}
+                                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                                        >
+                                            Annuler
+                                        </button>
                                     )}
-                                </button>
-                            </div>
-                        </form>
+                                    <button
+                                        type="submit"
+                                        disabled={savingClient}
+                                        className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors disabled:opacity-50"
+                                    >
+                                        {savingClient ? (
+                                            <Spinner small white />
+                                        ) : editingClient ? (
+                                            'Mettre à jour'
+                                        ) : (
+                                            'Ajouter'
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
 
                         <div className="mt-8">
-                            <h3 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4">
-                                Clients existants
-                            </h3>
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-lg font-medium text-gray-900">
+                                    Célébrités existantes ({clients.length})
+                                </h3>
+                                <button
+                                    onClick={() => {
+                                        setEditingClient(null);
+                                        resetClient();
+                                        setPreviewClientImage(null);
+                                        setPreviewClientBgImage(null);
+                                        setShowClientForm(true);
+                                    }}
+                                    className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors flex items-center space-x-2"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-5 w-5"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M12 4v16m8-8H4"
+                                        />
+                                    </svg>
+                                    <span>Nouvelle célébrité</span>
+                                </button>
+                            </div>
+
                             {loadingClients ? (
                                 <div className="flex justify-center py-10">
                                     <Spinner />
                                 </div>
+                            ) : clients.length === 0 ? (
+                                <div className="text-center py-12 bg-gray-50 rounded-lg">
+                                    <div className="text-gray-400 mb-4">
+                                        <svg
+                                            className="mx-auto h-12 w-12"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={1}
+                                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                        Aucune célébrité
+                                    </h3>
+                                    <p className="text-gray-500 mb-4">
+                                        Commencez par ajouter votre première célébrité
+                                    </p>
+                                </div>
                             ) : (
-                                <div className="overflow-auto">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50">
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Nom
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Domaine
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Photo
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Arrière-plan
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Actions
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {clients.map((client) => (
-                                                <tr key={client.id}>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        {client.name}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        {client.domain}
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="h-12 w-12 relative">
-                                                            <Image
-                                                                src={getMediaUrl(client.imageSrc)}
-                                                                alt={client.name}
-                                                                fill
-                                                                className="object-cover rounded-full"
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {clients.map((client) => (
+                                        <div
+                                            key={client.id}
+                                            className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden"
+                                        >
+                                            <div className="relative h-32 bg-gray-200">
+                                                <Image
+                                                    src={getMediaUrl(client.imageBackground)}
+                                                    alt={`${client.name} background`}
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+                                                <div className="absolute bottom-4 left-4">
+                                                    <div className="h-12 w-12 relative">
+                                                        <Image
+                                                            src={getMediaUrl(client.imageSrc)}
+                                                            alt={client.name}
+                                                            fill
+                                                            className="object-cover rounded-full border-2 border-white"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="p-4">
+                                                <h4 className="font-medium text-gray-900 mb-1">
+                                                    {client.name}
+                                                </h4>
+                                                <p className="text-sm text-gray-500 mb-3">
+                                                    {client.domain}
+                                                </p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            handleManageMedia('client', client)
+                                                        }
+                                                        className="flex-1 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium"
+                                                    >
+                                                        📁 Médias
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleEditClient(client)}
+                                                        className="px-3 py-2 bg-gray-50 text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
+                                                        title="Modifier"
+                                                    >
+                                                        <svg
+                                                            className="h-4 w-4"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                                             />
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="h-12 w-24 relative">
-                                                            <Image
-                                                                src={getMediaUrl(
-                                                                    client.imageBackground,
-                                                                )}
-                                                                alt={`${client.name} background`}
-                                                                fill
-                                                                className="object-cover rounded-md"
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteClient(client)}
+                                                        className="px-3 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors"
+                                                        title="Supprimer"
+                                                    >
+                                                        <svg
+                                                            className="h-4 w-4"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                                                             />
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleManageMedia('client', client)
-                                                            }
-                                                            className="text-blue-600 hover:text-blue-900"
-                                                        >
-                                                            Gérer médias
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleEditClient(client)}
-                                                            className="text-indigo-600 hover:text-indigo-900"
-                                                        >
-                                                            Modifier
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleDeleteClient(client)
-                                                            }
-                                                            className="text-red-600 hover:text-red-900"
-                                                        >
-                                                            Supprimer
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </div>

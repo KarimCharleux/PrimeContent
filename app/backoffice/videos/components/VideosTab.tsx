@@ -13,7 +13,15 @@ import {
 import Image from 'next/image';
 import { useEffect, useState, useCallback } from 'react';
 
+import VideoUpload, { VideoData } from '../../../components/VideoUpload';
 import { getMediaUrl } from '../../../utils/mediaUrl';
+import {
+    getVideoProvider,
+    extractVideoId,
+    getVideoThumbnail,
+    isExternalVideo,
+    VideoProvider,
+} from '../../../utils/videoManager';
 import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
 
@@ -27,6 +35,11 @@ interface Video {
     order: number;
     size: number; // Taille en bytes
     format: 'portrait' | 'paysage'; // Ajout du format
+    provider?: VideoProvider; // Fournisseur de la vidéo
+    videoId?: string; // ID de la vidéo externe
+    embedUrl?: string; // URL d'embed pour les vidéos externes
+    watchUrl?: string; // URL de visionnage pour les vidéos externes
+    isExternal?: boolean; // Indique si c'est une vidéo externe
 }
 
 interface VideoStats {
@@ -69,6 +82,8 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
     const [videoFile, setVideoFile] = useState<File | null>(null);
     const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
     const [uploadCategory, setUploadCategory] = useState<string>('');
+    const [videoData, setVideoData] = useState<VideoData | null>(null);
+    const [uploadMode, setUploadMode] = useState<'file' | 'external'>('file');
 
     // Extraire les catégories uniques des vidéos
     const categories = Array.from(new Set(videos.map((video) => video.category))).filter(Boolean);
@@ -202,65 +217,94 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         try {
             let videoUrl = formData.source;
             let thumbnailUrl = formData.thumbnail;
+            let videoDataToSave: Partial<Video> = { ...formData };
 
-            // Upload de la vidéo si un nouveau fichier est sélectionné
-            if (videoFile) {
-                const videoFormData = new FormData();
-                videoFormData.append('file', videoFile);
-                videoFormData.append('path', 'videos');
-                videoFormData.append('useUuid', 'false');
-
-                const videoResponse = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: videoFormData,
-                });
-
-                if (!videoResponse.ok) {
-                    throw new Error('Erreur lors du téléchargement de la vidéo');
+            // Gérer les vidéos externes (YouTube/Dailymotion)
+            if (uploadMode === 'external' && videoData) {
+                if (!videoData.provider || videoData.provider === 'local') {
+                    throw new Error(
+                        'Veuillez sélectionner une vidéo YouTube ou Dailymotion valide',
+                    );
                 }
 
-                const videoData = await videoResponse.json();
-                videoUrl = videoData.fileUrl;
-            }
+                videoDataToSave = {
+                    title: videoData.title || formData.title || 'Vidéo sans titre',
+                    category: formData.category || '',
+                    source: videoData.source,
+                    thumbnail: videoData.thumbnail || '',
+                    duration: 0, // La durée pourrait être récupérée via l'API
+                    order: editingVideo ? editingVideo.order : videos.length,
+                    size: 0, // Pas de taille pour les vidéos externes
+                    format: 'paysage', // Par défaut
+                    provider: videoData.provider,
+                    videoId: videoData.videoId,
+                    embedUrl: videoData.embedUrl,
+                    watchUrl: videoData.watchUrl,
+                    isExternal: true,
+                };
+            } else {
+                // Gérer les fichiers locaux
+                // Upload de la vidéo si un nouveau fichier est sélectionné
+                if (videoFile) {
+                    const videoFormData = new FormData();
+                    videoFormData.append('file', videoFile);
+                    videoFormData.append('path', 'videos');
+                    videoFormData.append('useUuid', 'false');
 
-            // Upload de la miniature si un nouveau fichier est sélectionné
-            if (thumbnailFile) {
-                const thumbnailFormData = new FormData();
-                thumbnailFormData.append('file', thumbnailFile);
-                thumbnailFormData.append('path', 'videos/thumbnails');
-                thumbnailFormData.append('useUuid', 'false');
+                    const videoResponse = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: videoFormData,
+                    });
 
-                const thumbnailResponse = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: thumbnailFormData,
-                });
+                    if (!videoResponse.ok) {
+                        throw new Error('Erreur lors du téléchargement de la vidéo');
+                    }
 
-                if (!thumbnailResponse.ok) {
-                    throw new Error('Erreur lors du téléchargement de la miniature');
+                    const uploadData = await videoResponse.json();
+                    videoUrl = uploadData.fileUrl;
                 }
 
-                const thumbnailData = await thumbnailResponse.json();
-                thumbnailUrl = thumbnailData.fileUrl;
+                // Upload de la miniature si un nouveau fichier est sélectionné
+                if (thumbnailFile) {
+                    const thumbnailFormData = new FormData();
+                    thumbnailFormData.append('file', thumbnailFile);
+                    thumbnailFormData.append('path', 'videos/thumbnails');
+                    thumbnailFormData.append('useUuid', 'false');
+
+                    const thumbnailResponse = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: thumbnailFormData,
+                    });
+
+                    if (!thumbnailResponse.ok) {
+                        throw new Error('Erreur lors du téléchargement de la miniature');
+                    }
+
+                    const thumbnailData = await thumbnailResponse.json();
+                    thumbnailUrl = thumbnailData.fileUrl;
+                }
+
+                videoDataToSave = {
+                    ...formData,
+                    source: videoUrl,
+                    thumbnail: thumbnailUrl,
+                    format: formData.format || 'paysage',
+                    provider: 'local',
+                    isExternal: false,
+                };
             }
 
             if (editingVideo?.id) {
                 const videoRef = doc(db, 'videos', editingVideo.id);
                 await updateDoc(videoRef, {
-                    title: formData.title,
-                    source: videoUrl,
-                    thumbnail: thumbnailUrl,
+                    ...videoDataToSave,
                     order: formData.order,
-                    category: formData.category || '',
-                    format: formData.format || 'paysage',
                 });
                 setStatusMessage({ type: 'success', message: 'Vidéo mise à jour avec succès' });
             } else {
                 const newVideo = {
-                    ...formData,
-                    source: videoUrl,
-                    thumbnail: thumbnailUrl,
+                    ...videoDataToSave,
                     order: videos.length,
-                    format: formData.format || 'paysage',
                 };
                 await addDoc(collection(db, 'videos'), newVideo);
                 setStatusMessage({
@@ -291,6 +335,8 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         setPreviewThumbnail(null);
         setStatusMessage(null);
         setUploadCategory('');
+        setVideoData(null);
+        setUploadMode('file');
     };
 
     // Gérer le drag & drop des fichiers
@@ -536,6 +582,29 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         setEditingVideo(video);
         setFormData(video);
         setPreviewThumbnail(video.thumbnail);
+
+        // Déterminer le mode d'upload et les données vidéo
+        if (video.isExternal && video.provider) {
+            setUploadMode('external');
+            setVideoData({
+                source: video.source,
+                provider: video.provider,
+                videoId: video.videoId,
+                thumbnail: video.thumbnail,
+                title: video.title,
+                embedUrl: video.embedUrl,
+                watchUrl: video.watchUrl,
+                // Propriétés de rétrocompatibilité
+                isYouTube: video.provider === 'youtube',
+                youtubeId: video.provider === 'youtube' ? video.videoId : undefined,
+                isDailymotion: video.provider === 'dailymotion',
+                dailymotionId: video.provider === 'dailymotion' ? video.videoId : undefined,
+            });
+        } else {
+            setUploadMode('file');
+            setVideoData(null);
+        }
+
         setShowForm(true);
 
         // Faire défiler la page jusqu'au formulaire
@@ -908,36 +977,82 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                                 </div>
 
                                 <div>
+                                    {/* Sélecteur de mode de vidéo */}
                                     <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Vidéo
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Type de vidéo
                                         </label>
-                                        <div className="flex space-x-2">
-                                            <input
-                                                type="text"
-                                                value={formData.source || ''}
-                                                onChange={(e) =>
-                                                    setFormData({
-                                                        ...formData,
-                                                        source: e.target.value,
-                                                    })
-                                                }
-                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                placeholder="URL de la vidéo"
-                                                required
-                                                readOnly
-                                            />
-                                            <label className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 cursor-pointer flex items-center">
-                                                <span>Parcourir</span>
-                                                <input
-                                                    type="file"
-                                                    className="hidden"
-                                                    accept="video/*"
-                                                    onChange={handleVideoFileChange}
-                                                />
-                                            </label>
+                                        <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg">
+                                            <button
+                                                type="button"
+                                                onClick={() => setUploadMode('file')}
+                                                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                                                    uploadMode === 'file'
+                                                        ? 'bg-white text-gray-900 shadow'
+                                                        : 'text-gray-500 hover:text-gray-700'
+                                                }`}
+                                            >
+                                                Fichier local
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setUploadMode('external')}
+                                                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                                                    uploadMode === 'external'
+                                                        ? 'bg-white text-gray-900 shadow'
+                                                        : 'text-gray-500 hover:text-gray-700'
+                                                }`}
+                                            >
+                                                YouTube / Dailymotion
+                                            </button>
                                         </div>
                                     </div>
+
+                                    {/* Upload de fichier local */}
+                                    {uploadMode === 'file' && (
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Fichier vidéo
+                                            </label>
+                                            <div className="flex space-x-2">
+                                                <input
+                                                    type="text"
+                                                    value={formData.source || ''}
+                                                    onChange={(e) =>
+                                                        setFormData({
+                                                            ...formData,
+                                                            source: e.target.value,
+                                                        })
+                                                    }
+                                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                    placeholder="URL de la vidéo"
+                                                    required
+                                                    readOnly
+                                                />
+                                                <label className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 cursor-pointer flex items-center">
+                                                    <span>Parcourir</span>
+                                                    <input
+                                                        type="file"
+                                                        className="hidden"
+                                                        accept="video/*"
+                                                        onChange={handleVideoFileChange}
+                                                    />
+                                                </label>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Upload vidéo externe */}
+                                    {uploadMode === 'external' && (
+                                        <div className="mb-4">
+                                            <VideoUpload
+                                                value={videoData}
+                                                onChange={setVideoData}
+                                                label="Vidéo YouTube ou Dailymotion"
+                                                placeholder="URL YouTube ou Dailymotion"
+                                            />
+                                        </div>
+                                    )}
 
                                     <div className="mb-4">
                                         <label className="block text-sm font-medium text-gray-700 mb-1">

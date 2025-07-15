@@ -121,24 +121,43 @@ export function isYouTubeVideo(source: string): boolean {
 }
 
 /**
- * Récupère les métadonnées d'une vidéo YouTube via l'API oEmbed
+ * Récupère les métadonnées d'une vidéo YouTube via notre API interne (évite les problèmes CORS)
  */
 export async function getYouTubeMetadata(videoId: string): Promise<{
     title?: string;
     thumbnail_url?: string;
     author_name?: string;
     provider_name?: string;
+    width?: number;
+    height?: number;
+    format?: 'portrait' | 'paysage';
 } | null> {
     try {
+        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
         const response = await fetch(
-            `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
+            `/api/video-metadata?url=${encodeURIComponent(videoUrl)}&provider=youtube`,
         );
 
         if (!response.ok) {
             throw new Error('Vidéo non trouvée');
         }
 
-        return await response.json();
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error || 'Erreur lors de la récupération des métadonnées');
+        }
+
+        // Adapter la réponse au format attendu
+        return {
+            title: data.metadata.title,
+            thumbnail_url: data.metadata.thumbnail,
+            author_name: data.metadata.author,
+            provider_name: 'YouTube',
+            width: data.metadata.width,
+            height: data.metadata.height,
+            format: data.metadata.format,
+        };
     } catch (error) {
         console.error('Erreur lors de la récupération des métadonnées YouTube:', error);
         return null;

@@ -1,17 +1,11 @@
 'use client';
-import { log } from 'console';
 
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 
 import gsap from '../../lib/gsap-config';
 import { getMediaUrl } from '../../utils/mediaUrl';
-import {
-    isYouTubeVideo,
-    getYouTubeThumbnail,
-    extractYouTubeId,
-    getYouTubeEmbedUrl,
-} from '../../utils/youtube';
+import { VideoProvider, getVideoThumbnail, isExternalVideo } from '../../utils/videoManager';
 import ImageCarousel from '../ImageCarousel/ImageCarousel';
 
 import styles from './PortfolioGrid.module.scss';
@@ -26,7 +20,12 @@ export interface Project {
     thumbnail?: string; // Miniature optionnelle pour les vidéos
     clientType?: 'marque' | 'celebrite'; // Type de client
     clientName?: string; // Nom du client
-    // Propriétés YouTube
+    // Propriétés vidéo unifiées
+    provider?: VideoProvider; // 'youtube' | 'dailymotion' | 'local'
+    videoId?: string; // ID de la vidéo externe
+    embedUrl?: string; // URL d'embed
+    watchUrl?: string; // URL de visionnage
+    // Propriétés de rétrocompatibilité
     isYouTube?: boolean;
     youtubeId?: string;
 }
@@ -90,6 +89,10 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     // État pour les éléments sélectionnés (gestion interne si pas fourni en props)
     const [internalSelectedItems, setInternalSelectedItems] = useState<Set<string>>(new Set());
+    // État pour les miniatures Dailymotion récupérées à la volée
+    const [dailymotionThumbnails, setDailymotionThumbnails] = useState<{ [key: string]: string }>(
+        {},
+    );
 
     // Utiliser soit le filtre externe soit l'interne
     const activeFilter = externalActiveFilter || internalActiveFilter;
@@ -139,6 +142,32 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         setCurrentImageIndex((prevIndex) =>
             prevIndex === 0 ? filteredProjects.length - 1 : prevIndex - 1,
         );
+    };
+
+    // Fonction pour récupérer la miniature Dailymotion à la volée
+    const fetchDailymotionThumbnail = async (videoId: string, videoUrl: string) => {
+        try {
+            const response = await fetch(
+                `/api/video-metadata?url=${encodeURIComponent(videoUrl)}&provider=dailymotion`,
+            );
+
+            if (!response.ok) {
+                throw new Error('Erreur API');
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.metadata.thumbnail) {
+                setDailymotionThumbnails((prev) => ({
+                    ...prev,
+                    [videoId]: data.metadata.thumbnail,
+                }));
+                return data.metadata.thumbnail;
+            }
+        } catch (error) {
+            console.error('Erreur récupération miniature Dailymotion:', error);
+        }
+        return null;
     };
 
     // Fonction pour gérer la sélection d'un projet
@@ -262,6 +291,25 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         });
     }, [activeVideoIndex]);
 
+    // Récupérer automatiquement les miniatures Dailymotion manquantes
+    useEffect(() => {
+        const dailymotionProjectsWithoutThumbnail = projects.filter(
+            (project) =>
+                project.provider === 'dailymotion' &&
+                project.videoId &&
+                !project.thumbnail &&
+                !dailymotionThumbnails[project.videoId],
+        );
+
+        if (dailymotionProjectsWithoutThumbnail.length > 0) {
+            dailymotionProjectsWithoutThumbnail.forEach((project) => {
+                if (project.videoId) {
+                    fetchDailymotionThumbnail(project.videoId, project.source);
+                }
+            });
+        }
+    }, [projects, dailymotionThumbnails]);
+
     // Générer les catégories ou utiliser les filtres personnalisés
     const categories = customFilters
         ? ['Tout', ...customFilters.map((f) => f.key)]
@@ -301,26 +349,62 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         }
     };
 
-    // Fonction pour récupérer la bonne miniature (YouTube ou fichier)
+    // Fonction pour récupérer la bonne miniature (vidéo externe ou fichier)
     const getProjectThumbnail = (project: Project): string => {
-        // Si c'est YouTube et qu'on a un youtubeId
-        if (project.isYouTube && project.youtubeId) {
-            return getYouTubeThumbnail(project.youtubeId);
-        }
-
-        // Si on a une miniature personnalisée
+        // ✅ PRIORITÉ 1 : Si on a une miniature sauvegardée, l'utiliser
         if (project.thumbnail) {
             return getMediaUrl(project.thumbnail);
         }
 
-        // Sinon utiliser la source (pour les images ou videos fichiers)
-        return getMediaUrl(project.source);
+        // ✅ SOLUTION : Utiliser miniature Dailymotion récupérée à la volée
+        if (project.provider === 'dailymotion' && project.videoId && !project.thumbnail) {
+            // Vérifier si on a déjà récupéré la miniature
+            const cachedThumbnail = dailymotionThumbnails[project.videoId];
+            if (cachedThumbnail) {
+                return cachedThumbnail;
+            }
+
+            // Lancer la récupération à la volée (asynchrone)
+            fetchDailymotionThumbnail(project.videoId, project.source);
+
+            // En attendant, utiliser placeholder pour éviter les 404
+            return '/placeholder-photo.png';
+        }
+
+        // ✅ PRIORITÉ 2 : Pour YouTube SEULEMENT (fonctionne bien)
+        if (project.provider === 'youtube' && project.videoId) {
+            const thumbnailUrl = getVideoThumbnail(project.videoId, 'youtube');
+            if (thumbnailUrl) return thumbnailUrl;
+        }
+
+        // Rétrocompatibilité : Si c'est YouTube et qu'on a un youtubeId
+        if (project.isYouTube && project.youtubeId) {
+            const thumbnailUrl = getVideoThumbnail(project.youtubeId, 'youtube');
+            if (thumbnailUrl) return thumbnailUrl;
+        }
+
+        // ✅ POUR DAILYMOTION : NE PAS générer de miniature (évite les 404)
+        // Utiliser directement la source ou placeholder
+
+        // Si on a une source valide, l'utiliser
+        if (project.source) {
+            return getMediaUrl(project.source);
+        }
+
+        // En dernier recours, retourner l'image placeholder
+        return '/placeholder-photo.png';
     };
 
     // Préparation des médias pour le carrousel (images et vidéos)
     const carouselMedia = filteredProjects.map((project) => ({
         src: project.source,
         isVideo: project.isVideo,
+        provider: project.provider || (project.isYouTube ? 'youtube' : 'local'),
+        videoId: project.videoId || project.youtubeId,
+        embedUrl: project.embedUrl,
+        watchUrl: project.watchUrl,
+        thumbnail: project.thumbnail, // ✅ Passer la miniature sauvegardée au carrousel
+        // Rétrocompatibilité
         isYouTube: project.isYouTube,
         youtubeId: project.youtubeId,
     }));
@@ -419,8 +503,11 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                 >
                                     {project.isVideo ? (
                                         <div className={styles.portfolioImageContainer}>
-                                            {/* Si on a une miniature ou c'est YouTube, utiliser Image */}
-                                            {project.thumbnail || project.isYouTube ? (
+                                            {/* Si on a une miniature ou c'est une vidéo externe, utiliser Image */}
+                                            {project.thumbnail ||
+                                            isExternalVideo(project.source) ||
+                                            (project.provider && project.provider !== 'local') ||
+                                            project.isYouTube ? (
                                                 <Image
                                                     src={getProjectThumbnail(project)}
                                                     alt={project.title ?? ''}
@@ -448,11 +535,15 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                                     }}
                                                 />
                                             )}
+
+                                            {/* Badge du fournisseur vidéo supprimé comme demandé */}
+
                                             <div
                                                 className={`${styles.videoPlayBtn} ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
                                             >
                                                 <div className={styles.videoPlayIcon}>
-                                                    {project.isYouTube ? (
+                                                    {project.provider === 'youtube' ||
+                                                    project.isYouTube ? (
                                                         // Icône YouTube
                                                         <svg
                                                             className="w-8 h-8 text-white"
@@ -460,6 +551,16 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                                             fill="currentColor"
                                                         >
                                                             <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                                                        </svg>
+                                                    ) : project.provider === 'dailymotion' ? (
+                                                        // Icône play avec style Dailymotion
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            className="h-8 w-8 text-white"
+                                                            viewBox="0 0 20 20"
+                                                            fill="currentColor"
+                                                        >
+                                                            <path d="M8 5v10l7-5z" />
                                                         </svg>
                                                     ) : (
                                                         // Icône play normale
@@ -540,7 +641,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
 
                     {/* Dégradé en bas pour inciter à voir plus */}
                     {showGradientOverlay && filteredProjects.length > 0 && (
-                        <div className="absolute -bottom-2 left-0 right-0 h-80 bg-gradient-to-t from-[#060608] to-[#060608]/50 pointer-events-none z-10" />
+                        <div className="absolute -bottom-2 left-0 right-0 h-[830px] bg-gradient-to-t from-[#060608] to-[#060608]/50 to-transparent pointer-events-none z-10" />
                     )}
                 </div>
             </div>
