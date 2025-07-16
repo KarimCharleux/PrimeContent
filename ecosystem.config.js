@@ -2,8 +2,7 @@ module.exports = {
     apps: [
         {
             name: 'dalifilms',
-            script: 'npm',
-            args: 'start',
+            script: 'server.js',
             cwd: '/var/www/PrimeContent',
             instances: 1,
             autorestart: true,

@@ -47,7 +47,7 @@ app.prepare()
             }
         }
 
-        server.listen('passenger', (err) => {
+        server.listen(port, hostname, (err) => {
             if (err) {
                 console.error('Failed to start server:', err);
                 process.exit(1);
