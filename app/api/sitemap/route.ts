@@ -17,61 +17,61 @@ export async function GET() {
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://primecontent.fr/</loc>
+    <loc>https://dalifilms.fr/</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://primecontent.fr/evenements/</loc>
+    <loc>https://dalifilms.fr/evenements/</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://primecontent.fr/mariages/</loc>
+    <loc>https://dalifilms.fr/mariages/</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://primecontent.fr/videos/</loc>
+    <loc>https://dalifilms.fr/videos/</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://primecontent.fr/photos/</loc>
+    <loc>https://dalifilms.fr/photos/</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://primecontent.fr/realisations/</loc>
+    <loc>https://dalifilms.fr/realisations/</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://primecontent.fr/reseaux-sociaux/</loc>
+    <loc>https://dalifilms.fr/reseaux-sociaux/</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
     <url>
-    <loc>https://primecontent.fr/web/</loc>
+    <loc>https://dalifilms.fr/web/</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
     <url>
-    <loc>https://primecontent.fr/clients/</loc>
+    <loc>https://dalifilms.fr/clients/</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://primecontent.fr/mentions-legales/</loc>
+    <loc>https://dalifilms.fr/mentions-legales/</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
@@ -80,7 +80,7 @@ export async function GET() {
       .map(
           (event) => `
   <url>
-    <loc>https://primecontent.fr/evenements/${event.id}/</loc>
+    <loc>https://dalifilms.fr/evenements/${event.id}/</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

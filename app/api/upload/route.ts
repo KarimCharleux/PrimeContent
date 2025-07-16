@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 // Définir le chemin racine pour les médias selon l'environnement
 const MEDIA_ROOT =
     process.env.NODE_ENV === 'production'
-        ? '/home/aymo1441/PrimeContentMedia'
+        ? '/var/www/PrimeContentMedia'
         : join(process.cwd(), 'public');
 
 // Fonction pour vérifier si un fichier existe
@@ -91,9 +91,9 @@ export async function POST(request: NextRequest) {
                 let oldFileName, oldFileFolderPath;
 
                 // Gérer les URLs absolues et relatives
-                if (oldFilePath.includes('media.primecontent.fr')) {
+                if (oldFilePath.includes('media.dalifilms.fr')) {
                     // URL absolue du sous-domaine
-                    const urlParts = oldFilePath.split('media.primecontent.fr/')[1].split('/');
+                    const urlParts = oldFilePath.split('media.dalifilms.fr/')[1].split('/');
                     oldFileName = urlParts.pop();
                     oldFileFolderPath = urlParts.join('/');
                 } else {

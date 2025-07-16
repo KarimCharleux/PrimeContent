@@ -310,7 +310,7 @@ export default function SocialNetworksManager({
                                 onChange={(e) =>
                                     setNewNetwork({ ...newNetwork, displayName: e.target.value })
                                 }
-                                placeholder="@primecontent.fr"
+                                placeholder="@dalifilms.fr"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                                 required
                             />

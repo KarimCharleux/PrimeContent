@@ -7,7 +7,7 @@ import sharp from 'sharp';
 // Définir le chemin racine pour les médias selon l'environnement
 const MEDIA_ROOT =
     process.env.NODE_ENV === 'production'
-        ? '/home/aymo1441/PrimeContentMedia'
+        ? '/var/www/PrimeContentMedia'
         : join(process.cwd(), 'public');
 
 // Fonction pour générer l'URL publique

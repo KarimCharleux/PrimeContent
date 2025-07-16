@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# Script de build local et déploiement du dossier .next vers o2switch
-# Usage: ./deploy-next.sh
+# Script de build local et déploiement du dossier .next vers VPS Hostinger
+# Usage: ./deploy.sh
 
 # Configuration
-SERVER_USER="aymo1441"
-SERVER_IP="109.234.166.34"
-SERVER_PATH="~/PrimeContent"
+SERVER_USER="root"
+SERVER_IP="82.29.173.124"
+SERVER_HOST="srv910965.hstgr.cloud"
+SERVER_PATH="/var/www/PrimeContent"
 LOCAL_PATH="$(pwd)"
 
 # Couleurs pour les messages
@@ -15,7 +16,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${YELLOW}=== Démarrage du build et déploiement du dossier .next ===${NC}"
+echo -e "${YELLOW}=== Démarrage du build et déploiement vers VPS Hostinger ===${NC}"
 
 # Se positionner dans le répertoire du projet
 cd "$LOCAL_PATH" || { echo -e "${RED}Erreur: Impossible d'accéder au répertoire du projet${NC}"; exit 1; }
@@ -30,12 +31,12 @@ ARCHIVE_NAME="next_build_$(date +%Y%m%d_%H%M%S).tar.gz"
 tar -czf "$ARCHIVE_NAME" .next
 
 # Transférer l'archive vers le serveur
-echo -e "${YELLOW}[3/5] Transfert vers le serveur o2switch...${NC}"
-scp "$ARCHIVE_NAME" "$SERVER_USER@$SERVER_IP:~/" || { echo -e "${RED}Erreur lors du transfert${NC}"; exit 1; }
+echo -e "${YELLOW}[3/5] Transfert vers le serveur Hostinger...${NC}"
+scp "$ARCHIVE_NAME" "$SERVER_USER@$SERVER_HOST:~/" || { echo -e "${RED}Erreur lors du transfert${NC}"; exit 1; }
 
 # Exécuter les commandes de déploiement sur le serveur
 echo -e "${YELLOW}[4/5] Mise à jour du code source avec git pull...${NC}"
-ssh "$SERVER_USER@$SERVER_IP" << EOF
+ssh "$SERVER_USER@$SERVER_HOST" << EOF
   cd $SERVER_PATH || { echo "Erreur: Impossible d'accéder au répertoire du serveur"; exit 1; }
   
   echo "Mise à jour du code source avec git pull..."
