@@ -3,6 +3,11 @@ const nextConfig = {
     images: {
         unoptimized: true,
     },
+    experimental: {
+        serverActions: {
+            allowedOrigins: ["localhost:3000", "dalifilms.fr", "www.dalifilms.fr"]
+        }
+    },
     trailingSlash: true,
     assetPrefix: process.env.NODE_ENV === 'production' ? '/' : '',
     webpack: (config, { dev, isServer }) => {
