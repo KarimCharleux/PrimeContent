@@ -76,6 +76,9 @@ if ! git diff --quiet HEAD origin/master; then
     log "📦 Installation des dépendances..."
     npm ci --production=false
     
+    log "🔧 Installation de Sharp pour Linux..."
+    npm install --platform=linux --arch=x64 sharp
+    
     log "🏗️  Build de l'application..."
     npm run build
     
