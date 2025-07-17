@@ -5,6 +5,10 @@ on:
     branches: [ master, main ]
   workflow_dispatch: # Permet le déclenchement manuel
 
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+  SKIP_ENV_VALIDATION: 1
+
 jobs:
   deploy:
     name: 🌐 Deploy to Hostinger VPS
@@ -22,8 +26,16 @@ jobs:
         node-version: '18'
         cache: 'npm'
 
-    - name: 📦 Install dependencies
-      run: npm ci
+    - name: 📦 Install dependencies & Sharp fix
+      run: |
+        # Installation normale des dépendances
+        npm ci
+        
+        # Installer Sharp spécifiquement pour Linux (fix erreur GitHub Actions)
+        npm install --platform=linux --arch=x64 sharp
+        
+        # Vérifier que Sharp fonctionne
+        node -e "console.log('Sharp version:', require('sharp').versions)"
 
     - name: 🧪 Run tests (si vous en avez)
       run: |
@@ -31,6 +43,8 @@ jobs:
         echo "✅ Tests passés (à configurer si nécessaire)"
 
     - name: 🏗️ Build application
+      env:
+        NEXT_TELEMETRY_DISABLED: 1
       run: npm run build
 
     - name: 🔑 Setup SSH
