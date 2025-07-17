@@ -15,18 +15,6 @@ fi
 echo "📁 Dossier actuel: $(pwd)"
 echo "📊 Espace utilisé avant nettoyage: $(du -sh . | cut -f1)"
 
-# Créer une sauvegarde complète
-echo ""
-echo "💾 Création d'une sauvegarde complète..."
-BACKUP_NAME="full-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
-tar -czf "/root/backups/$BACKUP_NAME" . 2>/dev/null
-if [ $? -eq 0 ]; then
-    echo "✅ Sauvegarde créée: /root/backups/$BACKUP_NAME"
-else
-    echo "❌ Erreur lors de la sauvegarde. Arrêt du script."
-    exit 1
-fi
-
 # Arrêter l'application temporairement
 echo ""
 echo "⏹️ Arrêt temporaire de l'application..."
