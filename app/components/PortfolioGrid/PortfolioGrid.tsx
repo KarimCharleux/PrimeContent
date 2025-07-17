@@ -40,6 +40,7 @@ interface CustomFilter {
 export interface ClientData {
     name: string;
     imageSrc: string;
+    imageBackground?: string;
     type: 'brand' | 'celebrity';
 }
 
@@ -431,6 +432,18 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                             onClick={() => handleFilterChange(category)}
                                         >
                                             <div className={styles.filterImageContainer}>
+                                                {/* Background image si disponible */}
+                                                {clientInfo.imageBackground && (
+                                                    <div
+                                                        className={styles.filterImageBackground}
+                                                        style={{
+                                                            backgroundImage: `url(${getMediaUrl(clientInfo.imageBackground)})`,
+                                                            backgroundSize: 'cover',
+                                                            backgroundPosition: 'center',
+                                                            backgroundRepeat: 'no-repeat',
+                                                        }}
+                                                    />
+                                                )}
                                                 <Image
                                                     src={getMediaUrl(clientInfo.imageSrc)}
                                                     alt={clientInfo.name}
@@ -445,7 +458,10 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                                 {/* Afficher le nom seulement pour les célébrités */}
                                                 {clientInfo.type === 'celebrity' && (
                                                     <span className={styles.filterImageLabel}>
-                                                        {clientInfo.name}
+                                                        {customFilters
+                                                            ? categoryLabels[category] ||
+                                                              clientInfo.name
+                                                            : clientInfo.name}
                                                     </span>
                                                 )}
                                             </div>

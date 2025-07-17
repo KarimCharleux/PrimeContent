@@ -333,7 +333,7 @@ function ClientPageContent() {
                 )
                 .map((client) => ({
                     key: client.name.toLowerCase().replace(/\s+/g, '-'),
-                    label: client.name,
+                    label: client.name.split(' ')[0], // Afficher seulement le prénom (premier mot)
                 }));
         }
     };
@@ -346,6 +346,7 @@ function ClientPageContent() {
     );
 
     const customFilters = getAvailableFilters();
+    console.log(customFilters);
 
     // Créer les données client pour les filtres avec images
     const createClientData = (): { [key: string]: ClientData } => {
@@ -366,6 +367,7 @@ function ClientPageContent() {
                 clientData[key] = {
                     name: client.name,
                     imageSrc: client.imageSrc,
+                    imageBackground: client.imageBackground,
                     type: 'celebrity',
                 };
             });
