@@ -5,7 +5,7 @@ import './styles/fonts.css';
 import ClientLayout from './components/ClientLayout';
 
 export const metadata: Metadata = {
-    title: 'Primecontent | Création vidéo & photo professionnelle',
+    title: 'DaliFilms | Création vidéo & photo professionnelle',
     description:
         'Créateur de contenu professionnel pour mariages, événements et entreprises basé à Paris',
     other: {

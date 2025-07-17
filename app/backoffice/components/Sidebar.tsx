@@ -399,7 +399,7 @@ export default function Sidebar() {
                 <div className="flex items-center">
                     <span className={`font-semibold text-xl ${isOpen ? 'block' : 'hidden'}`}>
                         <b className="primecontent-title">
-                            Prime<span className="text-gray-400">content.</span>
+                            Dali<span className="text-gray-400">films.</span>
                         </b>
                     </span>
                 </div>

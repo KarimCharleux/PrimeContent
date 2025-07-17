@@ -40,7 +40,7 @@ export default function ContactPage() {
                     calendlyUrl: 'https://calendly.com',
                     texteBienvenue: "Boostez Votre Présence Aujourd'hui !",
                     texteFormulaire:
-                        "Votre image mérite d'être vue, entendue, ressentie. Rejoignez Primecontent pour propulser votre présence visuelle et numérique au niveau supérieur.",
+                        "Votre image mérite d'être vue, entendue, ressentie. Rejoignez DaliFilms pour propulser votre présence visuelle et numérique au niveau supérieur.",
                 };
 
                 await setDoc(doc(db, 'configuration', 'contact'), defaultContactInfo);

@@ -74,7 +74,7 @@ export default function NotFound() {
                     transition={{ delay: 1.2, duration: 1 }}
                     className="mt-12 text-sm text-gray-500"
                 >
-                    © Primecontent
+                    © DaliFilms
                 </motion.div>
             </div>
 

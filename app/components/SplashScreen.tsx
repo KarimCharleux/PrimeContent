@@ -311,134 +311,104 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                                             opacity: 0;
                                         }
 
-                                        .prime-letter-1 {
+                                        .dali-letter-1 {
                                             animation:
                                                 appear 0.01s linear forwards 0.1s,
                                                 dash 0.5s ease forwards 0.1s;
                                         }
 
-                                        .prime-letter-1-fill {
+                                        .dali-letter-1-fill {
                                             animation: fill-in 0.7s ease-in forwards 0.3s;
                                         }
 
-                                        .prime-letter-2 {
+                                        .dali-letter-2 {
                                             animation:
                                                 appear 0.01s linear forwards 0.2s,
                                                 dash 0.5s ease forwards 0.2s;
                                         }
 
-                                        .prime-letter-2-fill {
+                                        .dali-letter-2-fill {
                                             animation: fill-in 0.7s ease-in forwards 0.4s;
                                         }
 
-                                        .prime-letter-3 {
+                                        .dali-letter-3 {
                                             animation:
                                                 appear 0.01s linear forwards 0.3s,
                                                 dash 0.5s ease forwards 0.3s;
                                         }
 
-                                        .prime-letter-3-fill {
+                                        .dali-letter-3-fill {
                                             animation: fill-in 0.7s ease-in forwards 0.5s;
                                         }
 
-                                        .prime-letter-4 {
+                                        .dali-letter-4 {
                                             animation:
                                                 appear 0.01s linear forwards 0.4s,
                                                 dash 0.5s ease forwards 0.4s;
                                         }
 
-                                        .prime-letter-4-fill {
+                                        .dali-letter-4-fill {
                                             animation: fill-in 0.7s ease-in forwards 0.6s;
                                         }
 
-                                        .prime-letter-5 {
+                                        .films-letter-1 {
                                             animation:
                                                 appear 0.01s linear forwards 0.5s,
                                                 dash 0.5s ease forwards 0.5s;
                                         }
 
-                                        .prime-letter-5-fill {
+                                        .films-letter-1-fill {
                                             animation: fill-in 0.7s ease-in forwards 0.7s;
                                         }
 
-                                        .content-letter-1 {
+                                        .films-letter-2 {
                                             animation:
                                                 appear 0.01s linear forwards 0.6s,
                                                 dash 0.5s ease forwards 0.6s;
                                         }
 
-                                        .content-letter-1-fill {
+                                        .films-letter-2-fill {
                                             animation: fill-in 0.7s ease-in forwards 0.8s;
                                         }
 
-                                        .content-letter-2 {
+                                        .films-letter-3 {
                                             animation:
                                                 appear 0.01s linear forwards 0.7s,
                                                 dash 0.5s ease forwards 0.7s;
                                         }
 
-                                        .content-letter-2-fill {
+                                        .films-letter-3-fill {
                                             animation: fill-in 0.7s ease-in forwards 0.9s;
                                         }
 
-                                        .content-letter-3 {
+                                        .films-letter-4 {
                                             animation:
                                                 appear 0.01s linear forwards 0.8s,
                                                 dash 0.5s ease forwards 0.8s;
                                         }
 
-                                        .content-letter-3-fill {
+                                        .films-letter-4-fill {
                                             animation: fill-in 0.7s ease-in forwards 1s;
                                         }
 
-                                        .content-letter-4 {
+                                        .films-letter-5 {
                                             animation:
                                                 appear 0.01s linear forwards 0.9s,
                                                 dash 0.5s ease forwards 0.9s;
                                         }
 
-                                        .content-letter-4-fill {
+                                        .films-letter-5-fill {
                                             animation: fill-in 0.7s ease-in forwards 1.1s;
                                         }
 
-                                        .content-letter-5 {
+                                        .films-letter-6 {
                                             animation:
                                                 appear 0.01s linear forwards 1s,
                                                 dash 0.5s ease forwards 1s;
                                         }
 
-                                        .content-letter-5-fill {
+                                        .films-letter-6-fill {
                                             animation: fill-in 0.7s ease-in forwards 1.2s;
-                                        }
-
-                                        .content-letter-6 {
-                                            animation:
-                                                appear 0.01s linear forwards 1.1s,
-                                                dash 0.5s ease forwards 1.1s;
-                                        }
-
-                                        .content-letter-6-fill {
-                                            animation: fill-in 0.7s ease-in forwards 1.3s;
-                                        }
-
-                                        .content-letter-7 {
-                                            animation:
-                                                appear 0.01s linear forwards 1.2s,
-                                                dash 0.5s ease forwards 1.2s;
-                                        }
-
-                                        .content-letter-7-fill {
-                                            animation: fill-in 0.7s ease-in forwards 1.4s;
-                                        }
-
-                                        .content-letter-8 {
-                                            animation:
-                                                appear 0.01s linear forwards 1.3s,
-                                                dash 0.5s ease forwards 1.3s;
-                                        }
-
-                                        .content-letter-8-fill {
-                                            animation: fill-in 0.7s ease-in forwards 1.5s;
                                         }
 
                                         @keyframes appear {
@@ -460,7 +430,7 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                                         }
                                     `}</style>
 
-                                    {/* Prime */}
+                                    {/* Dali */}
                                     <g>
                                         <text
                                             x="80"
@@ -474,18 +444,15 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                                                 fontSize: '70px',
                                             }}
                                         >
-                                            <tspan className="letter prime-letter-1">P</tspan>
-                                            <tspan className="letter prime-letter-2" x="124">
-                                                r
+                                            <tspan className="letter dali-letter-1">D</tspan>
+                                            <tspan className="letter dali-letter-2" x="134">
+                                                a
                                             </tspan>
-                                            <tspan className="letter prime-letter-3" x="151">
+                                            <tspan className="letter dali-letter-3" x="174">
+                                                l
+                                            </tspan>
+                                            <tspan className="letter dali-letter-4" x="194">
                                                 i
-                                            </tspan>
-                                            <tspan className="letter prime-letter-4" x="167">
-                                                m
-                                            </tspan>
-                                            <tspan className="letter prime-letter-5" x="227">
-                                                e
                                             </tspan>
                                         </text>
 
@@ -499,40 +466,34 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                                                 fontSize: '70px',
                                             }}
                                         >
-                                            <tspan className="letter-fill-white prime-letter-1-fill">
-                                                P
+                                            <tspan className="letter-fill-white dali-letter-1-fill">
+                                                D
                                             </tspan>
                                             <tspan
-                                                className="letter-fill-white prime-letter-2-fill"
-                                                x="124"
+                                                className="letter-fill-white dali-letter-2-fill"
+                                                x="134"
                                             >
-                                                r
+                                                a
                                             </tspan>
                                             <tspan
-                                                className="letter-fill-white prime-letter-3-fill"
-                                                x="151"
+                                                className="letter-fill-white dali-letter-3-fill"
+                                                x="174"
+                                            >
+                                                l
+                                            </tspan>
+                                            <tspan
+                                                className="letter-fill-white dali-letter-4-fill"
+                                                x="194"
                                             >
                                                 i
-                                            </tspan>
-                                            <tspan
-                                                className="letter-fill-white prime-letter-4-fill"
-                                                x="167"
-                                            >
-                                                m
-                                            </tspan>
-                                            <tspan
-                                                className="letter-fill-white prime-letter-5-fill"
-                                                x="227"
-                                            >
-                                                e
                                             </tspan>
                                         </text>
                                     </g>
 
-                                    {/* Content */}
+                                    {/* Films */}
                                     <g>
                                         <text
-                                            x="265"
+                                            x="210"
                                             y="70"
                                             fill="none"
                                             stroke="#9ca3af"
@@ -543,32 +504,26 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                                                 fontSize: '70px',
                                             }}
                                         >
-                                            <tspan className="letter content-letter-1">c</tspan>
-                                            <tspan className="letter content-letter-2" x="303">
-                                                o
+                                            <tspan className="letter films-letter-1">f</tspan>
+                                            <tspan className="letter films-letter-2" x="234">
+                                                i
                                             </tspan>
-                                            <tspan className="letter content-letter-3" x="343">
-                                                n
+                                            <tspan className="letter films-letter-3" x="250">
+                                                l
                                             </tspan>
-                                            <tspan className="letter content-letter-4" x="384">
-                                                t
+                                            <tspan className="letter films-letter-4" x="270">
+                                                m
                                             </tspan>
-                                            <tspan className="letter content-letter-5" x="407">
-                                                e
+                                            <tspan className="letter films-letter-5" x="330">
+                                                s
                                             </tspan>
-                                            <tspan className="letter content-letter-6" x="443">
-                                                n
-                                            </tspan>
-                                            <tspan className="letter content-letter-7" x="484">
-                                                t
-                                            </tspan>
-                                            <tspan className="letter content-letter-8" x="507">
+                                            <tspan className="letter films-letter-6" x="364">
                                                 .
                                             </tspan>
                                         </text>
 
                                         <text
-                                            x="265"
+                                            x="210"
                                             y="70"
                                             stroke="none"
                                             style={{
@@ -577,48 +532,36 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                                                 fontSize: '70px',
                                             }}
                                         >
-                                            <tspan className="letter-fill-gray content-letter-1-fill">
-                                                c
+                                            <tspan className="letter-fill-gray films-letter-1-fill">
+                                                f
                                             </tspan>
                                             <tspan
-                                                className="letter-fill-gray content-letter-2-fill"
-                                                x="303"
+                                                className="letter-fill-gray films-letter-2-fill"
+                                                x="234"
                                             >
-                                                o
+                                                i
                                             </tspan>
                                             <tspan
-                                                className="letter-fill-gray content-letter-3-fill"
-                                                x="343"
+                                                className="letter-fill-gray films-letter-3-fill"
+                                                x="250"
                                             >
-                                                n
+                                                l
                                             </tspan>
                                             <tspan
-                                                className="letter-fill-gray content-letter-4-fill"
-                                                x="384"
+                                                className="letter-fill-gray films-letter-4-fill"
+                                                x="270"
                                             >
-                                                t
+                                                m
                                             </tspan>
                                             <tspan
-                                                className="letter-fill-gray content-letter-5-fill"
-                                                x="407"
+                                                className="letter-fill-gray films-letter-5-fill"
+                                                x="330"
                                             >
-                                                e
+                                                s
                                             </tspan>
                                             <tspan
-                                                className="letter-fill-gray content-letter-6-fill"
-                                                x="443"
-                                            >
-                                                n
-                                            </tspan>
-                                            <tspan
-                                                className="letter-fill-gray content-letter-7-fill"
-                                                x="484"
-                                            >
-                                                t
-                                            </tspan>
-                                            <tspan
-                                                className="letter-fill-gray content-letter-8-fill"
-                                                x="507"
+                                                className="letter-fill-gray films-letter-6-fill"
+                                                x="364"
                                             >
                                                 .
                                             </tspan>

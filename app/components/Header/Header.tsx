@@ -90,8 +90,8 @@ export default function Header() {
         >
             <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
                 <Link href="/" className="font-bold text-xl primecontent-title">
-                    <span className="text-white">Prime</span>
-                    <span className="text-gray-400">content.</span>
+                    <span className="text-white">Dali</span>
+                    <span className="text-gray-400">films.</span>
                 </Link>
 
                 {/* Navigation Desktop */}

@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Mariages | Primecontent',
-    description: 'Services vidéo et photo pour votre mariage | Primecontent',
+    title: 'Mariages | DaliFilms',
+    description: 'Services vidéo et photo pour votre mariage | DaliFilms',
 };
 
 export default function MariagesLayout({ children }: { children: React.ReactNode }) {

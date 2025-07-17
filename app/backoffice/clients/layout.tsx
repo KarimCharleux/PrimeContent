@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Gestion des Clients | Primecontent',
+    title: 'Gestion des Clients | DaliFilms',
     description: "Interface d'administration pour la gestion des clients",
 };
 

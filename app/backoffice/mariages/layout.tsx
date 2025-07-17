@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Gestion des Mariages | Primecontent',
+    title: 'Gestion des Mariages | DaliFilms',
     description: "Interface d'administration pour la gestion des mariages",
 };
 

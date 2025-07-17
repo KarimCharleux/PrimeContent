@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Mentions Légales | Prime Content',
-    description: 'Mentions légales de Prime Content - Informations juridiques obligatoires.',
+    title: 'Mentions Légales | Dalifilms',
+    description: 'Mentions légales de Dalifilms - Informations juridiques obligatoires.',
 };
 
 export default function MentionsLegalesLayout({ children }: { children: React.ReactNode }) {

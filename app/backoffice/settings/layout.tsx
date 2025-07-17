@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Paramètres | Primecontent',
+    title: 'Paramètres | DaliFilms',
     description: "Interface d'administration pour les paramètres du site",
 };
 

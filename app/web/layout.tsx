@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Conception Interfaces Mobile/Web | Primecontent',
+    title: 'Conception Interfaces Mobile/Web | DaliFilms',
     description:
         "Nous créons des interfaces utilisateur modernes et intuitives pour vos applications mobiles et web, en mettant l'accent sur l'expérience utilisateur et le design responsive.",
     keywords:
         'conception interface, UI/UX, design mobile, design web, application, interface utilisateur',
     openGraph: {
-        title: 'Conception Interfaces Mobile/Web | Primecontent',
+        title: 'Conception Interfaces Mobile/Web | DaliFilms',
         description:
             'Nous créons des interfaces utilisateur modernes et intuitives pour vos applications mobiles et web.',
         type: 'website',

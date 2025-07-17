@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Gestion des Réseaux Sociaux | Backoffice Primecontent',
+    title: 'Gestion des Réseaux Sociaux | Backoffice DaliFilms',
     description: "Interface d'administration pour gérer le contenu de la page réseaux sociaux",
 };
 

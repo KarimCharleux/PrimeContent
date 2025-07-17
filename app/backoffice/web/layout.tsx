@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Conception Web - Backoffice | Primecontent',
+    title: 'Conception Web - Backoffice | DaliFilms',
     description: 'Gestion du contenu de la page conception interfaces mobile/web',
 };
 

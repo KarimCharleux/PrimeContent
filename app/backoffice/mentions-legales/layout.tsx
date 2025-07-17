@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Admin - Mentions Légales | Prime Content',
+    title: 'Admin - Mentions Légales | Dalifilms',
     description: 'Administration des mentions légales',
 };
 

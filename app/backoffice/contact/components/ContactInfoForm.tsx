@@ -28,7 +28,7 @@ export default function ContactInfoForm({ initialInfo, onSave, onCancel }: Conta
         calendlyUrl: '',
         texteBienvenue: "Boostez Votre Présence Aujourd'hui !",
         texteFormulaire:
-            "Votre image mérite d'être vue, entendue, ressentie. Rejoignez Primecontent pour propulser votre présence visuelle et numérique au niveau supérieur.",
+            "Votre image mérite d'être vue, entendue, ressentie. Rejoignez DaliFilms pour propulser votre présence visuelle et numérique au niveau supérieur.",
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);

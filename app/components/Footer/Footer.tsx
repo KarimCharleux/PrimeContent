@@ -24,7 +24,7 @@ export default function Footer({ hideCTA = false }: FooterProps) {
                 <div className={styles['company-info']}>
                     <p className={styles['company-description']}>
                         <span className="primecontent-title">
-                            Prime<span className="text-gray-400">content.</span>
+                            Dali<span className="text-gray-400">films.</span>
                         </span>{' '}
                         est une agence de production basée à Paris
                     </p>
@@ -90,12 +90,12 @@ export default function Footer({ hideCTA = false }: FooterProps) {
                 <div className={styles['copyright-content']}>
                     <div className={styles['brand-name']}>
                         <span className="primecontent-title">
-                            Prime<span className="text-gray-400">content.</span>
+                            Dali<span className="text-gray-400">films.</span>
                         </span>
                     </div>
                     <div className={styles['copyright-links']}>
                         <span className={styles['copyright-text']}>
-                            © {new Date().getFullYear()} Prime Content. Tous droits réservés.
+                            © {new Date().getFullYear()} Dalifilms. Tous droits réservés.
                         </span>
                         <Link href="/mentions-legales" className={styles['legal-link']}>
                             Mentions légales

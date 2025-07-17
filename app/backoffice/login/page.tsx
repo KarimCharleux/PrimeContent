@@ -13,7 +13,7 @@ const SplashScreen = () => (
         <div className="flex flex-col items-center">
             <div className="animate-pulse">
                 <b className="primecontent-title">
-                    Prime<span className="text-gray-400">content.</span>
+                    Dali<span className="text-gray-400">films.</span>
                 </b>
             </div>
             <h2 className="mt-6 text-center text-xl font-medium text-gray-500">Chargement...</h2>
@@ -58,7 +58,7 @@ export default function LoginPage() {
                 <div>
                     <h2 className="flex justify-center">
                         <b className="primecontent-title text-4xl">
-                            Prime<span className="text-gray-400">content.</span>
+                            Dali<span className="text-gray-400">films.</span>
                         </b>
                     </h2>
                 </div>
