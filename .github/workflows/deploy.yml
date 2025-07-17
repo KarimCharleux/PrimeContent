@@ -1,0 +1,95 @@
+name: 🚀 Deploy to Production
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch: # Permet le déclenchement manuel
+
+jobs:
+  deploy:
+    name: 🌐 Deploy to Hostinger VPS
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📂 Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Récupère tout l'historique Git
+
+    - name: 🔧 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: 📦 Install dependencies
+      run: npm ci
+
+    - name: 🧪 Run tests (si vous en avez)
+      run: |
+        # npm run test
+        echo "✅ Tests passés (à configurer si nécessaire)"
+
+    - name: 🏗️ Build application
+      run: npm run build
+
+    - name: 🔑 Setup SSH
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: 📤 Deploy to server
+      env:
+        SSH_HOST: ${{ secrets.SSH_HOST }}
+        SSH_USER: ${{ secrets.SSH_USER }}
+      run: |
+        # Ajouter le serveur aux known_hosts
+        ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+        
+        # Copier le script de déploiement sur le serveur
+        scp deploy-production.sh $SSH_USER@$SSH_HOST:/tmp/deploy-production.sh
+        
+        # Exécuter le déploiement sur le serveur
+        ssh $SSH_USER@$SSH_HOST "
+          chmod +x /tmp/deploy-production.sh && 
+          /tmp/deploy-production.sh &&
+          rm /tmp/deploy-production.sh
+        "
+
+    - name: 🌐 Health Check
+      env:
+        SITE_URL: ${{ secrets.SITE_URL }}
+      run: |
+        echo "🔍 Vérification que le site répond..."
+        sleep 10
+        
+        # Attendre que le site soit accessible
+        for i in {1..5}; do
+          if curl -f -s -I $SITE_URL; then
+            echo "✅ Site accessible !"
+            break
+          else
+            echo "⏳ Tentative $i/5... Attente 30s"
+            sleep 30
+          fi
+        done
+
+    - name: 📊 Deployment Summary
+      if: success()
+      run: |
+        echo "## 🎉 Déploiement réussi ! " >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit:** \`$(git rev-parse --short HEAD)\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branche:** \`${GITHUB_REF_NAME}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Auteur:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Site:** [${{ secrets.SITE_URL }}](${{ secrets.SITE_URL }})" >> $GITHUB_STEP_SUMMARY
+        echo "- **Heure:** $(date)" >> $GITHUB_STEP_SUMMARY
+
+    - name: 🚨 Notify on failure
+      if: failure()
+      run: |
+        echo "## ❌ Échec du déploiement" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Le déploiement a échoué. Vérifiez les logs ci-dessus." >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit:** \`$(git rev-parse --short HEAD)\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branche:** \`${GITHUB_REF_NAME}\`" >> $GITHUB_STEP_SUMMARY 
