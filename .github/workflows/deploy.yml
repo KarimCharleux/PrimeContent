@@ -67,17 +67,57 @@ jobs:
         SSH_HOST: ${{ secrets.SSH_HOST }}
         SSH_USER: ${{ secrets.SSH_USER }}
       run: |
-        # Ajouter le serveur aux known_hosts
-        ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+        echo "📁 Préparation du déploiement optimisé..."
         
-        # Copier le script de déploiement sur le serveur
-        scp deploy-production.sh $SSH_USER@$SSH_HOST:/tmp/deploy-production.sh
+        # Créer un backup sur le serveur avant déploiement
+        ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "
+          cd /var/www/PrimeContent
+          echo '💾 Création backup...'
+          tar -czf /root/backups/backup-\$(date +%Y%m%d-%H%M%S).tar.gz .next package-lock.json 2>/dev/null || echo 'Backup ignoré'
+          
+          echo '⏹️ Arrêt de l'application...'
+          pm2 stop dalifilms
+        "
         
-        # Exécuter le déploiement sur le serveur
-        ssh $SSH_USER@$SSH_HOST "
-          chmod +x /tmp/deploy-production.sh && 
-          /tmp/deploy-production.sh &&
-          rm /tmp/deploy-production.sh
+        # Envoyer le build compilé
+        echo "🚀 Envoi du build compilé..."
+        rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" \
+          .next/ $SSH_USER@$SSH_HOST:/var/www/PrimeContent/.next/
+          
+        # Envoyer aussi les fichiers nécessaires
+        echo "📦 Envoi des fichiers de configuration..."
+        scp -o StrictHostKeyChecking=no package.json $SSH_USER@$SSH_HOST:/var/www/PrimeContent/
+        scp -o StrictHostKeyChecking=no package-lock.json $SSH_USER@$SSH_HOST:/var/www/PrimeContent/
+        scp -o StrictHostKeyChecking=no next.config.mjs $SSH_USER@$SSH_HOST:/var/www/PrimeContent/
+        scp -o StrictHostKeyChecking=no server.js $SSH_USER@$SSH_HOST:/var/www/PrimeContent/
+        scp -o StrictHostKeyChecking=no ecosystem.config.js $SSH_USER@$SSH_HOST:/var/www/PrimeContent/
+        
+        # Redémarrer l'application
+        echo "🔄 Redémarrage de l'application..."
+        ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "
+          cd /var/www/PrimeContent
+          
+          # Installer seulement les dépendances de production (pas de build)
+          echo '📦 Installation des dépendances de production...'
+          npm ci --only=production
+          
+          echo '🚀 Redémarrage PM2...'
+          pm2 start dalifilms
+          
+          # Vérifier que l'app fonctionne
+          sleep 5
+          if curl -f -s http://localhost:3000 > /dev/null; then
+            echo '✅ Application démarrée avec succès'
+          else
+            echo '❌ Problème détecté, restauration du backup...'
+            pm2 stop dalifilms
+            tar -xzf /root/backups/backup-\$(date +%Y%m%d)*.tar.gz 2>/dev/null || echo 'Pas de backup à restaurer'
+            pm2 start dalifilms
+            exit 1
+          fi
+          
+          echo '🎉 Déploiement optimisé terminé !'
+          pm2 list | grep dalifilms
         "
 
     - name: 🌐 Health Check
