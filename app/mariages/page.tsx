@@ -1,12 +1,13 @@
 'use client';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
 import Footer from '../components/Footer';
 import Header from '../components/Header';
 import PortfolioGrid from '../components/PortfolioGrid';
-import { mariagesPortfolioData, mariagesTestimonialsData } from '../data/mariagesData';
+import { useMariagesData } from '../hooks/useMariagesData';
 import './mariages.scss';
 import { getMediaUrl } from '../utils/mediaUrl';
 
@@ -36,17 +37,54 @@ const staggerContainer = {
 };
 
 export default function MariagesPage() {
-    // État pour contrôler le démarrage des animations
+    const searchParams = useSearchParams();
+    const router = useRouter();
+
+    // Charger les données depuis Firebase
+    const { portfolioData, testimonialsData, loading: dataLoading, error } = useMariagesData();
+
+    // États pour contrôler le démarrage des animations
     const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
     // État pour le chargement
     const [isLoading, setIsLoading] = useState(true);
 
+    // Gestion du filtre actif depuis les query params
+    const [activeFilter, setActiveFilter] = useState('Tout');
+
+    // Mettre à jour le filtre depuis les query params
+    useEffect(() => {
+        const filter = searchParams?.get('couple');
+        if (filter) {
+            // Décoder le nom du couple depuis l'URL
+            const decodedFilter = decodeURIComponent(filter).replace(/-/g, ' ');
+            setActiveFilter(decodedFilter);
+        } else {
+            setActiveFilter('Tout');
+        }
+    }, [searchParams]);
+
+    // Fonction pour gérer le changement de filtre et mettre à jour l'URL
+    const handleFilterChange = (filter: string) => {
+        setActiveFilter(filter);
+
+        if (filter === 'Tout') {
+            // Supprimer le query param si on sélectionne "Tout"
+            router.push('/mariages', { scroll: false });
+        } else {
+            // Encoder le nom du couple pour l'URL
+            const encodedFilter = encodeURIComponent(filter.replace(/\s+/g, '-'));
+            router.push(`/mariages?couple=${encodedFilter}`, { scroll: false });
+        }
+    };
+
     // Vérifier si le SplashScreen est terminé ou si on vient d'une autre page
     useEffect(() => {
-        // Simuler un chargement
-        setTimeout(() => {
-            setIsLoading(false);
-        }, 600);
+        // Attendre que les données soient chargées
+        if (!dataLoading) {
+            setTimeout(() => {
+                setIsLoading(false);
+            }, 600);
+        }
 
         // Vérifie si le splash screen est terminé via le localStorage
         const checkSplashScreen = () => {
@@ -73,7 +111,7 @@ export default function MariagesPage() {
         const interval = setInterval(checkSplashScreen, 100);
 
         return () => clearInterval(interval);
-    }, []);
+    }, [dataLoading]);
 
     return (
         <main className="global-main-page">
@@ -106,9 +144,19 @@ export default function MariagesPage() {
 
                 {/* Section Portfolio avec PortfolioGrid */}
                 <div className="container mx-auto">
-                    {isLoading ? (
+                    {isLoading || dataLoading ? (
                         <div className="loading-container">
                             <div className="loading-spinner"></div>
+                        </div>
+                    ) : error ? (
+                        <div className="text-center py-12">
+                            <p className="text-red-500 mb-4">{error}</p>
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                            >
+                                Réessayer
+                            </button>
                         </div>
                     ) : (
                         <motion.div
@@ -117,7 +165,12 @@ export default function MariagesPage() {
                             variants={fadeInUp}
                             className="portfolio-container"
                         >
-                            <PortfolioGrid projects={mariagesPortfolioData} showFilter={true} />
+                            <PortfolioGrid
+                                projects={portfolioData}
+                                showFilter={true}
+                                activeFilter={activeFilter}
+                                onFilterChange={handleFilterChange}
+                            />
                         </motion.div>
                     )}
                 </div>
@@ -130,17 +183,19 @@ export default function MariagesPage() {
                     animate={shouldStartAnimations ? 'visible' : 'hidden'}
                     variants={staggerContainer}
                 >
-                    {mariagesTestimonialsData.map((testimonial, index) => (
+                    {testimonialsData.map((testimonial, index) => (
                         <motion.div
                             key={testimonial.id}
                             className="testimonial-card"
                             variants={fadeInUp}
                             custom={index}
+                            onClick={() => handleFilterChange(testimonial.coupleName)}
+                            style={{ cursor: 'pointer' }}
                         >
                             <div className="couple-images">
                                 <Image
                                     src={getMediaUrl(testimonial.coupleImages.person1)}
-                                    alt={`Photo de ${testimonial.coupleName.split('&')[0]}`}
+                                    alt={`Photo de ${testimonial.coupleName.split(' & ')[0]}`}
                                     width={80}
                                     height={80}
                                     className="object-cover rounded-full overflow-hidden h-20 w-20"
@@ -154,7 +209,7 @@ export default function MariagesPage() {
                                 />
                                 <Image
                                     src={getMediaUrl(testimonial.coupleImages.person2)}
-                                    alt={`Photo de ${testimonial.coupleName.split('&')[1]}`}
+                                    alt={`Photo de ${testimonial.coupleName.split(' & ')[1]}`}
                                     width={80}
                                     height={80}
                                     className="object-cover rounded-full overflow-hidden h-20 w-20"

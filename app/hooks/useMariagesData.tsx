@@ -1,0 +1,199 @@
+'use client';
+
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+
+import { db } from '../backoffice/lib/firebase-client';
+
+// Types pour les données de mariages
+interface Couple {
+    id: string;
+    person1Name: string;
+    person2Name: string;
+    person1Image: string;
+    person2Image: string;
+    coupleDisplayName: string;
+    order: number;
+}
+
+interface CoupleMedia {
+    id: string;
+    coupleId: string;
+    type: 'photo' | 'video';
+    url: string;
+    filename: string;
+    title?: string;
+    description?: string;
+    category?: string;
+    order: number;
+}
+
+interface CoupleVideo {
+    id: string;
+    coupleId: string;
+    type: 'youtube' | 'dailymotion';
+    videoId: string;
+    title: string;
+    description?: string;
+    thumbnail?: string;
+    embedUrl: string;
+    watchUrl: string;
+    format?: 'portrait' | 'paysage';
+}
+
+// Types pour PortfolioGrid (compatibilité)
+export interface MariageProject {
+    title: string;
+    category: string;
+    source: string;
+    isVideo?: boolean;
+    format?: 'paysage' | 'portrait';
+    thumbnail?: string;
+    provider?: 'youtube' | 'dailymotion' | 'local';
+    videoId?: string;
+    embedUrl?: string;
+    watchUrl?: string;
+}
+
+export interface MariageTestimonial {
+    id: string;
+    coupleName: string;
+    coupleImages: {
+        person1: string;
+        person2: string;
+    };
+}
+
+export const useMariagesData = () => {
+    const [couples, setCouples] = useState<Couple[]>([]);
+    const [portfolioData, setPortfolioData] = useState<MariageProject[]>([]);
+    const [testimonialsData, setTestimonialsData] = useState<MariageTestimonial[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchMariagesData = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+
+                // 1. Charger les couples
+                const couplesCollection = collection(db, 'couples');
+                const couplesSnapshot = await getDocs(couplesCollection);
+
+                if (!couplesSnapshot.empty) {
+                    const fetchedCouples = couplesSnapshot.docs.map((doc) => ({
+                        id: doc.id,
+                        ...doc.data(),
+                    })) as Couple[];
+
+                    const sortedCouples = [...fetchedCouples].sort(
+                        (a, b) => (a.order || 0) - (b.order || 0),
+                    );
+                    setCouples(sortedCouples);
+
+                    // 2. Charger les médias pour tous les couples
+                    const allMedia: MariageProject[] = [];
+                    const allVideos: MariageProject[] = [];
+
+                    for (const couple of sortedCouples) {
+                        // Charger les médias (photos/vidéos locales)
+                        const mediaCollection = collection(db, 'coupleMedias');
+                        const mediaQuery = query(
+                            mediaCollection,
+                            where('coupleId', '==', couple.id),
+                        );
+                        const mediaSnapshot = await getDocs(mediaQuery);
+
+                        if (!mediaSnapshot.empty) {
+                            const coupleMedias = mediaSnapshot.docs.map((doc) =>
+                                doc.data(),
+                            ) as CoupleMedia[];
+                            const sortedMedias = coupleMedias.sort(
+                                (a, b) => (a.order || 0) - (b.order || 0),
+                            );
+
+                            sortedMedias.forEach((media) => {
+                                allMedia.push({
+                                    title:
+                                        media.title ||
+                                        `${couple.coupleDisplayName} - ${media.filename}`,
+                                    category: couple.coupleDisplayName,
+                                    source: media.url,
+                                    isVideo: media.type === 'video',
+                                    format: 'paysage', // On peut détecter cela plus tard
+                                    provider: media.type === 'video' ? 'local' : undefined,
+                                });
+                            });
+                        }
+
+                        // Charger les vidéos externes (YouTube/Dailymotion)
+                        const videosCollection = collection(db, 'coupleVideos');
+                        const videosQuery = query(
+                            videosCollection,
+                            where('coupleId', '==', couple.id),
+                        );
+                        const videosSnapshot = await getDocs(videosQuery);
+
+                        if (!videosSnapshot.empty) {
+                            const coupleVideos = videosSnapshot.docs.map((doc) =>
+                                doc.data(),
+                            ) as CoupleVideo[];
+
+                            coupleVideos.forEach((video) => {
+                                allVideos.push({
+                                    title: video.title,
+                                    category: couple.coupleDisplayName,
+                                    source: video.watchUrl,
+                                    isVideo: true,
+                                    format: video.format || 'paysage', // Inclure le format détecté
+                                    thumbnail: video.thumbnail,
+                                    provider: video.type,
+                                    videoId: video.videoId,
+                                    embedUrl: video.embedUrl,
+                                    watchUrl: video.watchUrl,
+                                });
+                            });
+                        }
+                    }
+
+                    // Combiner tous les médias (vidéos externes en premier)
+                    const allPortfolioData = [...allVideos, ...allMedia];
+                    setPortfolioData(allPortfolioData);
+
+                    // 3. Générer les données de témoignages
+                    const testimonials: MariageTestimonial[] = sortedCouples.map((couple) => ({
+                        id: couple.id,
+                        coupleName: couple.coupleDisplayName,
+                        coupleImages: {
+                            person1: couple.person1Image,
+                            person2: couple.person2Image,
+                        },
+                    }));
+                    setTestimonialsData(testimonials);
+                } else {
+                    // Pas de couples trouvés
+                    setCouples([]);
+                    setPortfolioData([]);
+                    setTestimonialsData([]);
+                }
+
+                setLoading(false);
+            } catch (err) {
+                console.error('Erreur lors du chargement des données de mariages:', err);
+                setError('Impossible de charger les données des mariages');
+                setLoading(false);
+            }
+        };
+
+        fetchMariagesData();
+    }, []);
+
+    return {
+        couples,
+        portfolioData,
+        testimonialsData,
+        loading,
+        error,
+    };
+};

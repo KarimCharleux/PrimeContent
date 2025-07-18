@@ -91,6 +91,18 @@ export type Project = {
 };
 
 // Types pour Mariages
+export type Couple = {
+    id?: string;
+    person1Name: string;
+    person2Name: string;
+    person1Image: string;
+    person2Image: string;
+    coupleDisplayName?: string; // Calculé automatiquement à partir des prénoms
+    order?: number;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+};
+
 export type Wedding = {
     id: string;
     coupleNames: string;
