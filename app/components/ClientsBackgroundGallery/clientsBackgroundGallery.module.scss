@@ -1,6 +1,7 @@
 /* 
  * ClientsBackgroundGallery - Version allégée du Gallery principal
  * Galerie 3D en arrière-plan pour la page clients
+ * 5 lignes de défilement avec vitesse réduite et hauteur augmentée
  */
 
 .background-gallery {
@@ -9,7 +10,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: -1;
+    z-index: 0;
     overflow: hidden;
     background: #000;
 
@@ -29,12 +30,12 @@
 
 .gallery-container {
     position: absolute;
-    top: 50%;
+    top: 80%;
     left: 50%;
     transform: translate(-50%, -50%) perspective(1200px) rotateX(36deg) rotateY(-3deg) scale(1.2);
     width: 200%;
     height: 200%;
-    opacity: 0.3;
+    opacity: 0.3 !important;
     transition: opacity 1s ease-in-out;
 }
 
@@ -53,21 +54,21 @@
 
     &.left {
         animation-name: scrollLeft;
-        animation-duration: 120s;
+        animation-duration: 180s; // Plus lent
     }
 
     &.right {
         animation-name: scrollRight;
-        animation-duration: 140s;
+        animation-duration: 200s; // Plus lent
     }
 
     &.speed {
-        // Vitesse légèrement plus rapide pour plus de dynamisme
+        // Vitesse encore plus lente pour un effet plus subtil
         &.left {
-            animation-duration: 100s;
+            animation-duration: 160s;
         }
         &.right {
-            animation-duration: 120s;
+            animation-duration: 180s;
         }
     }
 }
@@ -128,10 +129,10 @@
 
     .gallery-scroll {
         &.left {
-            animation-duration: 80s;
+            animation-duration: 140s; // Plus lent sur mobile aussi
         }
         &.right {
-            animation-duration: 100s;
+            animation-duration: 160s; // Plus lent sur mobile aussi
         }
     }
 }

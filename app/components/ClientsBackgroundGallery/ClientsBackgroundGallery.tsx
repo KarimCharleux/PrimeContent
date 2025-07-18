@@ -19,9 +19,9 @@ export default function ClientsBackgroundGallery() {
     // Récupérer les images préchargées du store
     const preloadedImages = useImageStore((state) => state.preloadedImages);
 
-    // Configuration de la galerie (4 lignes fixes)
-    const ROWS = 4;
-    const IMAGE_HEIGHT = 160;
+    // Configuration de la galerie (5 lignes fixes)
+    const ROWS = 5;
+    const IMAGE_HEIGHT = 200; // Lignes plus hautes
     const IMAGE_MARGIN = 16;
 
     // Préparer les images pour l'affichage
@@ -31,13 +31,13 @@ export default function ClientsBackgroundGallery() {
         }
     }, [preloadedImages]);
 
-    // Répartir les images en 4 lignes
+    // Répartir les images en 5 lignes
     const imageRows = (() => {
         if (!preloadedImages || preloadedImages.length === 0) {
-            return [[], [], [], []];
+            return [[], [], [], [], []];
         }
 
-        const rows: HTMLImageElement[][] = [[], [], [], []];
+        const rows: HTMLImageElement[][] = [[], [], [], [], []];
         preloadedImages.forEach((img, index) => {
             rows[index % ROWS].push(img);
         });
@@ -104,7 +104,7 @@ export default function ClientsBackgroundGallery() {
                             key={rowIndex}
                             className={styles['gallery-row']}
                             style={{
-                                marginBottom: '20px',
+                                marginBottom: '16px', // Espacement réduit pour 5 lignes
                             }}
                         >
                             <div className={getScrollContainerClass(rowIndex)}>

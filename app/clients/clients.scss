@@ -26,46 +26,6 @@ $transition: all 0.3s ease;
     }
 }
 
-// Section hero
-.client-hero {
-    color: $secondary-color;
-    padding: 4rem 0;
-    position: relative;
-    z-index: 10; /* Z-index plus élevé pour être au-dessus de la galerie */
-
-    // Améliorer la lisibilité avec l'arrière-plan
-    &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(
-            135deg,
-            rgba(0, 0, 0, 0.3) 0%,
-            rgba(0, 0, 0, 0.1) 50%,
-            rgba(0, 0, 0, 0.4) 100%
-        );
-        backdrop-filter: blur(8px);
-        z-index: -1;
-        pointer-events: none;
-    }
-
-    @media (max-width: 768px) {
-        padding: 3rem 0;
-
-        &::before {
-            background: linear-gradient(
-                135deg,
-                rgba(0, 0, 0, 0.4) 0%,
-                rgba(0, 0, 0, 0.2) 50%,
-                rgba(0, 0, 0, 0.5) 100%
-            );
-        }
-    }
-}
-
 // Titre principal
 .client-title {
     font-size: 3.5rem;
