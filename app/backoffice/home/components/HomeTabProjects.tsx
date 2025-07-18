@@ -132,56 +132,24 @@ const SortableRow: React.FC<SortableRowProps> = ({
                             className="object-cover"
                         />
                     )}
-                    <div className="absolute bottom-0 right-0">{getMediaIcon(project)}</div>
                 </div>
             </td>
-            <td className="px-6 py-4">
-                {(project.isVideo ||
-                    project.isYouTube ||
-                    project.provider === 'youtube' ||
-                    project.provider === 'dailymotion') && (
-                    <div className="h-10 w-10 relative overflow-hidden rounded">
-                        {project.thumbnail ? (
-                            <Image
-                                src={
-                                    project.provider === 'youtube' ||
-                                    project.provider === 'dailymotion' ||
-                                    project.isYouTube
-                                        ? project.thumbnail
-                                        : getMediaUrl(project.thumbnail)
-                                }
-                                alt={`Miniature de ${project.title}`}
-                                fill
-                                className="object-cover"
-                            />
-                        ) : (
-                            <div className="h-full w-full flex items-center justify-center bg-gray-200 text-gray-400">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-6 w-6"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                    />
-                                </svg>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </td>
-            <td className="px-6 py-4 whitespace-nowrap">{project.title}</td>
-            <td className="px-6 py-4 whitespace-nowrap">{project.category}</td>
-            <td className="px-6 py-4 whitespace-nowrap">{project.format}</td>
             <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center space-x-1">
-                    {getMediaIcon(project)}
-                    <span>
+                <div className="flex flex-col space-y-1">
+                    <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-fit ${
+                            project.isVideo ||
+                            project.provider === 'youtube' ||
+                            project.provider === 'dailymotion' ||
+                            project.isYouTube
+                                ? project.provider === 'youtube' || project.isYouTube
+                                    ? 'bg-red-100 text-red-800'
+                                    : project.provider === 'dailymotion'
+                                      ? 'bg-orange-100 text-orange-800'
+                                      : 'bg-blue-100 text-blue-800'
+                                : 'bg-green-100 text-green-800'
+                        }`}
+                    >
                         {project.provider === 'youtube' || project.isYouTube
                             ? 'YouTube'
                             : project.provider === 'dailymotion'
@@ -192,6 +160,13 @@ const SortableRow: React.FC<SortableRowProps> = ({
                     </span>
                 </div>
             </td>
+            <td className="px-6 py-4 whitespace-nowrap max-w-64">
+                <span className="truncate block" title={project.title}>
+                    {project.title || 'Sans titre'}
+                </span>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">{project.format}</td>
+            <td className="px-6 py-4 whitespace-nowrap">{project.category}</td>
             <td className="px-6 py-4 whitespace-nowrap space-x-2">
                 <button
                     onClick={() => onEdit(project)}
@@ -1206,22 +1181,19 @@ export default function HomeTabProjects() {
                                                 Ordre
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Media
+                                                Aperçu
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Miniature
+                                                Type
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Titre
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Catégorie
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Format
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Type
+                                                Catégorie
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Actions

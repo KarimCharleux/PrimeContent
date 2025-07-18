@@ -77,13 +77,18 @@ export default function RealisationsPage() {
                     const data = doc.data();
                     allRealisations.push({
                         category: data.category || '',
-                        source: data.url || '',
+                        source: data.url || data.source || '',
                         format: data.format || 'paysage',
                         title: data.title || '',
                         isVideo: true,
+                        provider: data.provider || (data.isYouTube ? 'youtube' : 'local'),
+                        videoId: data.videoId || data.youtubeId,
+                        embedUrl: data.embedUrl,
+                        watchUrl: data.watchUrl,
+                        thumbnail: data.thumbnail,
+                        // Propriétés de rétrocompatibilité
                         isYouTube: data.isYouTube || false,
                         youtubeId: data.youtubeId || '',
-                        thumbnail: data.thumbnail,
                     });
                 });
 

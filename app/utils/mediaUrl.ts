@@ -4,7 +4,8 @@ export function getMediaUrl(path: string | null | undefined): string {
         return 'https://media.dalifilms.fr/placeholder-image.png'; // Image de placeholder par défaut
     }
 
-    if (path.startsWith('blob:')) {
+    // Si c'est un blob ou une URL complète (http/https), la retourner directement
+    if (path.startsWith('blob:') || path.startsWith('http://') || path.startsWith('https://')) {
         return path;
     }
 

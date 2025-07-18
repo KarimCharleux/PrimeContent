@@ -167,13 +167,23 @@ function SortableRow({ media, onEdit, onDelete, formatSize, getMediaUrl }: Sorta
             <td className="px-3 py-4 whitespace-nowrap">
                 <div className="flex flex-col space-y-1">
                     <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-fit ${
                             media.isVideo
-                                ? 'bg-blue-100 text-blue-800'
+                                ? media.provider === 'youtube' || media.isYouTube
+                                    ? 'bg-red-100 text-red-800'
+                                    : media.provider === 'dailymotion'
+                                      ? 'bg-orange-100 text-orange-800'
+                                      : 'bg-blue-100 text-blue-800'
                                 : 'bg-green-100 text-green-800'
                         }`}
                     >
-                        {media.isVideo ? 'Vidéo' : 'Image'}
+                        {media.isVideo
+                            ? media.provider === 'youtube' || media.isYouTube
+                                ? 'YouTube'
+                                : media.provider === 'dailymotion'
+                                  ? 'Dailymotion'
+                                  : 'Vidéo'
+                            : 'Image'}
                     </span>
                 </div>
             </td>
