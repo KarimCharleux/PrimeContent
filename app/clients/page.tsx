@@ -3,7 +3,7 @@
 import { collection, getDocs } from 'firebase/firestore';
 import { gsap } from 'gsap';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useState, useRef, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense, useCallback, useMemo } from 'react';
 
 import { db } from '../backoffice/lib/firebase-client';
 import ClientsBackgroundGallery from '../components/ClientsBackgroundGallery';
@@ -293,6 +293,54 @@ function ClientPageContent() {
         }
     }, [loading]);
 
+    // Vérifier si un filtre existe pour un type donné
+    const isFilterValidForType = useCallback(
+        (filter: string, type: 'marques' | 'celebrites'): boolean => {
+            if (!filter) return false;
+
+            const currentProjects = projects.filter((project) =>
+                type === 'marques'
+                    ? project.clientType === 'marque'
+                    : project.clientType === 'celebrite',
+            );
+
+            // Extraire les noms uniques des clients qui ont des médias
+            const uniqueClients = Array.from(new Set(currentProjects.map((p) => p.clientName)));
+
+            if (type === 'marques') {
+                return brands
+                    .filter((brand) =>
+                        uniqueClients.includes(brand.name.toLowerCase().replace(/\s+/g, '-')),
+                    )
+                    .some((brand) => brand.name.toLowerCase().replace(/\s+/g, '-') === filter);
+            } else {
+                return clients
+                    .filter((client) =>
+                        uniqueClients.includes(client.name.toLowerCase().replace(/\s+/g, '-')),
+                    )
+                    .some((client) => client.name.toLowerCase().replace(/\s+/g, '-') === filter);
+            }
+        },
+        [projects, brands, clients],
+    );
+
+    // Valider le filtre dans l'URL au chargement et aux changements
+    useEffect(() => {
+        if (!loading && projects.length > 0 && urlFilter) {
+            // Vérifier si le filtre actuel est valide pour le type actuel
+            const isValid = isFilterValidForType(urlFilter, activeType);
+
+            if (!isValid) {
+                // Le filtre n'est pas valide, supprimer le paramètre filter de l'URL
+                const params = new URLSearchParams();
+                params.set('type', activeType);
+                // Ne pas ajouter le paramètre filter = suppression
+
+                router.replace(`/clients?${params.toString()}`, { scroll: false });
+            }
+        }
+    }, [loading, projects, urlFilter, activeType, isFilterValidForType]);
+
     // Gérer le changement de type avec URL
     const handleTypeChange = (type: 'marques' | 'celebrites') => {
         setActiveType(type);
@@ -300,9 +348,12 @@ function ClientPageContent() {
         // Mettre à jour l'URL
         const params = new URLSearchParams();
         params.set('type', type);
-        if (urlFilter) {
+
+        // Vérifier si le filtre actuel est valide pour le nouveau type
+        if (urlFilter && isFilterValidForType(urlFilter, type)) {
             params.set('filter', urlFilter);
         }
+        // Si le filtre n'est pas valide, on ne l'ajoute pas aux params (= suppression)
 
         router.push(`/clients?${params.toString()}`, { scroll: false });
     };
@@ -347,6 +398,21 @@ function ClientPageContent() {
     );
 
     const customFilters = getAvailableFilters();
+
+    // Calculer le filtre actif valide (évite les problèmes de timing)
+    const validActiveFilter = useMemo(() => {
+        if (!urlFilter || urlFilter === 'Tout') {
+            return 'Tout';
+        }
+
+        // Vérifier si le filtre est valide pour le type actuel
+        if (projects.length > 0 && isFilterValidForType(urlFilter, activeType)) {
+            return urlFilter;
+        }
+
+        // Si invalide, retourner 'Tout'
+        return 'Tout';
+    }, [urlFilter, activeType, projects, isFilterValidForType]);
 
     // Créer les données client pour les filtres avec images
     const createClientData = (): { [key: string]: ClientData } => {
@@ -437,7 +503,7 @@ function ClientPageContent() {
                                 projects={filteredProjects}
                                 showFilter={customFilters.length > 0}
                                 customFilters={customFilters}
-                                activeFilter={urlFilter || 'Tout'}
+                                activeFilter={validActiveFilter}
                                 onFilterChange={(filter) => {
                                     const params = new URLSearchParams();
                                     params.set('type', activeType);
