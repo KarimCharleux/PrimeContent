@@ -1,5 +1,23 @@
 'use client';
 
+// Imports pour drag and drop
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { addDoc, collection, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
@@ -9,12 +27,99 @@ import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
 import { TeamMember } from '../../models/teamTypes';
 
+// Composant pour une carte triable
+function SortableMemberCard({
+    member,
+    index,
+    totalMembers,
+    onEdit,
+    onDelete,
+    isSubmitting,
+}: {
+    member: TeamMember;
+    index: number;
+    totalMembers: number;
+    onEdit: (member: TeamMember) => void;
+    onDelete: (memberId: string) => void;
+    isSubmitting: boolean;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+        id: member.id!,
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className="bg-white rounded-lg shadow-md overflow-hidden"
+        >
+            {member.imagePath && (
+                <div className="aspect-video relative">
+                    <Image
+                        src={getMediaUrl(member.imagePath)}
+                        alt={member.name}
+                        fill
+                        className="object-cover"
+                    />
+                </div>
+            )}
+            <div className="p-4">
+                <h3 className="font-semibold text-gray-900 mb-1">{member.name}</h3>
+                <p className="text-sm text-gray-600 mb-2">{member.title}</p>
+                <p className="text-sm text-gray-500 line-clamp-3">{member.description}</p>
+
+                <div className="mt-4 flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                        <button
+                            {...attributes}
+                            {...listeners}
+                            className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
+                            title="Glisser pour réorganiser"
+                        >
+                            ☰
+                        </button>
+                    </div>
+
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={() => onEdit(member)}
+                            className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                            Modifier
+                        </button>
+                        <button
+                            onClick={() => onDelete(member.id!)}
+                            className="text-red-600 hover:text-red-800 text-sm"
+                            disabled={isSubmitting}
+                        >
+                            Supprimer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function HomeTabTeam() {
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
     const [loading, setLoading] = useState(true);
     const [isFormVisible, setIsFormVisible] = useState(false);
     const [currentMember, setCurrentMember] = useState<TeamMember | null>(null);
     const [isEditing, setIsEditing] = useState(false);
+
+    // Configuration pour le drag and drop
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
+    );
 
     // État du formulaire
     const [formName, setFormName] = useState<string>('');
@@ -285,59 +390,35 @@ export default function HomeTabTeam() {
         }
     };
 
-    // Déplacer vers le haut
-    const handleMoveUp = async (index: number) => {
-        if (index === 0) return;
+    // Gérer la fin du drag and drop
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
 
-        const newMembers = [...teamMembers];
-        [newMembers[index], newMembers[index - 1]] = [newMembers[index - 1], newMembers[index]];
+        if (over && active.id !== over.id) {
+            const oldIndex = teamMembers.findIndex((member) => member.id === active.id);
+            const newIndex = teamMembers.findIndex((member) => member.id === over.id);
 
-        // Mettre à jour les ordres
-        newMembers.forEach((member, idx) => {
-            member.order = idx;
-        });
+            if (oldIndex !== -1 && newIndex !== -1) {
+                const newMembers = arrayMove(teamMembers, oldIndex, newIndex);
 
-        setTeamMembers(newMembers);
+                // Mettre à jour les ordres
+                newMembers.forEach((member, idx) => {
+                    member.order = idx;
+                });
 
-        // Sauvegarder en base
-        try {
-            await Promise.all(
-                newMembers
-                    .slice(index - 1, index + 1)
-                    .map((member) =>
-                        updateDoc(doc(db, 'team', member.id!), { order: member.order }),
-                    ),
-            );
-        } catch (error) {
-            console.error('Erreur lors de la réorganisation:', error);
-        }
-    };
+                setTeamMembers(newMembers);
 
-    // Déplacer vers le bas
-    const handleMoveDown = async (index: number) => {
-        if (index === teamMembers.length - 1) return;
-
-        const newMembers = [...teamMembers];
-        [newMembers[index], newMembers[index + 1]] = [newMembers[index + 1], newMembers[index]];
-
-        // Mettre à jour les ordres
-        newMembers.forEach((member, idx) => {
-            member.order = idx;
-        });
-
-        setTeamMembers(newMembers);
-
-        // Sauvegarder en base
-        try {
-            await Promise.all(
-                newMembers
-                    .slice(index, index + 2)
-                    .map((member) =>
-                        updateDoc(doc(db, 'team', member.id!), { order: member.order }),
-                    ),
-            );
-        } catch (error) {
-            console.error('Erreur lors de la réorganisation:', error);
+                // Sauvegarder en base
+                try {
+                    await Promise.all(
+                        newMembers.map((member) =>
+                            updateDoc(doc(db, 'team', member.id!), { order: member.order }),
+                        ),
+                    );
+                } catch (error) {
+                    console.error('Erreur lors de la réorganisation:', error);
+                }
+            }
         }
     };
 
@@ -375,64 +456,30 @@ export default function HomeTabTeam() {
             )}
 
             {/* Liste des membres */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {teamMembers.map((member, index) => (
-                    <div key={member.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                        {member.imagePath && (
-                            <div className="aspect-video relative">
-                                <Image
-                                    src={getMediaUrl(member.imagePath)}
-                                    alt={member.name}
-                                    fill
-                                    className="object-cover"
-                                />
-                            </div>
-                        )}
-                        <div className="p-4">
-                            <h3 className="font-semibold text-gray-900 mb-1">{member.name}</h3>
-                            <p className="text-sm text-gray-600 mb-2">{member.title}</p>
-                            <p className="text-sm text-gray-500 line-clamp-3">
-                                {member.description}
-                            </p>
-
-                            <div className="mt-4 flex justify-between items-center">
-                                <div className="flex space-x-2">
-                                    <button
-                                        onClick={() => handleMoveUp(index)}
-                                        disabled={index === 0}
-                                        className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                                    >
-                                        ↑
-                                    </button>
-                                    <button
-                                        onClick={() => handleMoveDown(index)}
-                                        disabled={index === teamMembers.length - 1}
-                                        className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                                    >
-                                        ↓
-                                    </button>
-                                </div>
-
-                                <div className="flex space-x-2">
-                                    <button
-                                        onClick={() => handleEditClick(member)}
-                                        className="text-blue-600 hover:text-blue-800 text-sm"
-                                    >
-                                        Modifier
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteClick(member.id!)}
-                                        className="text-red-600 hover:text-red-800 text-sm"
-                                        disabled={isSubmitting}
-                                    >
-                                        Supprimer
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+            >
+                <SortableContext
+                    items={teamMembers.map((member) => member.id!)}
+                    strategy={verticalListSortingStrategy}
+                >
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {teamMembers.map((member, index) => (
+                            <SortableMemberCard
+                                key={member.id}
+                                member={member}
+                                index={index}
+                                totalMembers={teamMembers.length}
+                                onEdit={handleEditClick}
+                                onDelete={handleDeleteClick}
+                                isSubmitting={isSubmitting}
+                            />
+                        ))}
                     </div>
-                ))}
-            </div>
+                </SortableContext>
+            </DndContext>
 
             {teamMembers.length === 0 && (
                 <div className="text-center py-8 text-gray-500">

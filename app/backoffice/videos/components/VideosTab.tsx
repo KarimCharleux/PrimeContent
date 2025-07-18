@@ -1,5 +1,23 @@
 'use client';
 
+// Imports pour drag and drop
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
     collection,
     deleteDoc,
@@ -53,6 +71,86 @@ interface VideosTabProps {
     onStatusChange?: (status: { type: 'success' | 'error'; message: string } | null) => void;
 }
 
+// Composant pour une ligne triable du tableau
+function SortableRow({
+    video,
+    onEdit,
+    onDelete,
+    formatDuration,
+}: {
+    video: Video;
+    onEdit: (video: Video) => void;
+    onDelete: (id: string) => void;
+    formatDuration: (seconds: number) => string;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+        id: video.id!,
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <tr ref={setNodeRef} style={style} className="bg-white hover:bg-gray-50">
+            <td className="px-6 py-4 whitespace-nowrap text-center w-20">
+                <button
+                    {...attributes}
+                    {...listeners}
+                    className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing text-lg"
+                    title="Glisser pour réorganiser"
+                >
+                    ☰
+                </button>
+            </td>
+            <td className="px-6 py-4">
+                <div className="h-16 w-24 relative overflow-hidden rounded">
+                    {video.thumbnail ? (
+                        <Image
+                            src={getMediaUrl(video.thumbnail)}
+                            alt={video.title || 'Vidéo sans titre'}
+                            fill
+                            className="object-cover"
+                        />
+                    ) : (
+                        <video
+                            src={getMediaUrl(video.source)}
+                            className="w-full h-full object-cover"
+                            preload="metadata"
+                        />
+                    )}
+                    <div className="absolute bottom-1 right-1 bg-black bg-opacity-70 text-white px-1 py-0.5 rounded text-xs">
+                        {formatDuration(video.duration)}
+                    </div>
+                </div>
+            </td>
+            <td className="px-6 py-4 max-w-xs">
+                <div className="truncate" title={video.title || 'Sans titre'}>
+                    {video.title || <span className="text-gray-400 italic">Sans titre</span>}
+                </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">{video.category}</td>
+            <td className="px-6 py-4 whitespace-nowrap">{video.format || 'paysage'}</td>
+            <td className="px-6 py-4 whitespace-nowrap">{formatDuration(video.duration)}</td>
+            <td className="px-6 py-4 whitespace-nowrap space-x-2">
+                <button
+                    onClick={() => onEdit(video)}
+                    className="text-indigo-600 hover:text-indigo-900"
+                >
+                    Modifier
+                </button>
+                <button
+                    onClick={() => onDelete(video.id!)}
+                    className="text-red-600 hover:text-red-900"
+                >
+                    Supprimer
+                </button>
+            </td>
+        </tr>
+    );
+}
+
 export default function VideosTab({ onStatusChange }: VideosTabProps) {
     const [videos, setVideos] = useState<Video[]>([]);
     const [loading, setLoading] = useState(true);
@@ -84,6 +182,14 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
     const [uploadCategory, setUploadCategory] = useState<string>('');
     const [videoData, setVideoData] = useState<VideoData | null>(null);
     const [uploadMode, setUploadMode] = useState<'file' | 'external'>('file');
+
+    // Configuration pour le drag and drop
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
+    );
 
     // Extraire les catégories uniques des vidéos
     const categories = Array.from(new Set(videos.map((video) => video.category))).filter(Boolean);
@@ -647,13 +753,39 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         }
     };
 
-    const handleReorder = async (videoId: string, newOrder: number) => {
-        try {
-            await updateDoc(doc(db, 'videos', videoId), { order: newOrder });
-            fetchVideos();
-        } catch (error) {
-            console.error('Erreur lors du réordonnancement:', error);
-            setStatusMessage({ type: 'error', message: 'Erreur lors du réordonnancement' });
+    // Gérer la fin du drag and drop
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (over && active.id !== over.id) {
+            const oldIndex = videos.findIndex((video) => video.id === active.id);
+            const newIndex = videos.findIndex((video) => video.id === over.id);
+
+            if (oldIndex !== -1 && newIndex !== -1) {
+                const newVideos = arrayMove(videos, oldIndex, newIndex);
+
+                // Mettre à jour les ordres
+                newVideos.forEach((video, idx) => {
+                    video.order = idx;
+                });
+
+                setVideos(newVideos);
+
+                // Sauvegarder en base
+                try {
+                    await Promise.all(
+                        newVideos.map((video) =>
+                            updateDoc(doc(db, 'videos', video.id!), { order: video.order }),
+                        ),
+                    );
+                } catch (error) {
+                    console.error('Erreur lors de la réorganisation:', error);
+                    setStatusMessage({
+                        type: 'error',
+                        message: 'Erreur lors de la réorganisation',
+                    });
+                }
+            }
         }
     };
 
@@ -1162,121 +1294,57 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                     )}
 
                     <div className="mt-8">
-                        <div className="overflow-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Ordre
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Vidéo
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Titre
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Catégorie
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Format
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Durée
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {videos.map((video) => (
-                                        <tr key={video.id}>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center space-x-2">
-                                                    <button
-                                                        onClick={() =>
-                                                            handleReorder(
-                                                                video.id!,
-                                                                video.order - 1,
-                                                            )
-                                                        }
-                                                        disabled={video.order === 0}
-                                                        className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                                                    >
-                                                        ↑
-                                                    </button>
-                                                    <span>{video.order}</span>
-                                                    <button
-                                                        onClick={() =>
-                                                            handleReorder(
-                                                                video.id!,
-                                                                video.order + 1,
-                                                            )
-                                                        }
-                                                        disabled={video.order === videos.length - 1}
-                                                        className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                                                    >
-                                                        ↓
-                                                    </button>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="h-16 w-24 relative overflow-hidden rounded">
-                                                    {video.thumbnail ? (
-                                                        <Image
-                                                            src={getMediaUrl(video.thumbnail)}
-                                                            alt={video.title || 'Vidéo sans titre'}
-                                                            fill
-                                                            className="object-cover"
-                                                        />
-                                                    ) : (
-                                                        <video
-                                                            src={getMediaUrl(video.source)}
-                                                            className="w-full h-full object-cover"
-                                                            preload="metadata"
-                                                        />
-                                                    )}
-                                                    <div className="absolute bottom-1 right-1 bg-black bg-opacity-70 text-white px-1 py-0.5 rounded text-xs">
-                                                        {formatDuration(video.duration)}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {video.title || (
-                                                    <span className="text-gray-400 italic">
-                                                        Sans titre
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {video.category}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {video.format || 'paysage'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {formatDuration(video.duration)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                                                <button
-                                                    onClick={() => handleEdit(video)}
-                                                    className="text-indigo-600 hover:text-indigo-900"
-                                                >
-                                                    Modifier
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(video.id!)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                >
-                                                    Supprimer
-                                                </button>
-                                            </td>
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <div className="overflow-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                                                Ordre
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Vidéo
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Titre
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Catégorie
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Format
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Durée
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Actions
+                                            </th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <SortableContext
+                                        items={videos.map((video) => video.id!)}
+                                        strategy={verticalListSortingStrategy}
+                                    >
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {videos.map((video) => (
+                                                <SortableRow
+                                                    key={video.id}
+                                                    video={video}
+                                                    onEdit={handleEdit}
+                                                    onDelete={handleDelete}
+                                                    formatDuration={formatDuration}
+                                                />
+                                            ))}
+                                        </tbody>
+                                    </SortableContext>
+                                </table>
+                            </div>
+                        </DndContext>
                     </div>
                 </div>
             </div>

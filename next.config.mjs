@@ -5,8 +5,8 @@ const nextConfig = {
     },
     experimental: {
         serverActions: {
-            allowedOrigins: ["localhost:3000", "dalifilms.fr", "www.dalifilms.fr"]
-        }
+            allowedOrigins: ['localhost:3000', 'dalifilms.fr', 'www.dalifilms.fr'],
+        },
     },
     trailingSlash: true,
     assetPrefix: process.env.NODE_ENV === 'production' ? '/' : '',

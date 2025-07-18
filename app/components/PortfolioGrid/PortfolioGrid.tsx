@@ -223,6 +223,19 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
             );
         }
 
+        // Trier les projets pour mettre les vidéos YouTube/Dailymotion en haut
+        newFilteredProjects = newFilteredProjects.sort((a, b) => {
+            // Si les deux sont des vidéos externes ou les deux ne le sont pas, garder l'ordre original
+            const aIsExternal =
+                a.provider === 'youtube' || a.provider === 'dailymotion' || a.isYouTube;
+            const bIsExternal =
+                b.provider === 'youtube' || b.provider === 'dailymotion' || b.isYouTube;
+
+            if (aIsExternal && !bIsExternal) return -1; // a en premier
+            if (!aIsExternal && bIsExternal) return 1; // b en premier
+            return 0; // garder l'ordre original
+        });
+
         // Animation de sortie
         const tl = gsap.timeline();
 

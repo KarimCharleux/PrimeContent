@@ -1,5 +1,23 @@
 'use client';
 
+// Imports pour drag and drop
+import {
+    DndContext,
+    DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    closestCenter,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    SortableContext,
+    arrayMove,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { addDoc, collection, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 
@@ -15,6 +33,69 @@ interface KeyFigure {
     isPercentage?: boolean;
     order: number;
 }
+
+// Composant pour les lignes triables
+interface SortableRowProps {
+    figure: KeyFigure;
+    onEdit: (figure: KeyFigure) => void;
+    onDelete: (figureId: string) => void;
+}
+
+const SortableRow: React.FC<SortableRowProps> = ({ figure, onEdit, onDelete }) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+        id: figure.id!,
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 1000 : 'auto',
+    };
+
+    return (
+        <tr ref={setNodeRef} style={style} className={isDragging ? 'shadow-lg' : ''}>
+            <td className="px-3 py-4 whitespace-nowrap text-center w-16">
+                <div
+                    {...attributes}
+                    {...listeners}
+                    className="cursor-grab active:cursor-grabbing inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                    title="Glisser pour réorganiser"
+                >
+                    ☰
+                </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                {figure.value}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {figure.description}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {figure.prefix || ''} / {figure.suffix || ''}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {figure.isPercentage ? 'Oui' : 'Non'}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <div className="flex justify-end space-x-2">
+                    <button
+                        onClick={() => onEdit(figure)}
+                        className="text-indigo-600 hover:text-indigo-900"
+                    >
+                        Modifier
+                    </button>
+                    <button
+                        onClick={() => figure.id && onDelete(figure.id)}
+                        className="text-red-600 hover:text-red-900"
+                    >
+                        Supprimer
+                    </button>
+                </div>
+            </td>
+        </tr>
+    );
+};
 
 export default function HomeTabKeyFigures() {
     const [keyFigures, setKeyFigures] = useState<KeyFigure[]>([]);
@@ -32,6 +113,57 @@ export default function HomeTabKeyFigures() {
     const [formError, setFormError] = useState<string>('');
     const [formSuccess, setFormSuccess] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Configuration des capteurs pour le drag and drop
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
+    );
+
+    // Fonction pour gérer la fin du drag and drop
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (!active || !over || active.id === over.id) {
+            return;
+        }
+
+        const oldIndex = keyFigures.findIndex((figure) => figure.id === active.id);
+        const newIndex = keyFigures.findIndex((figure) => figure.id === over.id);
+
+        if (oldIndex === -1 || newIndex === -1) {
+            return;
+        }
+
+        // Réorganiser localement
+        const newKeyFigures = arrayMove(keyFigures, oldIndex, newIndex);
+
+        // Mettre à jour les ordres
+        const updatedKeyFigures = newKeyFigures.map((figure, index) => ({
+            ...figure,
+            order: index,
+        }));
+
+        setKeyFigures(updatedKeyFigures);
+
+        // Sauvegarder en base de données
+        try {
+            const updatePromises = updatedKeyFigures.map((figure) => {
+                if (figure.id) {
+                    return updateDoc(doc(db, 'keyFigures', figure.id), { order: figure.order });
+                }
+                return Promise.resolve();
+            });
+
+            await Promise.all(updatePromises);
+        } catch (error) {
+            console.error('Erreur lors de la sauvegarde de la réorganisation:', error);
+            // Rollback en cas d'erreur
+            setKeyFigures(keyFigures);
+        }
+    };
 
     // Récupérer les chiffres clés depuis Firestore
     useEffect(() => {
@@ -210,72 +342,6 @@ export default function HomeTabKeyFigures() {
         }
     };
 
-    // Réordonner les chiffres clés (monter)
-    const handleMoveUp = async (index: number) => {
-        if (index <= 0) return;
-
-        try {
-            const updatedFigures = [...keyFigures];
-            const currentFigure = updatedFigures[index];
-            const prevFigure = updatedFigures[index - 1];
-
-            // Échanger les ordres
-            const tempOrder = currentFigure.order;
-            currentFigure.order = prevFigure.order;
-            prevFigure.order = tempOrder;
-
-            // Échanger les positions dans le tableau
-            updatedFigures[index] = prevFigure;
-            updatedFigures[index - 1] = currentFigure;
-
-            // Mettre à jour l'état local
-            setKeyFigures(updatedFigures);
-
-            // Mettre à jour dans Firestore
-            if (currentFigure.id && prevFigure.id) {
-                await updateDoc(doc(db, 'keyFigures', currentFigure.id), {
-                    order: currentFigure.order,
-                });
-                await updateDoc(doc(db, 'keyFigures', prevFigure.id), { order: prevFigure.order });
-            }
-        } catch (error) {
-            console.error('Erreur lors de la réorganisation:', error);
-        }
-    };
-
-    // Réordonner les chiffres clés (descendre)
-    const handleMoveDown = async (index: number) => {
-        if (index >= keyFigures.length - 1) return;
-
-        try {
-            const updatedFigures = [...keyFigures];
-            const currentFigure = updatedFigures[index];
-            const nextFigure = updatedFigures[index + 1];
-
-            // Échanger les ordres
-            const tempOrder = currentFigure.order;
-            currentFigure.order = nextFigure.order;
-            nextFigure.order = tempOrder;
-
-            // Échanger les positions dans le tableau
-            updatedFigures[index] = nextFigure;
-            updatedFigures[index + 1] = currentFigure;
-
-            // Mettre à jour l'état local
-            setKeyFigures(updatedFigures);
-
-            // Mettre à jour dans Firestore
-            if (currentFigure.id && nextFigure.id) {
-                await updateDoc(doc(db, 'keyFigures', currentFigure.id), {
-                    order: currentFigure.order,
-                });
-                await updateDoc(doc(db, 'keyFigures', nextFigure.id), { order: nextFigure.order });
-            }
-        } catch (error) {
-            console.error('Erreur lors de la réorganisation:', error);
-        }
-    };
-
     return (
         <div className="bg-white rounded-lg shadow">
             <div className="p-6 border-b border-gray-200">
@@ -299,125 +365,72 @@ export default function HomeTabKeyFigures() {
                     <>
                         {/* Liste des chiffres clés */}
                         {keyFigures.length > 0 ? (
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th
-                                                scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            <div className="space-y-4">
+                                <div className="overflow-x-auto">
+                                    <DndContext
+                                        sensors={sensors}
+                                        collisionDetection={closestCenter}
+                                        onDragEnd={handleDragEnd}
+                                    >
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-gray-50">
+                                                <tr>
+                                                    <th
+                                                        scope="col"
+                                                        className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+                                                    >
+                                                        Ordre
+                                                    </th>
+                                                    <th
+                                                        scope="col"
+                                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                                    >
+                                                        Valeur
+                                                    </th>
+                                                    <th
+                                                        scope="col"
+                                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                                    >
+                                                        Description
+                                                    </th>
+                                                    <th
+                                                        scope="col"
+                                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                                    >
+                                                        Préfixe/Suffixe
+                                                    </th>
+                                                    <th
+                                                        scope="col"
+                                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                                    >
+                                                        Pourcentage
+                                                    </th>
+                                                    <th
+                                                        scope="col"
+                                                        className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                                    >
+                                                        Actions
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <SortableContext
+                                                items={keyFigures.map((figure) => figure.id!)}
+                                                strategy={verticalListSortingStrategy}
                                             >
-                                                Valeur
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                            >
-                                                Description
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                            >
-                                                Préfixe/Suffixe
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                            >
-                                                Pourcentage
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                            >
-                                                Actions
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {keyFigures.map((figure, index) => (
-                                            <tr key={figure.id}>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {figure.value}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {figure.description}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {figure.prefix || ''} / {figure.suffix || ''}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {figure.isPercentage ? 'Oui' : 'Non'}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <div className="flex justify-end space-x-2">
-                                                        {/* Bouton monter */}
-                                                        <button
-                                                            onClick={() => handleMoveUp(index)}
-                                                            disabled={index === 0}
-                                                            className={`p-1 rounded hover:bg-gray-100 ${index === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600'}`}
-                                                        >
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                className="h-5 w-5"
-                                                                viewBox="0 0 20 20"
-                                                                fill="currentColor"
-                                                            >
-                                                                <path
-                                                                    fillRule="evenodd"
-                                                                    d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z"
-                                                                    clipRule="evenodd"
-                                                                />
-                                                            </svg>
-                                                        </button>
-
-                                                        {/* Bouton descendre */}
-                                                        <button
-                                                            onClick={() => handleMoveDown(index)}
-                                                            disabled={
-                                                                index === keyFigures.length - 1
-                                                            }
-                                                            className={`p-1 rounded hover:bg-gray-100 ${index === keyFigures.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600'}`}
-                                                        >
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                className="h-5 w-5"
-                                                                viewBox="0 0 20 20"
-                                                                fill="currentColor"
-                                                            >
-                                                                <path
-                                                                    fillRule="evenodd"
-                                                                    d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z"
-                                                                    clipRule="evenodd"
-                                                                />
-                                                            </svg>
-                                                        </button>
-
-                                                        {/* Bouton éditer */}
-                                                        <button
-                                                            onClick={() => handleEditClick(figure)}
-                                                            className="text-indigo-600 hover:text-indigo-900"
-                                                        >
-                                                            Modifier
-                                                        </button>
-
-                                                        {/* Bouton supprimer */}
-                                                        <button
-                                                            onClick={() =>
-                                                                figure.id &&
-                                                                handleDeleteClick(figure.id)
-                                                            }
-                                                            className="text-red-600 hover:text-red-900"
-                                                        >
-                                                            Supprimer
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                                <tbody className="bg-white divide-y divide-gray-200">
+                                                    {keyFigures.map((figure) => (
+                                                        <SortableRow
+                                                            key={figure.id}
+                                                            figure={figure}
+                                                            onEdit={handleEditClick}
+                                                            onDelete={handleDeleteClick}
+                                                        />
+                                                    ))}
+                                                </tbody>
+                                            </SortableContext>
+                                        </table>
+                                    </DndContext>
+                                </div>
                             </div>
                         ) : (
                             <div className="py-8 text-center text-gray-500">

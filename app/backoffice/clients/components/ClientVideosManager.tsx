@@ -1,5 +1,22 @@
 'use client';
 
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    rectSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { collection, doc, getDocs, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import React, { useState, useEffect, useCallback } from 'react';
@@ -41,6 +58,153 @@ interface ClientVideosManagerProps {
     readonly onStatusChange?: (
         status: { type: 'success' | 'error'; message: string } | null,
     ) => void;
+}
+
+// Composant SortableVideoCard
+interface SortableVideoCardProps {
+    video: ClientVideo;
+    index: number;
+    onEdit: (video: ClientVideo) => void;
+    onDelete: (video: ClientVideo) => void;
+}
+
+function SortableVideoCard({ video, index, onEdit, onDelete }: SortableVideoCardProps) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+        id: video.id,
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 1000 : 1,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={`bg-white border rounded-lg overflow-hidden ${
+                isDragging ? 'shadow-lg' : ''
+            }`}
+        >
+            {/* Miniature */}
+            <div className="relative aspect-video">
+                <Image
+                    src={
+                        video.thumbnail ||
+                        getVideoThumbnail(video.videoId || '', video.provider) ||
+                        '/placeholder-photo.png'
+                    }
+                    alt={video.title}
+                    fill
+                    className="object-cover"
+                />
+                {/* Icône de lecture */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div
+                        className={`rounded-full p-2 ${
+                            video.provider === 'youtube'
+                                ? 'bg-red-600'
+                                : video.provider === 'dailymotion'
+                                  ? 'bg-blue-600'
+                                  : 'bg-gray-600'
+                        }`}
+                    >
+                        <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            {/* Informations */}
+            <div className="p-4">
+                <h4 className="font-medium text-gray-900 mb-2 line-clamp-2">{video.title}</h4>
+
+                {/* Format de la vidéo */}
+                {video.format && (
+                    <div className="mb-2">
+                        <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                video.format === 'portrait'
+                                    ? 'bg-purple-100 text-purple-800'
+                                    : 'bg-green-100 text-green-800'
+                            }`}
+                        >
+                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                {video.format === 'portrait' ? (
+                                    <rect x="9" y="2" width="6" height="20" rx="1" />
+                                ) : (
+                                    <rect x="2" y="9" width="20" height="6" rx="1" />
+                                )}
+                            </svg>
+                            {video.format === 'portrait' ? 'Portrait' : 'Paysage'}
+                        </span>
+                    </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex justify-between items-center">
+                    {/* Drag handle */}
+                    <div
+                        {...attributes}
+                        {...listeners}
+                        className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 p-1"
+                        title="Glisser pour réorganiser"
+                    >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+                        </svg>
+                    </div>
+
+                    <div className="flex gap-2">
+                        {/* Modifier */}
+                        <button
+                            onClick={() => onEdit(video)}
+                            className="text-blue-600 hover:text-blue-800"
+                            title="Modifier"
+                        >
+                            <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
+                            </svg>
+                        </button>
+
+                        {/* Supprimer */}
+                        <button
+                            onClick={() => onDelete(video)}
+                            className="text-red-600 hover:text-red-800"
+                            title="Supprimer"
+                        >
+                            <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 export default function ClientVideosManager({
@@ -117,6 +281,14 @@ export default function ClientVideosManager({
     useEffect(() => {
         loadVideos();
     }, [loadVideos]);
+
+    // Configuration des sensors pour le drag and drop
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
+    );
 
     // Sauvegarder une vidéo
     const handleSaveVideo = async () => {
@@ -233,41 +405,38 @@ export default function ClientVideosManager({
         setShowForm(true);
     };
 
-    // Réorganiser les vidéos
-    const handleReorder = async (videoId: string, direction: 'up' | 'down') => {
-        const videoIndex = videos.findIndex((v) => v.id === videoId);
-        if (videoIndex === -1) return;
+    // Fonction de drag and drop
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
 
-        const newVideos = [...videos];
-        const targetIndex = direction === 'up' ? videoIndex - 1 : videoIndex + 1;
+        if (!over || active.id === over.id) {
+            return;
+        }
 
-        if (targetIndex < 0 || targetIndex >= newVideos.length) return;
+        const oldIndex = videos.findIndex((video) => video.id === active.id);
+        const newIndex = videos.findIndex((video) => video.id === over.id);
 
-        // Échanger les ordres
-        [newVideos[videoIndex], newVideos[targetIndex]] = [
-            newVideos[targetIndex],
-            newVideos[videoIndex],
-        ];
+        if (oldIndex === -1 || newIndex === -1) {
+            return;
+        }
 
-        // Mettre à jour les ordres
-        newVideos[videoIndex].order = videoIndex;
-        newVideos[targetIndex].order = targetIndex;
+        // Réorganiser les vidéos localement
+        const newVideos = arrayMove(videos, oldIndex, newIndex);
+        setVideos(newVideos);
 
         try {
-            await Promise.all([
-                updateDoc(doc(db, 'client-videos', newVideos[videoIndex].id), {
-                    order: videoIndex,
-                }),
-                updateDoc(doc(db, 'client-videos', newVideos[targetIndex].id), {
-                    order: targetIndex,
-                }),
-            ]);
+            // Mettre à jour les ordres en base de données
+            const updatePromises = newVideos.map((video, index) =>
+                updateDoc(doc(db, 'client-videos', video.id), { order: index }),
+            );
 
-            setVideos(newVideos);
+            await Promise.all(updatePromises);
             onStatusChange?.({ type: 'success', message: 'Ordre mis à jour !' });
         } catch (error) {
             console.error('Erreur lors du réordonnancement:', error);
             onStatusChange?.({ type: 'error', message: 'Erreur lors du réordonnancement' });
+            // Recharger les données en cas d'erreur
+            await loadVideos();
         }
     };
 
@@ -334,183 +503,50 @@ export default function ClientVideosManager({
                 </div>
             )}
 
-            {/* Liste des vidéos */}
-            {videos.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {videos.map((video, index) => (
-                        <div key={video.id} className="bg-white border rounded-lg overflow-hidden">
-                            {/* Miniature */}
-                            <div className="relative aspect-video">
-                                <Image
-                                    src={
-                                        video.thumbnail ||
-                                        getVideoThumbnail(video.videoId || '', video.provider) ||
-                                        '/placeholder-photo.png'
-                                    }
-                                    alt={video.title}
-                                    fill
-                                    className="object-cover"
-                                />
-                                {/* Icône de lecture */}
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <div
-                                        className={`rounded-full p-2 ${
-                                            video.provider === 'youtube'
-                                                ? 'bg-red-600'
-                                                : video.provider === 'dailymotion'
-                                                  ? 'bg-blue-600'
-                                                  : 'bg-gray-600'
-                                        }`}
-                                    >
-                                        <svg
-                                            className="w-6 h-6 text-white"
-                                            fill="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path d="M8 5v14l11-7z" />
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Informations */}
-                            <div className="p-4">
-                                <h4 className="font-medium text-gray-900 mb-2 line-clamp-2">
-                                    {video.title}
-                                </h4>
-
-                                {/* Format de la vidéo */}
-                                {video.format && (
-                                    <div className="mb-2">
-                                        <span
-                                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                                video.format === 'portrait'
-                                                    ? 'bg-purple-100 text-purple-800'
-                                                    : 'bg-green-100 text-green-800'
-                                            }`}
-                                        >
-                                            <svg
-                                                className="w-3 h-3 mr-1"
-                                                fill="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                {video.format === 'portrait' ? (
-                                                    <rect
-                                                        x="9"
-                                                        y="2"
-                                                        width="6"
-                                                        height="20"
-                                                        rx="1"
-                                                    />
-                                                ) : (
-                                                    <rect
-                                                        x="2"
-                                                        y="9"
-                                                        width="20"
-                                                        height="6"
-                                                        rx="1"
-                                                    />
-                                                )}
-                                            </svg>
-                                            {video.format === 'portrait' ? 'Portrait' : 'Paysage'}
-                                        </span>
-                                    </div>
-                                )}
-
-                                {/* Actions */}
-                                <div className="flex justify-between items-center">
-                                    <div className="flex gap-2">
-                                        {/* Réorganiser */}
-                                        <button
-                                            onClick={() => handleReorder(video.id, 'up')}
-                                            disabled={index === 0}
-                                            className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                                            title="Monter"
-                                        >
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M5 15l7-7 7 7"
-                                                />
-                                            </svg>
-                                        </button>
-                                        <button
-                                            onClick={() => handleReorder(video.id, 'down')}
-                                            disabled={index === videos.length - 1}
-                                            className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                                            title="Descendre"
-                                        >
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M19 9l-7 7-7-7"
-                                                />
-                                            </svg>
-                                        </button>
-                                    </div>
-
-                                    <div className="flex gap-2">
-                                        {/* Modifier */}
-                                        <button
-                                            onClick={() => handleEditVideo(video)}
-                                            className="text-blue-600 hover:text-blue-800"
-                                            title="Modifier"
-                                        >
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                />
-                                            </svg>
-                                        </button>
-
-                                        {/* Supprimer */}
-                                        <button
-                                            onClick={() => handleDeleteVideo(video)}
-                                            className="text-red-600 hover:text-red-800"
-                                            title="Supprimer"
-                                        >
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+            {/* Instructions utilisateur */}
+            {videos.length > 1 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center">
+                        <svg
+                            className="w-5 h-5 text-blue-600 mr-2"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                        >
+                            <path
+                                fillRule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                clipRule="evenodd"
+                            />
+                        </svg>
+                        <p className="text-sm text-blue-800">
+                            Glissez-déposez les vidéos pour les réorganiser. L&apos;ordre sera
+                            automatiquement sauvegardé.
+                        </p>
+                    </div>
                 </div>
+            )}
+
+            {/* Liste des vidéos avec drag and drop */}
+            {videos.length > 0 ? (
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                >
+                    <SortableContext items={videos.map((v) => v.id)} strategy={rectSortingStrategy}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {videos.map((video, index) => (
+                                <SortableVideoCard
+                                    key={video.id}
+                                    video={video}
+                                    index={index}
+                                    onEdit={handleEditVideo}
+                                    onDelete={handleDeleteVideo}
+                                />
+                            ))}
+                        </div>
+                    </SortableContext>
+                </DndContext>
             ) : (
                 <div className="text-center py-8 text-gray-500">
                     <svg

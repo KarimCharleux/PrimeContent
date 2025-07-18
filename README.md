@@ -21,6 +21,7 @@
 ### ✨ Fonctionnalités Principales
 
 #### 🌟 Interface Publique
+
 - **Page d'accueil** avec galerie 3D interactive et animations SVG
 - **Services Mariages** avec forfaits personnalisés
 - **Portfolio Événements** avec fiches détaillées
@@ -28,6 +29,7 @@
 - **Services Web & Réseaux Sociaux** avec processus détaillés
 
 #### 🔐 Backoffice d'Administration
+
 - **Dashboard** avec statistiques en temps réel
 - **Gestion complète des médias** (photos, vidéos, YouTube)
 - **CRUD Événements** avec organisation par projets
@@ -40,20 +42,23 @@
 ## 🎨 Points Techniques Remarquables
 
 ### 🎬 Animations & UX
+
 - **SplashScreen animé** avec SVG tracé progressif et rotation 3D
 - **Galerie défilante** avec préchargement d'images optimisé
 - **Transitions fluides** utilisant Framer Motion et GSAP
 - **Design responsive** adaptatif sur tous appareils
 
 ### 🏗️ Architecture
+
 - **Séparation Client/Admin** avec layouts dédiés
 - **App Router Next.js 14** pour les performances
 - **State Management** avec Zustand
 - **Firebase Firestore** pour la base de données temps réel
 
 ### 🔧 Stack Technique
+
 - **Frontend** : Next.js 14, React 18, TypeScript
-- **Styling** : Tailwind CSS, SCSS Modules  
+- **Styling** : Tailwind CSS, SCSS Modules
 - **Animations** : Framer Motion, GSAP
 - **Backend** : Firebase (Auth, Firestore, Storage)
 - **UI Components** : Radix UI, ShadCN/UI
@@ -63,6 +68,7 @@
 ## 📱 Aperçu des Fonctionnalités
 
 ### Interface Publique
+
 ```
 🏠 Accueil          → Galerie interactive, équipe, avis clients
 💒 Mariages         → Forfaits, galerie spécialisée
@@ -75,6 +81,7 @@
 ```
 
 ### Backoffice
+
 ```
 📊 Dashboard        → Statistiques visiteurs, médias, messages
 👥 Clients          → Base clients avec médias privés
@@ -101,4 +108,3 @@
 **Projet développé avec passion pour démontrer la maîtrise du stack moderne React/Next.js** 🚀
 
 </div>
-

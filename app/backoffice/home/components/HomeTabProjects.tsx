@@ -1,6 +1,23 @@
 'use client';
 
 import {
+    DndContext,
+    DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    closestCenter,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    SortableContext,
+    arrayMove,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
     collection,
     deleteDoc,
     doc,
@@ -12,6 +29,8 @@ import {
 } from 'firebase/firestore';
 import Image from 'next/image';
 import { useEffect, useState, useCallback } from 'react';
+
+// Imports pour drag and drop
 
 import VideoUpload, { VideoData } from '../../../components/VideoUpload';
 import { getMediaUrl } from '../../../utils/mediaUrl';
@@ -50,6 +69,147 @@ interface ProjectStats {
     averageLoadTime: number;
 }
 
+// Composant pour les lignes triables
+interface SortableRowProps {
+    project: Project;
+    onEdit: (project: Project) => void;
+    onDelete: (projectId: string) => void;
+    getMediaIcon: (project: Project) => React.ReactNode;
+    getPreviewThumbnail: (project: Project) => string;
+}
+
+const SortableRow: React.FC<SortableRowProps> = ({
+    project,
+    onEdit,
+    onDelete,
+    getMediaIcon,
+    getPreviewThumbnail,
+}) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+        id: project.id!,
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 1000 : 'auto',
+    };
+
+    return (
+        <tr ref={setNodeRef} style={style} className={isDragging ? 'shadow-lg' : ''}>
+            <td className="px-3 py-4 whitespace-nowrap text-center w-16">
+                <div
+                    {...attributes}
+                    {...listeners}
+                    className="cursor-grab active:cursor-grabbing inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                    title="Glisser pour réorganiser"
+                >
+                    ☰
+                </div>
+            </td>
+            <td className="px-6 py-4">
+                <div className="h-10 w-10 relative overflow-hidden rounded flex items-center justify-center">
+                    {project.provider === 'youtube' ||
+                    project.provider === 'dailymotion' ||
+                    project.isYouTube ? (
+                        <Image
+                            src={getPreviewThumbnail(project)}
+                            alt={project.title}
+                            fill
+                            className="object-cover"
+                        />
+                    ) : project.source.match(/\.(mp4|webm|ogg)$/i) ? (
+                        <video
+                            src={getMediaUrl(project.source)}
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <Image
+                            src={getMediaUrl(project.source)}
+                            alt={project.title}
+                            fill
+                            className="object-cover"
+                        />
+                    )}
+                    <div className="absolute bottom-0 right-0">{getMediaIcon(project)}</div>
+                </div>
+            </td>
+            <td className="px-6 py-4">
+                {(project.isVideo ||
+                    project.isYouTube ||
+                    project.provider === 'youtube' ||
+                    project.provider === 'dailymotion') && (
+                    <div className="h-10 w-10 relative overflow-hidden rounded">
+                        {project.thumbnail ? (
+                            <Image
+                                src={
+                                    project.provider === 'youtube' ||
+                                    project.provider === 'dailymotion' ||
+                                    project.isYouTube
+                                        ? project.thumbnail
+                                        : getMediaUrl(project.thumbnail)
+                                }
+                                alt={`Miniature de ${project.title}`}
+                                fill
+                                className="object-cover"
+                            />
+                        ) : (
+                            <div className="h-full w-full flex items-center justify-center bg-gray-200 text-gray-400">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-6 w-6"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                    />
+                                </svg>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">{project.title}</td>
+            <td className="px-6 py-4 whitespace-nowrap">{project.category}</td>
+            <td className="px-6 py-4 whitespace-nowrap">{project.format}</td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex items-center space-x-1">
+                    {getMediaIcon(project)}
+                    <span>
+                        {project.provider === 'youtube' || project.isYouTube
+                            ? 'YouTube'
+                            : project.provider === 'dailymotion'
+                              ? 'Dailymotion'
+                              : project.source.match(/\.(mp4|webm|ogg)$/i)
+                                ? 'Vidéo'
+                                : 'Image'}
+                    </span>
+                </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap space-x-2">
+                <button
+                    onClick={() => onEdit(project)}
+                    className="text-indigo-600 hover:text-indigo-900"
+                >
+                    Modifier
+                </button>
+                <button
+                    onClick={() => onDelete(project.id!)}
+                    className="text-red-600 hover:text-red-900"
+                >
+                    Supprimer
+                </button>
+            </td>
+        </tr>
+    );
+};
+
 export default function HomeTabProjects() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
@@ -86,6 +246,68 @@ export default function HomeTabProjects() {
     const [uploadCategory, setUploadCategory] = useState<string>('');
     const [videoData, setVideoData] = useState<VideoData | null>(null);
 
+    // Configuration des capteurs pour le drag and drop
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
+    );
+
+    // Fonction pour gérer la fin du drag and drop
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (!active || !over || active.id === over.id) {
+            return;
+        }
+
+        // Filtrer les projets selon l'onglet actif
+        const currentProjects = projects.filter((project) =>
+            activeTab === 'latest' ? project.isLatest : !project.isLatest,
+        );
+
+        const oldIndex = currentProjects.findIndex((project) => project.id === active.id);
+        const newIndex = currentProjects.findIndex((project) => project.id === over.id);
+
+        if (oldIndex === -1 || newIndex === -1) {
+            return;
+        }
+
+        // Réorganiser localement
+        const newProjects = arrayMove(currentProjects, oldIndex, newIndex);
+
+        // Mettre à jour les ordres
+        const updatedProjects = newProjects.map((project, index) => ({
+            ...project,
+            order: index,
+        }));
+
+        // Mettre à jour l'état local
+        setProjects((prevProjects) => {
+            const otherProjects = prevProjects.filter((project) =>
+                activeTab === 'latest' ? !project.isLatest : project.isLatest,
+            );
+            return [...otherProjects, ...updatedProjects].sort((a, b) => a.order - b.order);
+        });
+
+        // Sauvegarder en base de données
+        try {
+            const updatePromises = updatedProjects.map((project) => {
+                if (project.id) {
+                    return updateDoc(doc(db, 'projects', project.id), { order: project.order });
+                }
+                return Promise.resolve();
+            });
+
+            await Promise.all(updatePromises);
+        } catch (error) {
+            console.error('Erreur lors de la sauvegarde de la réorganisation:', error);
+            // Rollback en cas d'erreur
+            fetchProjects();
+        }
+    };
+
     // Extraire les catégories uniques des projets
     const categories = Array.from(new Set(projects.map((project) => project.category))).filter(
         Boolean,
@@ -113,7 +335,6 @@ export default function HomeTabProjects() {
         }
     };
 
-    // Fonction pour déterminer la classe de taille en fonction du format
     // Fonction pour calculer les statistiques
     const calculateStats = useCallback(async () => {
         let totalSize = 0;
@@ -624,16 +845,6 @@ export default function HomeTabProjects() {
         }
     };
 
-    const handleReorder = async (projectId: string, newOrder: number) => {
-        try {
-            await updateDoc(doc(db, 'projects', projectId), { order: newOrder });
-            fetchProjects();
-        } catch (error) {
-            console.error('Erreur lors du réordonnancement:', error);
-            setStatusMessage({ type: 'error', message: 'Erreur lors du réordonnancement' });
-        }
-    };
-
     const cancelEdit = () => {
         setEditingProject(null);
         setFormData({
@@ -983,195 +1194,71 @@ export default function HomeTabProjects() {
 
                     <div className="mt-8">
                         <div className="overflow-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Ordre
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Media
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Miniature
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Titre
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Catégorie
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Format
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Type
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {projects
-                                        .filter((project) =>
-                                            activeTab === 'latest'
-                                                ? project.isLatest
-                                                : !project.isLatest,
-                                        )
-                                        .map((project) => (
-                                            <tr key={project.id}>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="flex items-center space-x-2">
-                                                        <button
-                                                            onClick={() =>
-                                                                handleReorder(
-                                                                    project.id!,
-                                                                    project.order - 1,
-                                                                )
-                                                            }
-                                                            disabled={project.order === 0}
-                                                            className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                                                        >
-                                                            ↑
-                                                        </button>
-                                                        <span>{project.order}</span>
-                                                        <button
-                                                            onClick={() =>
-                                                                handleReorder(
-                                                                    project.id!,
-                                                                    project.order + 1,
-                                                                )
-                                                            }
-                                                            disabled={
-                                                                project.order ===
-                                                                projects.length - 1
-                                                            }
-                                                            className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                                                        >
-                                                            ↓
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="h-10 w-10 relative overflow-hidden rounded flex items-center justify-center">
-                                                        {project.provider === 'youtube' ||
-                                                        project.provider === 'dailymotion' ||
-                                                        project.isYouTube ? (
-                                                            <Image
-                                                                src={getPreviewThumbnail(project)}
-                                                                alt={project.title}
-                                                                fill
-                                                                className="object-cover"
-                                                            />
-                                                        ) : project.source.match(
-                                                              /\.(mp4|webm|ogg)$/i,
-                                                          ) ? (
-                                                            <video
-                                                                src={getMediaUrl(project.source)}
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        ) : (
-                                                            <Image
-                                                                src={getMediaUrl(project.source)}
-                                                                alt={project.title}
-                                                                fill
-                                                                className="object-cover"
-                                                            />
-                                                        )}
-                                                        <div className="absolute bottom-0 right-0">
-                                                            {getMediaIcon(project)}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    {(project.isVideo ||
-                                                        project.isYouTube ||
-                                                        project.provider === 'youtube' ||
-                                                        project.provider === 'dailymotion') && (
-                                                        <div className="h-10 w-10 relative overflow-hidden rounded">
-                                                            {project.thumbnail ? (
-                                                                <Image
-                                                                    src={
-                                                                        project.provider ===
-                                                                            'youtube' ||
-                                                                        project.provider ===
-                                                                            'dailymotion' ||
-                                                                        project.isYouTube
-                                                                            ? project.thumbnail
-                                                                            : getMediaUrl(
-                                                                                  project.thumbnail,
-                                                                              )
-                                                                    }
-                                                                    alt={`Miniature de ${project.title}`}
-                                                                    fill
-                                                                    className="object-cover"
-                                                                />
-                                                            ) : (
-                                                                <div className="h-full w-full flex items-center justify-center bg-gray-200 text-gray-400">
-                                                                    <svg
-                                                                        xmlns="http://www.w3.org/2000/svg"
-                                                                        className="h-6 w-6"
-                                                                        fill="none"
-                                                                        viewBox="0 0 24 24"
-                                                                        stroke="currentColor"
-                                                                    >
-                                                                        <path
-                                                                            strokeLinecap="round"
-                                                                            strokeLinejoin="round"
-                                                                            strokeWidth={2}
-                                                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                                                        />
-                                                                    </svg>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {project.title}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {project.category}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {project.format}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="flex items-center space-x-1">
-                                                        {getMediaIcon(project)}
-                                                        <span>
-                                                            {project.provider === 'youtube' ||
-                                                            project.isYouTube
-                                                                ? 'YouTube'
-                                                                : project.provider === 'dailymotion'
-                                                                  ? 'Dailymotion'
-                                                                  : project.source.match(
-                                                                          /\.(mp4|webm|ogg)$/i,
-                                                                      )
-                                                                    ? 'Vidéo'
-                                                                    : 'Image'}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                                                    <button
-                                                        onClick={() => handleEdit(project)}
-                                                        className="text-indigo-600 hover:text-indigo-900"
-                                                    >
-                                                        Modifier
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(project.id!)}
-                                                        className="text-red-600 hover:text-red-900"
-                                                    >
-                                                        Supprimer
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                </tbody>
-                            </table>
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleDragEnd}
+                            >
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                                                Ordre
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Media
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Miniature
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Titre
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Catégorie
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Format
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Type
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <SortableContext
+                                        items={projects
+                                            .filter((project) =>
+                                                activeTab === 'latest'
+                                                    ? project.isLatest
+                                                    : !project.isLatest,
+                                            )
+                                            .map((project) => project.id!)}
+                                        strategy={verticalListSortingStrategy}
+                                    >
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {projects
+                                                .filter((project) =>
+                                                    activeTab === 'latest'
+                                                        ? project.isLatest
+                                                        : !project.isLatest,
+                                                )
+                                                .map((project) => (
+                                                    <SortableRow
+                                                        key={project.id}
+                                                        project={project}
+                                                        onEdit={handleEdit}
+                                                        onDelete={handleDelete}
+                                                        getMediaIcon={getMediaIcon}
+                                                        getPreviewThumbnail={getPreviewThumbnail}
+                                                    />
+                                                ))}
+                                        </tbody>
+                                    </SortableContext>
+                                </table>
+                            </DndContext>
                         </div>
                     </div>
                 </div>

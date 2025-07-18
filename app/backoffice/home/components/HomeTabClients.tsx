@@ -1,9 +1,26 @@
 'use client';
 
+// Imports pour drag and drop
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import React, { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { useForm } from 'react-hook-form';
 
 import { getMediaUrl } from '../../../utils/mediaUrl';
@@ -28,6 +45,153 @@ interface Client {
     order?: number;
 }
 
+// Composant pour une ligne triable de marque
+function SortableBrandRow({
+    brand,
+    index,
+    onEdit,
+    onDelete,
+}: {
+    brand: Brand;
+    index: number;
+    onEdit: (brand: Brand) => void;
+    onDelete: (brand: Brand) => void;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+        id: brand.id!,
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <tr ref={setNodeRef} style={style} className="bg-white hover:bg-gray-50">
+            <td className="px-6 py-4 whitespace-nowrap text-center w-20">
+                <button
+                    {...attributes}
+                    {...listeners}
+                    className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing text-lg"
+                    title="Glisser pour réorganiser"
+                >
+                    ☰
+                </button>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="text-sm text-gray-900">{brand.name}</div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex-shrink-0 h-10 w-10">
+                    <Image
+                        className="h-10 w-10 object-contain"
+                        src={getMediaUrl(brand.imageSrc)}
+                        alt={brand.name}
+                        width={40}
+                        height={40}
+                    />
+                </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="text-sm text-blue-600 hover:text-blue-900">
+                    <a href={brand.href} target="_blank" rel="noopener noreferrer">
+                        {brand.href}
+                    </a>
+                </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <button
+                    onClick={() => onEdit(brand)}
+                    className="text-indigo-600 hover:text-indigo-900 mr-4"
+                >
+                    Modifier
+                </button>
+                <button onClick={() => onDelete(brand)} className="text-red-600 hover:text-red-900">
+                    Supprimer
+                </button>
+            </td>
+        </tr>
+    );
+}
+
+// Composant pour une ligne triable de client
+function SortableClientRow({
+    client,
+    index,
+    onEdit,
+    onDelete,
+}: {
+    client: Client;
+    index: number;
+    onEdit: (client: Client) => void;
+    onDelete: (client: Client) => void;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+        id: client.id!,
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <tr ref={setNodeRef} style={style} className="bg-white hover:bg-gray-50">
+            <td className="px-6 py-4 whitespace-nowrap text-center w-20">
+                <button
+                    {...attributes}
+                    {...listeners}
+                    className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing text-lg"
+                    title="Glisser pour réorganiser"
+                >
+                    ☰
+                </button>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10">
+                        <Image
+                            className="h-10 w-10 rounded-full object-cover"
+                            src={getMediaUrl(client.imageSrc)}
+                            alt={client.name}
+                            width={40}
+                            height={40}
+                        />
+                    </div>
+                    <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">{client.name}</div>
+                        <div className="text-sm text-gray-500">{client.domain}</div>
+                    </div>
+                </div>
+            </td>
+            <td className="px-6 py-4">
+                <div className="relative h-20 w-32 rounded-lg overflow-hidden">
+                    <Image
+                        src={getMediaUrl(client.imageBackground)}
+                        alt={`${client.name} background`}
+                        fill
+                        className="object-cover"
+                    />
+                </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <button
+                    onClick={() => onEdit(client)}
+                    className="text-indigo-600 hover:text-indigo-900 mr-4"
+                >
+                    Modifier
+                </button>
+                <button
+                    onClick={() => onDelete(client)}
+                    className="text-red-600 hover:text-red-900"
+                >
+                    Supprimer
+                </button>
+            </td>
+        </tr>
+    );
+}
+
 export default function HomeTabClients() {
     // États pour les marques
     const [brands, setBrands] = useState<Brand[]>([]);
@@ -35,7 +199,6 @@ export default function HomeTabClients() {
     const [savingBrand, setSavingBrand] = useState(false);
     const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
     const [previewBrandImage, setPreviewBrandImage] = useState<string | null>(null);
-    const [updatingBrandOrder, setUpdatingBrandOrder] = useState(false);
 
     // États pour les clients
     const [clients, setClients] = useState<Client[]>([]);
@@ -44,7 +207,6 @@ export default function HomeTabClients() {
     const [editingClient, setEditingClient] = useState<Client | null>(null);
     const [previewClientImage, setPreviewClientImage] = useState<string | null>(null);
     const [previewClientBgImage, setPreviewClientBgImage] = useState<string | null>(null);
-    const [updatingClientOrder, setUpdatingClientOrder] = useState(false);
 
     // État général
     const [activeTab, setActiveTab] = useState<'brands' | 'clients'>('brands');
@@ -52,6 +214,14 @@ export default function HomeTabClients() {
         type: 'success' | 'error';
         message: string;
     } | null>(null);
+
+    // Configuration pour le drag and drop
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
+    );
 
     // Formulaires React Hook Form
     const {
@@ -385,70 +555,43 @@ export default function HomeTabClients() {
         }
     };
 
-    // Fonction pour gérer le changement d'ordre d'une marque
-    const handleReorderBrand = async (brandId: string | undefined, direction: 'up' | 'down') => {
-        if (!brandId) return;
+    // Gérer la fin du drag and drop pour les marques
+    const handleBrandDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
 
-        try {
-            // Trier les marques par ordre
-            const sortedBrands = [...brands].sort((a, b) => (a.order || 0) - (b.order || 0));
+        if (over && active.id !== over.id) {
+            const oldIndex = brands.findIndex((brand) => brand.id === active.id);
+            const newIndex = brands.findIndex((brand) => brand.id === over.id);
 
-            // Trouver l'index actuel de la marque
-            const currentIndex = sortedBrands.findIndex((brand) => brand.id === brandId);
-            if (currentIndex === -1) return;
+            if (oldIndex !== -1 && newIndex !== -1) {
+                const newBrands = arrayMove(brands, oldIndex, newIndex);
 
-            // Déterminer le nouvel index en fonction de la direction
-            const newIndex =
-                direction === 'up'
-                    ? Math.max(0, currentIndex - 1)
-                    : Math.min(sortedBrands.length - 1, currentIndex + 1);
+                // Mettre à jour les ordres
+                newBrands.forEach((brand, idx) => {
+                    brand.order = idx;
+                });
 
-            // Si l'index ne change pas (déjà en haut ou en bas), ne rien faire
-            if (newIndex === currentIndex) return;
+                setBrands(newBrands);
 
-            // Échanger les ordres entre les deux marques
-            const targetBrand = sortedBrands[newIndex];
-            const currentBrand = sortedBrands[currentIndex];
-
-            const currentOrder = currentBrand.order || 0;
-            const targetOrder = targetBrand.order || 0;
-
-            // Mettre à jour les ordres
-            const updatedBrands = sortedBrands.map((brand) => {
-                if (brand.id === brandId) {
-                    return { ...brand, order: targetOrder };
-                } else if (brand.id === targetBrand.id) {
-                    return { ...brand, order: currentOrder };
+                // Sauvegarder en base
+                try {
+                    await Promise.all(
+                        newBrands.map((brand) =>
+                            updateDoc(doc(db, 'brands', brand.id!), { order: brand.order }),
+                        ),
+                    );
+                    setStatusMessage({
+                        type: 'success',
+                        message: 'Ordre de la marque modifié avec succès',
+                    });
+                } catch (error) {
+                    console.error('Erreur lors de la réorganisation des marques:', error);
+                    setStatusMessage({
+                        type: 'error',
+                        message: 'Erreur lors de la réorganisation des marques',
+                    });
                 }
-                return brand;
-            });
-
-            // Mettre à jour l'état local
-            setBrands(updatedBrands);
-
-            // Mettre à jour Firestore
-            if (currentBrand.id) {
-                await updateDoc(doc(db, 'brands', currentBrand.id), {
-                    order: targetOrder,
-                });
             }
-
-            if (targetBrand.id) {
-                await updateDoc(doc(db, 'brands', targetBrand.id), {
-                    order: currentOrder,
-                });
-            }
-
-            setStatusMessage({
-                type: 'success',
-                message: 'Ordre de la marque modifié avec succès',
-            });
-        } catch (error) {
-            console.error('Erreur lors de la réorganisation des marques:', error);
-            setStatusMessage({
-                type: 'error',
-                message: 'Erreur lors de la réorganisation des marques',
-            });
         }
     };
 
@@ -561,70 +704,43 @@ export default function HomeTabClients() {
         setPreviewBrandImage(null);
     };
 
-    // Fonction pour gérer le changement d'ordre d'un client
-    const handleReorderClient = async (clientId: string | undefined, direction: 'up' | 'down') => {
-        if (!clientId) return;
+    // Gérer la fin du drag and drop pour les clients
+    const handleClientDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
 
-        try {
-            // Trier les clients par ordre
-            const sortedClients = [...clients].sort((a, b) => (a.order || 0) - (b.order || 0));
+        if (over && active.id !== over.id) {
+            const oldIndex = clients.findIndex((client) => client.id === active.id);
+            const newIndex = clients.findIndex((client) => client.id === over.id);
 
-            // Trouver l'index actuel du client
-            const currentIndex = sortedClients.findIndex((client) => client.id === clientId);
-            if (currentIndex === -1) return;
+            if (oldIndex !== -1 && newIndex !== -1) {
+                const newClients = arrayMove(clients, oldIndex, newIndex);
 
-            // Déterminer le nouvel index en fonction de la direction
-            const newIndex =
-                direction === 'up'
-                    ? Math.max(0, currentIndex - 1)
-                    : Math.min(sortedClients.length - 1, currentIndex + 1);
+                // Mettre à jour les ordres
+                newClients.forEach((client, idx) => {
+                    client.order = idx;
+                });
 
-            // Si l'index ne change pas (déjà en haut ou en bas), ne rien faire
-            if (newIndex === currentIndex) return;
+                setClients(newClients);
 
-            // Échanger les ordres entre les deux clients
-            const targetClient = sortedClients[newIndex];
-            const currentClient = sortedClients[currentIndex];
-
-            const currentOrder = currentClient.order || 0;
-            const targetOrder = targetClient.order || 0;
-
-            // Mettre à jour les ordres
-            const updatedClients = sortedClients.map((client) => {
-                if (client.id === clientId) {
-                    return { ...client, order: targetOrder };
-                } else if (client.id === targetClient.id) {
-                    return { ...client, order: currentOrder };
+                // Sauvegarder en base
+                try {
+                    await Promise.all(
+                        newClients.map((client) =>
+                            updateDoc(doc(db, 'clients', client.id!), { order: client.order }),
+                        ),
+                    );
+                    setStatusMessage({
+                        type: 'success',
+                        message: 'Ordre du client modifié avec succès',
+                    });
+                } catch (error) {
+                    console.error('Erreur lors de la réorganisation des clients:', error);
+                    setStatusMessage({
+                        type: 'error',
+                        message: 'Erreur lors de la réorganisation des clients',
+                    });
                 }
-                return client;
-            });
-
-            // Mettre à jour l'état local
-            setClients(updatedClients);
-
-            // Mettre à jour Firestore
-            if (currentClient.id) {
-                await updateDoc(doc(db, 'clients', currentClient.id), {
-                    order: targetOrder,
-                });
             }
-
-            if (targetClient.id) {
-                await updateDoc(doc(db, 'clients', targetClient.id), {
-                    order: currentOrder,
-                });
-            }
-
-            setStatusMessage({
-                type: 'success',
-                message: 'Ordre du client modifié avec succès',
-            });
-        } catch (error) {
-            console.error('Erreur lors de la réorganisation des clients:', error);
-            setStatusMessage({
-                type: 'error',
-                message: 'Erreur lors de la réorganisation des clients',
-            });
         }
     };
 
@@ -751,90 +867,6 @@ export default function HomeTabClients() {
         });
         setPreviewClientImage(null);
         setPreviewClientBgImage(null);
-    };
-
-    // Fonctions pour gérer le drag and drop des marques
-    const handleDragEndBrands = async (result: DropResult) => {
-        if (!result.destination) return;
-        if (result.destination.index === result.source.index) return;
-
-        const items = Array.from(brands);
-        const [reorderedItem] = items.splice(result.source.index, 1);
-        items.splice(result.destination.index, 0, reorderedItem);
-
-        // Mettre à jour les ordres
-        const updatedBrands = items.map((brand, index) => ({
-            ...brand,
-            order: index,
-        }));
-
-        setBrands(updatedBrands);
-
-        // Mettre à jour dans Firestore
-        try {
-            setUpdatingBrandOrder(true);
-            setStatusMessage({ type: 'success', message: "Mise à jour de l'ordre des marques..." });
-
-            for (const brand of updatedBrands) {
-                if (brand.id) {
-                    await updateDoc(doc(db, 'brands', brand.id), {
-                        order: brand.order,
-                    });
-                }
-            }
-
-            setStatusMessage({ type: 'success', message: 'Ordre des marques mis à jour' });
-        } catch (error) {
-            console.error("Erreur lors de la mise à jour de l'ordre des marques:", error);
-            setStatusMessage({
-                type: 'error',
-                message: "Erreur lors de la mise à jour de l'ordre des marques",
-            });
-        } finally {
-            setUpdatingBrandOrder(false);
-        }
-    };
-
-    // Fonctions pour gérer le drag and drop des clients
-    const handleDragEndClients = async (result: DropResult) => {
-        if (!result.destination) return;
-        if (result.destination.index === result.source.index) return;
-
-        const items = Array.from(clients);
-        const [reorderedItem] = items.splice(result.source.index, 1);
-        items.splice(result.destination.index, 0, reorderedItem);
-
-        // Mettre à jour les ordres
-        const updatedClients = items.map((client, index) => ({
-            ...client,
-            order: index,
-        }));
-
-        setClients(updatedClients);
-
-        // Mettre à jour dans Firestore
-        try {
-            setUpdatingClientOrder(true);
-            setStatusMessage({ type: 'success', message: "Mise à jour de l'ordre des clients..." });
-
-            for (const client of updatedClients) {
-                if (client.id) {
-                    await updateDoc(doc(db, 'clients', client.id), {
-                        order: client.order,
-                    });
-                }
-            }
-
-            setStatusMessage({ type: 'success', message: 'Ordre des clients mis à jour' });
-        } catch (error) {
-            console.error("Erreur lors de la mise à jour de l'ordre des clients:", error);
-            setStatusMessage({
-                type: 'error',
-                message: "Erreur lors de la mise à jour de l'ordre des clients",
-            });
-        } finally {
-            setUpdatingClientOrder(false);
-        }
     };
 
     return (
@@ -1018,218 +1050,56 @@ export default function HomeTabClients() {
                                     <Spinner />
                                 </div>
                             ) : (
-                                <div className="overflow-auto">
-                                    <DragDropContext onDragEnd={handleDragEndBrands}>
-                                        <Droppable droppableId="brands">
-                                            {(provided) => (
-                                                <table
-                                                    className="min-w-full divide-y divide-gray-200"
-                                                    {...provided.droppableProps}
-                                                    ref={provided.innerRef}
-                                                >
-                                                    <thead className="bg-gray-50">
-                                                        <tr>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Ordre
-                                                            </th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Nom
-                                                            </th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Logo
-                                                            </th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Lien
-                                                            </th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Actions
-                                                            </th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="bg-white divide-y divide-gray-200">
-                                                        {brands
-                                                            .sort(
-                                                                (a, b) =>
-                                                                    (a.order || 0) - (b.order || 0),
-                                                            )
-                                                            .map((brand, index) => (
-                                                                <Draggable
-                                                                    key={`brand-${index}`}
-                                                                    draggableId={`brand-${index}`}
-                                                                    index={index}
-                                                                >
-                                                                    {(provided, snapshot) => (
-                                                                        <tr
-                                                                            ref={provided.innerRef}
-                                                                            {...provided.draggableProps}
-                                                                            className={`${snapshot.isDragging ? 'bg-gray-100' : ''}`}
-                                                                        >
-                                                                            <td
-                                                                                className="px-6 py-4 whitespace-nowrap"
-                                                                                {...provided.dragHandleProps}
-                                                                            >
-                                                                                <div className="flex flex-col items-center">
-                                                                                    <button
-                                                                                        onClick={() =>
-                                                                                            handleReorderBrand(
-                                                                                                brand.id,
-                                                                                                'up',
-                                                                                            )
-                                                                                        }
-                                                                                        disabled={
-                                                                                            brand.order ===
-                                                                                                0 ||
-                                                                                            updatingBrandOrder
-                                                                                        }
-                                                                                        className={`text-gray-500 hover:text-gray-700 mb-1 ${
-                                                                                            brand.order ===
-                                                                                                0 ||
-                                                                                            updatingBrandOrder
-                                                                                                ? 'opacity-30 cursor-not-allowed'
-                                                                                                : ''
-                                                                                        }`}
-                                                                                    >
-                                                                                        <svg
-                                                                                            xmlns="http://www.w3.org/2000/svg"
-                                                                                            className="h-5 w-5"
-                                                                                            fill="none"
-                                                                                            viewBox="0 0 24 24"
-                                                                                            stroke="currentColor"
-                                                                                        >
-                                                                                            <path
-                                                                                                strokeLinecap="round"
-                                                                                                strokeLinejoin="round"
-                                                                                                strokeWidth={
-                                                                                                    2
-                                                                                                }
-                                                                                                d="M5 15l7-7 7 7"
-                                                                                            />
-                                                                                        </svg>
-                                                                                    </button>
-                                                                                    <span className="text-sm font-medium flex items-center">
-                                                                                        <svg
-                                                                                            className="h-5 w-5 text-gray-400 mr-1"
-                                                                                            fill="none"
-                                                                                            viewBox="0 0 24 24"
-                                                                                            stroke="currentColor"
-                                                                                        >
-                                                                                            <path
-                                                                                                strokeLinecap="round"
-                                                                                                strokeLinejoin="round"
-                                                                                                strokeWidth={
-                                                                                                    2
-                                                                                                }
-                                                                                                d="M4 8h16M4 16h16"
-                                                                                            />
-                                                                                        </svg>
-                                                                                        {brand.order !==
-                                                                                        undefined
-                                                                                            ? brand.order
-                                                                                            : '?'}
-                                                                                    </span>
-                                                                                    <button
-                                                                                        onClick={() =>
-                                                                                            handleReorderBrand(
-                                                                                                brand.id,
-                                                                                                'down',
-                                                                                            )
-                                                                                        }
-                                                                                        disabled={
-                                                                                            brand.order ===
-                                                                                                brands.length -
-                                                                                                    1 ||
-                                                                                            updatingBrandOrder
-                                                                                        }
-                                                                                        className={`text-gray-500 hover:text-gray-700 mt-1 ${
-                                                                                            brand.order ===
-                                                                                                brands.length -
-                                                                                                    1 ||
-                                                                                            updatingBrandOrder
-                                                                                                ? 'opacity-30 cursor-not-allowed'
-                                                                                                : ''
-                                                                                        }`}
-                                                                                    >
-                                                                                        <svg
-                                                                                            xmlns="http://www.w3.org/2000/svg"
-                                                                                            className="h-5 w-5"
-                                                                                            fill="none"
-                                                                                            viewBox="0 0 24 24"
-                                                                                            stroke="currentColor"
-                                                                                        >
-                                                                                            <path
-                                                                                                strokeLinecap="round"
-                                                                                                strokeLinejoin="round"
-                                                                                                strokeWidth={
-                                                                                                    2
-                                                                                                }
-                                                                                                d="M19 9l-7 7-7-7"
-                                                                                            />
-                                                                                        </svg>
-                                                                                    </button>
-                                                                                </div>
-                                                                            </td>
-                                                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                                                {brand.name}
-                                                                            </td>
-                                                                            <td className="px-6 py-4">
-                                                                                <div className="h-10 w-24 relative bg-gray-200 rounded-md">
-                                                                                    <Image
-                                                                                        src={getMediaUrl(
-                                                                                            brand.imageSrc,
-                                                                                        )}
-                                                                                        alt={
-                                                                                            brand.name
-                                                                                        }
-                                                                                        fill
-                                                                                        className="object-contain"
-                                                                                    />
-                                                                                </div>
-                                                                            </td>
-                                                                            <td className="px-6 py-4">
-                                                                                <div className="max-w-xs truncate">
-                                                                                    {brand.href}
-                                                                                </div>
-                                                                            </td>
-                                                                            <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() =>
-                                                                                        handleEditBrand(
-                                                                                            brand,
-                                                                                        )
-                                                                                    }
-                                                                                    className="text-indigo-600 hover:text-indigo-900"
-                                                                                >
-                                                                                    Modifier
-                                                                                </button>
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() =>
-                                                                                        handleDeleteBrand(
-                                                                                            brand,
-                                                                                        )
-                                                                                    }
-                                                                                    className="text-red-600 hover:text-red-900"
-                                                                                >
-                                                                                    Supprimer
-                                                                                </button>
-                                                                            </td>
-                                                                        </tr>
-                                                                    )}
-                                                                </Draggable>
-                                                            ))}
-                                                        {provided.placeholder}
-                                                    </tbody>
-                                                </table>
-                                            )}
-                                        </Droppable>
-                                    </DragDropContext>
-                                    {updatingBrandOrder && (
-                                        <div className="flex justify-center py-2">
-                                            <Spinner small />
-                                        </div>
-                                    )}
-                                </div>
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleBrandDragEnd}
+                                >
+                                    <div className="overflow-auto">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-gray-50">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                                                        Ordre
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Nom
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Logo
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Lien
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Actions
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <SortableContext
+                                                items={brands.map((brand) => brand.id!)}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                <tbody className="bg-white divide-y divide-gray-200">
+                                                    {brands
+                                                        .sort(
+                                                            (a, b) =>
+                                                                (a.order || 0) - (b.order || 0),
+                                                        )
+                                                        .map((brand, index) => (
+                                                            <SortableBrandRow
+                                                                key={brand.id}
+                                                                brand={brand}
+                                                                index={index}
+                                                                onEdit={handleEditBrand}
+                                                                onDelete={handleDeleteBrand}
+                                                            />
+                                                        ))}
+                                                </tbody>
+                                            </SortableContext>
+                                        </table>
+                                    </div>
+                                </DndContext>
                             )}
                         </div>
                     </>
@@ -1448,231 +1318,53 @@ export default function HomeTabClients() {
                                     <Spinner />
                                 </div>
                             ) : (
-                                <div className="overflow-auto">
-                                    <DragDropContext onDragEnd={handleDragEndClients}>
-                                        <Droppable droppableId="clients">
-                                            {(provided) => (
-                                                <table
-                                                    className="min-w-full divide-y divide-gray-200"
-                                                    {...provided.droppableProps}
-                                                    ref={provided.innerRef}
-                                                >
-                                                    <thead className="bg-gray-50">
-                                                        <tr>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Ordre
-                                                            </th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Nom
-                                                            </th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Domaine
-                                                            </th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Photo
-                                                            </th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Arrière-plan
-                                                            </th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                Actions
-                                                            </th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="bg-white divide-y divide-gray-200">
-                                                        {clients
-                                                            .sort(
-                                                                (a, b) =>
-                                                                    (a.order || 0) - (b.order || 0),
-                                                            )
-                                                            .map((client, index) => (
-                                                                <Draggable
-                                                                    key={`client-${index}`}
-                                                                    draggableId={`client-${index}`}
-                                                                    index={index}
-                                                                >
-                                                                    {(provided, snapshot) => (
-                                                                        <tr
-                                                                            ref={provided.innerRef}
-                                                                            {...provided.draggableProps}
-                                                                            className={`${snapshot.isDragging ? 'bg-gray-100' : ''}`}
-                                                                        >
-                                                                            <td
-                                                                                className="px-6 py-4 whitespace-nowrap"
-                                                                                {...provided.dragHandleProps}
-                                                                            >
-                                                                                <div className="flex flex-col items-center">
-                                                                                    <button
-                                                                                        onClick={() =>
-                                                                                            handleReorderClient(
-                                                                                                client.id,
-                                                                                                'up',
-                                                                                            )
-                                                                                        }
-                                                                                        disabled={
-                                                                                            client.order ===
-                                                                                                0 ||
-                                                                                            updatingClientOrder
-                                                                                        }
-                                                                                        className={`text-gray-500 hover:text-gray-700 mb-1 ${
-                                                                                            client.order ===
-                                                                                                0 ||
-                                                                                            updatingClientOrder
-                                                                                                ? 'opacity-30 cursor-not-allowed'
-                                                                                                : ''
-                                                                                        }`}
-                                                                                    >
-                                                                                        <svg
-                                                                                            xmlns="http://www.w3.org/2000/svg"
-                                                                                            className="h-5 w-5"
-                                                                                            fill="none"
-                                                                                            viewBox="0 0 24 24"
-                                                                                            stroke="currentColor"
-                                                                                        >
-                                                                                            <path
-                                                                                                strokeLinecap="round"
-                                                                                                strokeLinejoin="round"
-                                                                                                strokeWidth={
-                                                                                                    2
-                                                                                                }
-                                                                                                d="M5 15l7-7 7 7"
-                                                                                            />
-                                                                                        </svg>
-                                                                                    </button>
-                                                                                    <span className="text-sm font-medium flex items-center">
-                                                                                        <svg
-                                                                                            className="h-5 w-5 text-gray-400 mr-1"
-                                                                                            fill="none"
-                                                                                            viewBox="0 0 24 24"
-                                                                                            stroke="currentColor"
-                                                                                        >
-                                                                                            <path
-                                                                                                strokeLinecap="round"
-                                                                                                strokeLinejoin="round"
-                                                                                                strokeWidth={
-                                                                                                    2
-                                                                                                }
-                                                                                                d="M4 8h16M4 16h16"
-                                                                                            />
-                                                                                        </svg>
-                                                                                        {client.order !==
-                                                                                        undefined
-                                                                                            ? client.order
-                                                                                            : '?'}
-                                                                                    </span>
-                                                                                    <button
-                                                                                        onClick={() =>
-                                                                                            handleReorderClient(
-                                                                                                client.id,
-                                                                                                'down',
-                                                                                            )
-                                                                                        }
-                                                                                        disabled={
-                                                                                            client.order ===
-                                                                                                clients.length -
-                                                                                                    1 ||
-                                                                                            updatingClientOrder
-                                                                                        }
-                                                                                        className={`text-gray-500 hover:text-gray-700 mt-1 ${
-                                                                                            client.order ===
-                                                                                                clients.length -
-                                                                                                    1 ||
-                                                                                            updatingClientOrder
-                                                                                                ? 'opacity-30 cursor-not-allowed'
-                                                                                                : ''
-                                                                                        }`}
-                                                                                    >
-                                                                                        <svg
-                                                                                            xmlns="http://www.w3.org/2000/svg"
-                                                                                            className="h-5 w-5"
-                                                                                            fill="none"
-                                                                                            viewBox="0 0 24 24"
-                                                                                            stroke="currentColor"
-                                                                                        >
-                                                                                            <path
-                                                                                                strokeLinecap="round"
-                                                                                                strokeLinejoin="round"
-                                                                                                strokeWidth={
-                                                                                                    2
-                                                                                                }
-                                                                                                d="M19 9l-7 7-7-7"
-                                                                                            />
-                                                                                        </svg>
-                                                                                    </button>
-                                                                                </div>
-                                                                            </td>
-                                                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                                                {client.name}
-                                                                            </td>
-                                                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                                                {client.domain}
-                                                                            </td>
-                                                                            <td className="px-6 py-4">
-                                                                                <div className="h-12 w-12 relative">
-                                                                                    <Image
-                                                                                        src={getMediaUrl(
-                                                                                            client.imageSrc,
-                                                                                        )}
-                                                                                        alt={
-                                                                                            client.name
-                                                                                        }
-                                                                                        fill
-                                                                                        className="object-cover rounded-full"
-                                                                                    />
-                                                                                </div>
-                                                                            </td>
-                                                                            <td className="px-6 py-4">
-                                                                                <div className="h-12 w-24 relative">
-                                                                                    <Image
-                                                                                        src={getMediaUrl(
-                                                                                            client.imageBackground,
-                                                                                        )}
-                                                                                        alt={`${client.name} background`}
-                                                                                        fill
-                                                                                        className="object-cover rounded-md"
-                                                                                    />
-                                                                                </div>
-                                                                            </td>
-                                                                            <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() =>
-                                                                                        handleEditClient(
-                                                                                            client,
-                                                                                        )
-                                                                                    }
-                                                                                    className="text-indigo-600 hover:text-indigo-900"
-                                                                                >
-                                                                                    Modifier
-                                                                                </button>
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() =>
-                                                                                        handleDeleteClient(
-                                                                                            client,
-                                                                                        )
-                                                                                    }
-                                                                                    className="text-red-600 hover:text-red-900"
-                                                                                >
-                                                                                    Supprimer
-                                                                                </button>
-                                                                            </td>
-                                                                        </tr>
-                                                                    )}
-                                                                </Draggable>
-                                                            ))}
-                                                        {provided.placeholder}
-                                                    </tbody>
-                                                </table>
-                                            )}
-                                        </Droppable>
-                                    </DragDropContext>
-                                    {updatingClientOrder && (
-                                        <div className="flex justify-center py-2">
-                                            <Spinner small />
-                                        </div>
-                                    )}
-                                </div>
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleClientDragEnd}
+                                >
+                                    <div className="overflow-auto">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-gray-50">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                                                        Ordre
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Client
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Arrière-plan
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Actions
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <SortableContext
+                                                items={clients.map((client) => client.id!)}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                <tbody className="bg-white divide-y divide-gray-200">
+                                                    {clients
+                                                        .sort(
+                                                            (a, b) =>
+                                                                (a.order || 0) - (b.order || 0),
+                                                        )
+                                                        .map((client, index) => (
+                                                            <SortableClientRow
+                                                                key={client.id}
+                                                                client={client}
+                                                                index={index}
+                                                                onEdit={handleEditClient}
+                                                                onDelete={handleDeleteClient}
+                                                            />
+                                                        ))}
+                                                </tbody>
+                                            </SortableContext>
+                                        </table>
+                                    </div>
+                                </DndContext>
                             )}
                         </div>
                     </>

@@ -1,5 +1,22 @@
 'use client';
 
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { collection, doc, getDocs, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -53,6 +70,169 @@ export interface MediaStats {
     averageLoadTime: number;
     imagesSize: number;
     videosSize: number;
+}
+
+// Composant pour chaque ligne sortable
+interface SortableRowProps {
+    media: RealisationMedia;
+    onEdit: (media: RealisationMedia) => void;
+    onDelete: (id: string) => void;
+    formatSize: (size: number) => string;
+    getMediaUrl: (path: string) => string;
+}
+
+function SortableRow({ media, onEdit, onDelete, formatSize, getMediaUrl }: SortableRowProps) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+        id: media.id,
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <tr
+            ref={setNodeRef}
+            style={style}
+            className={`${isDragging ? 'bg-gray-50 shadow-lg z-10' : ''} hover:bg-gray-50 transition-colors`}
+        >
+            {/* Poignée de drag */}
+            <td className="px-3 py-4 whitespace-nowrap">
+                <div
+                    {...attributes}
+                    {...listeners}
+                    className="flex items-center justify-center cursor-grab active:cursor-grabbing p-2 rounded hover:bg-gray-100 transition-colors"
+                    title="Glisser pour réorganiser"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 8h16M4 16h16"
+                        />
+                    </svg>
+                </div>
+            </td>
+
+            {/* Aperçu */}
+            <td className="px-3 py-4 whitespace-nowrap">
+                <div className="w-20 h-12 relative rounded overflow-hidden">
+                    {media.isVideo ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black">
+                            {media.thumbnail ? (
+                                <Image
+                                    src={getMediaUrl(media.thumbnail)}
+                                    alt={media.title || 'Miniature vidéo'}
+                                    fill
+                                    className="object-cover"
+                                />
+                            ) : (
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-8 w-8 text-white"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={1}
+                                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                    />
+                                </svg>
+                            )}
+                        </div>
+                    ) : (
+                        <Image
+                            src={getMediaUrl(media.path)}
+                            alt={media.title || 'Image'}
+                            fill
+                            className="object-cover"
+                        />
+                    )}
+                </div>
+            </td>
+
+            {/* Type */}
+            <td className="px-3 py-4 whitespace-nowrap">
+                <div className="flex flex-col space-y-1">
+                    <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            media.isVideo
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-green-100 text-green-800'
+                        }`}
+                    >
+                        {media.isVideo ? 'Vidéo' : 'Image'}
+                    </span>
+                </div>
+            </td>
+
+            {/* Titre */}
+            <td className="px-3 py-4 whitespace-nowrap">
+                <div className="max-w-[200px] truncate" title={media.title || 'Sans titre'}>
+                    {media.title || 'Sans titre'}
+                </div>
+            </td>
+
+            {/* Format */}
+            <td className="px-3 py-4 whitespace-nowrap">
+                <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        media.format === 'portrait'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                    }`}
+                >
+                    {media.format === 'portrait' ? 'Portrait' : 'Paysage'}
+                </span>
+            </td>
+
+            {/* Poids */}
+            <td className="px-3 py-4 whitespace-nowrap">{formatSize(media.size || 0)}</td>
+
+            {/* Catégorie */}
+            <td className="px-3 py-4 whitespace-nowrap">
+                <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        media.category
+                            ? 'bg-indigo-100 text-indigo-800'
+                            : 'bg-gray-100 text-gray-800'
+                    }`}
+                >
+                    {media.category || 'Non catégorisé'}
+                </span>
+            </td>
+
+            {/* Actions */}
+            <td className="px-3 py-4 whitespace-nowrap">
+                <div className="flex space-x-2">
+                    <button
+                        onClick={() => onEdit(media)}
+                        className="text-indigo-600 hover:text-indigo-900 font-medium"
+                    >
+                        Modifier
+                    </button>
+                    <button
+                        onClick={() => onDelete(media.id)}
+                        className="text-red-600 hover:text-red-900 font-medium"
+                    >
+                        Supprimer
+                    </button>
+                </div>
+            </td>
+        </tr>
+    );
 }
 
 export default function RealisationsMediaManager({
@@ -662,50 +842,62 @@ export default function RealisationsMediaManager({
         }
     };
 
-    // Réorganiser l'ordre
-    const handleReorder = async (mediaId: string, direction: 'up' | 'down') => {
-        try {
+    // Capteurs pour le drag and drop
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
+    );
+
+    // Gestion du drag and drop
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (over && active.id !== over.id) {
             const sortedMedias = [...medias].sort((a, b) => (a.order || 0) - (b.order || 0));
-            const currentIndex = sortedMedias.findIndex((m) => m.id === mediaId);
-            if (currentIndex === -1) return;
+            const oldIndex = sortedMedias.findIndex((media) => media.id === active.id);
+            const newIndex = sortedMedias.findIndex((media) => media.id === over.id);
 
-            const newIndex =
-                direction === 'up'
-                    ? Math.max(0, currentIndex - 1)
-                    : Math.min(sortedMedias.length - 1, currentIndex + 1);
+            if (oldIndex !== -1 && newIndex !== -1) {
+                const newOrder = arrayMove(sortedMedias, oldIndex, newIndex);
 
-            if (newIndex === currentIndex) return;
+                // Mettre à jour immédiatement l'affichage
+                const updatedMedias = newOrder.map((media, index) => ({
+                    ...media,
+                    order: index,
+                }));
+                setMedias(updatedMedias);
 
-            const targetMedia = sortedMedias[newIndex];
-            const currentMedia = sortedMedias[currentIndex];
+                try {
+                    // Mettre à jour en base de données
+                    const updatePromises = updatedMedias.map((media) => {
+                        const collectionName = media.isVideo
+                            ? 'realisations-videos'
+                            : 'realisations-photos';
+                        return updateDoc(doc(db, collectionName, media.id), { order: media.order });
+                    });
 
-            const currentOrder = currentMedia.order || 0;
-            const targetOrder = targetMedia.order || 0;
+                    await Promise.all(updatePromises);
 
-            // Mettre à jour dans Firestore
-            const currentCollectionName = currentMedia.isVideo
-                ? 'realisations-videos'
-                : 'realisations-photos';
-            const targetCollectionName = targetMedia.isVideo
-                ? 'realisations-videos'
-                : 'realisations-photos';
-
-            await Promise.all([
-                updateDoc(doc(db, currentCollectionName, currentMedia.id), { order: targetOrder }),
-                updateDoc(doc(db, targetCollectionName, targetMedia.id), { order: currentOrder }),
-            ]);
-
-            await loadMedias();
-            onStatusChange?.({
-                type: 'success',
-                message: 'Ordre modifié avec succès',
-            });
-        } catch (error) {
-            console.error('Erreur lors de la réorganisation:', error);
-            onStatusChange?.({
-                type: 'error',
-                message: 'Erreur lors de la réorganisation',
-            });
+                    onStatusChange?.({
+                        type: 'success',
+                        message: 'Ordre des médias mis à jour avec succès',
+                    });
+                } catch (error) {
+                    console.error("Erreur lors de la mise à jour de l'ordre:", error);
+                    onStatusChange?.({
+                        type: 'error',
+                        message: "Erreur lors de la mise à jour de l'ordre",
+                    });
+                    // Revenir à l'ordre précédent en cas d'erreur
+                    await loadMedias();
+                }
+            }
         }
     };
 
@@ -1048,7 +1240,7 @@ export default function RealisationsMediaManager({
                 )}
             </div>
 
-            {/* Tableau des médias */}
+            {/* Tableau des médias avec drag and drop */}
             <div>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-medium">Gestion des médias ({medias.length})</h3>
@@ -1081,8 +1273,10 @@ export default function RealisationsMediaManager({
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th scope="col" className="w-12 px-3 py-3">
-                                    Ordre
+                                <th scope="col" className="w-16 px-3 py-3 text-center">
+                                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Ordre
+                                    </span>
                                 </th>
                                 <th
                                     scope="col"
@@ -1130,149 +1324,29 @@ export default function RealisationsMediaManager({
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {medias.length > 0 ? (
-                                medias.map((media) => (
-                                    <tr key={media.id}>
-                                        <td className="px-3 py-4 whitespace-nowrap">
-                                            <div className="flex flex-col items-center">
-                                                <button
-                                                    onClick={() => handleReorder(media.id, 'up')}
-                                                    disabled={media.order === 0}
-                                                    className={`text-gray-500 hover:text-gray-700 mb-1 ${media.order === 0 ? 'opacity-30 cursor-not-allowed' : ''}`}
-                                                >
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        className="h-5 w-5"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M5 15l7-7 7 7"
-                                                        />
-                                                    </svg>
-                                                </button>
-                                                <span className="text-sm font-medium">
-                                                    {media.order}
-                                                </span>
-                                                <button
-                                                    onClick={() => handleReorder(media.id, 'down')}
-                                                    disabled={media.order === medias.length - 1}
-                                                    className={`text-gray-500 hover:text-gray-700 mt-1 ${media.order === medias.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
-                                                >
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        className="h-5 w-5"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M19 9l-7 7-7-7"
-                                                        />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-4 whitespace-nowrap">
-                                            <div className="w-20 h-12 relative rounded overflow-hidden">
-                                                {media.isVideo ? (
-                                                    <div className="absolute inset-0 flex items-center justify-center bg-black">
-                                                        {media.thumbnail ? (
-                                                            <Image
-                                                                src={getMediaUrl(media.thumbnail)}
-                                                                alt={
-                                                                    media.title || 'Miniature vidéo'
-                                                                }
-                                                                fill
-                                                                className="object-cover"
-                                                            />
-                                                        ) : (
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                className="h-8 w-8 text-white"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth={1}
-                                                                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                                                                />
-                                                            </svg>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <Image
-                                                        src={getMediaUrl(media.path)}
-                                                        alt={media.title || 'Image'}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-4 whitespace-nowrap">
-                                            <div className="flex flex-col space-y-1">
-                                                <span
-                                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${media.isVideo ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}
-                                                >
-                                                    {media.isVideo ? 'Vidéo' : 'Image'}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-4 whitespace-nowrap">
-                                            <div
-                                                className="max-w-[200px] truncate"
-                                                title={media.title || 'Sans titre'}
-                                            >
-                                                {media.title || 'Sans titre'}
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-4 whitespace-nowrap">
-                                            <span
-                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${media.format === 'portrait' ? 'bg-purple-100 text-purple-800' : 'bg-yellow-100 text-yellow-800'}`}
-                                            >
-                                                {media.format === 'portrait'
-                                                    ? 'Portrait'
-                                                    : 'Paysage'}
-                                            </span>
-                                        </td>
-                                        <td className="px-3 py-4 whitespace-nowrap">
-                                            {formatSize(media.size || 0)}
-                                        </td>
-                                        <td className="px-3 py-4 whitespace-nowrap">
-                                            <span
-                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${media.category ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800'}`}
-                                            >
-                                                {media.category || 'Non catégorisé'}
-                                            </span>
-                                        </td>
-                                        <td className="px-3 py-4 whitespace-nowrap">
-                                            <div className="flex space-x-2">
-                                                <button
-                                                    onClick={() => handleEditWithNewForm(media)}
-                                                    className="text-indigo-600 hover:text-indigo-900"
-                                                >
-                                                    Modifier
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteMedia(media.id)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                >
-                                                    Supprimer
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleDragEnd}
+                                >
+                                    <SortableContext
+                                        items={medias.map((m) => m.id)}
+                                        strategy={verticalListSortingStrategy}
+                                    >
+                                        {medias
+                                            .sort((a, b) => (a.order || 0) - (b.order || 0))
+                                            .map((media) => (
+                                                <SortableRow
+                                                    key={media.id}
+                                                    media={media}
+                                                    onEdit={handleEditWithNewForm}
+                                                    onDelete={handleDeleteMedia}
+                                                    formatSize={formatSize}
+                                                    getMediaUrl={getMediaUrl}
+                                                />
+                                            ))}
+                                    </SortableContext>
+                                </DndContext>
                             ) : (
                                 <tr>
                                     <td colSpan={8} className="px-6 py-10 text-center">

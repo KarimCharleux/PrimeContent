@@ -17,7 +17,49 @@
 - **UI Components**: Radix UI + shadcn/ui
 - **Animations**: Framer Motion + GSAP
 - **Base de données**: Firebase Firestore
-- **Déploiement**: O2Switch
+- **Déploiement**: Hostinger VPS avec déploiement automatique
+
+### 🚀 Déploiement & Production
+
+#### **Infrastructure VPS**
+- **Serveur**: srv910965.hstgr.cloud (IP: 82.29.173.124)
+- **Domaine principal**: dalifilms.fr
+- **Sous-domaine médias**: media.dalifilms.fr
+- **Reverse proxy**: Nginx avec SSL (Certbot)
+- **Process manager**: PM2 (app: "dalifilms")
+- **Environnement**: Node.js production
+
+#### **Processus de Déploiement Automatique**
+1. **Push sur master** → GitHub Actions se déclenche automatiquement
+2. **Build sur GitHub Actions**: 
+   - Installation des dépendances
+   - Construction Next.js optimisée (`npm run build`)
+   - Résolution Sharp pour compatibilité Linux
+3. **Déploiement via rsync**: 
+   - Transfer sécurisé du dossier `.next/` compilé
+   - Envoi des fichiers de configuration (package.json, server.js, etc.)
+4. **Mise à jour serveur**: 
+   - Installation des dépendances production uniquement
+   - Redémarrage PM2 automatique
+   - Vérification de santé de l'application
+
+#### **Structure Production** (`/var/www/PrimeContent/`)
+```
+├── .env                    # Variables d'environnement
+├── .next/                  # Build Next.js (depuis GitHub Actions)
+├── ecosystem.config.js     # Configuration PM2
+├── next.config.mjs         # Configuration Next.js
+├── node_modules/           # Dépendances production uniquement
+├── package.json            # Métadonnées et scripts
+├── public/                 # Assets statiques
+└── server.js              # Serveur Express personnalisé
+```
+
+#### **Médias & Assets**
+- **Stockage**: `/var/www/PrimeContentMedia/`
+- **Accès public**: https://media.dalifilms.fr/uploads/
+- **Permissions**: www-data:www-data (nginx user)
+- **Upload**: Via API routes Next.js avec validation côté serveur
 
 ### Architecture Client/Admin
 Le projet est divisé en deux parties distinctes :

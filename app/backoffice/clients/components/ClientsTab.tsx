@@ -1,10 +1,27 @@
 'use client';
 
+// Imports pour drag and drop
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    rectSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { useForm } from 'react-hook-form';
 
 import { getMediaUrl } from '../../../utils/mediaUrl';
@@ -31,6 +48,226 @@ interface ClientsTabProps {
     activeTab: 'brands' | 'clients';
 }
 
+// Composant pour une carte de marque triable
+function SortableBrandCard({
+    brand,
+    onEdit,
+    onDelete,
+    onManageMedia,
+}: {
+    brand: Brand;
+    onEdit: (brand: Brand) => void;
+    onDelete: (brand: Brand) => void;
+    onManageMedia: (type: 'brand', brand: Brand) => void;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+        id: brand.id!,
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden"
+        >
+            <div className="aspect-w-16 aspect-h-9 bg-gray-200">
+                <div className="relative h-32 bg-gray-700 flex items-center justify-center">
+                    <Image
+                        src={getMediaUrl(brand.imageSrc)}
+                        alt={brand.name}
+                        fill
+                        className="object-contain"
+                    />
+                </div>
+            </div>
+            <div className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-900">{brand.name}</h4>
+                    <button
+                        {...attributes}
+                        {...listeners}
+                        className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing text-lg"
+                        title="Glisser pour réorganiser"
+                    >
+                        ☰
+                    </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        type="button"
+                        onClick={() => onManageMedia('brand', brand)}
+                        className="flex-1 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium"
+                    >
+                        📁 Médias
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onEdit(brand)}
+                        className="px-3 py-2 bg-gray-50 text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
+                        title="Modifier"
+                    >
+                        <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
+                        </svg>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onDelete(brand)}
+                        className="px-3 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors"
+                        title="Supprimer"
+                    >
+                        <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Composant pour une carte de client triable
+function SortableClientCard({
+    client,
+    onEdit,
+    onDelete,
+    onManageMedia,
+}: {
+    client: Client;
+    onEdit: (client: Client) => void;
+    onDelete: (client: Client) => void;
+    onManageMedia: (type: 'client', client: Client) => void;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+        id: client.id!,
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden"
+        >
+            <div
+                className="relative h-48 bg-gray-700 flex items-center justify-center"
+                style={{
+                    backgroundImage: client.imageBackground
+                        ? `url(${getMediaUrl(client.imageBackground)})`
+                        : 'none',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                }}
+            >
+                <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+                <div className="relative z-10 text-center">
+                    <div className="relative w-16 h-16 mx-auto mb-2">
+                        <Image
+                            src={getMediaUrl(client.imageSrc)}
+                            alt={client.name}
+                            fill
+                            className="object-contain"
+                        />
+                    </div>
+                    <p className="text-white font-medium">{client.name}</p>
+                    <p className="text-gray-300 text-sm">{client.domain}</p>
+                </div>
+            </div>
+            <div className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-900">{client.name}</h4>
+                    <button
+                        {...attributes}
+                        {...listeners}
+                        className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing text-lg"
+                        title="Glisser pour réorganiser"
+                    >
+                        ☰
+                    </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        type="button"
+                        onClick={() => onManageMedia('client', client)}
+                        className="flex-1 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium"
+                    >
+                        📁 Médias
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onEdit(client)}
+                        className="px-3 py-2 bg-gray-50 text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
+                        title="Modifier"
+                    >
+                        <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
+                        </svg>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onDelete(client)}
+                        className="px-3 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors"
+                        title="Supprimer"
+                    >
+                        <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function ClientsTab({ activeTab }: ClientsTabProps) {
     const router = useRouter();
 
@@ -54,6 +291,14 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
         type: 'success' | 'error';
         message: string;
     } | null>(null);
+
+    // Configuration pour le drag and drop
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
+    );
 
     // États de visibilité des formulaires
     const [showBrandForm, setShowBrandForm] = useState(false);
@@ -422,6 +667,42 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
         setPreviewBrandImage(null);
     };
 
+    // Gérer la fin du drag and drop pour les marques
+    const handleBrandDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (over && active.id !== over.id) {
+            const oldIndex = brands.findIndex((brand) => brand.id === active.id);
+            const newIndex = brands.findIndex((brand) => brand.id === over.id);
+
+            if (oldIndex !== -1 && newIndex !== -1) {
+                const newBrands = arrayMove(brands, oldIndex, newIndex);
+
+                // Mettre à jour les ordres
+                newBrands.forEach((brand, idx) => {
+                    brand.order = idx;
+                });
+
+                setBrands(newBrands);
+
+                // Sauvegarder en base
+                try {
+                    await Promise.all(
+                        newBrands.map((brand) =>
+                            updateDoc(doc(db, 'brands', brand.id!), { order: brand.order }),
+                        ),
+                    );
+                } catch (error) {
+                    console.error('Erreur lors de la réorganisation des marques:', error);
+                    setStatusMessage({
+                        type: 'error',
+                        message: 'Erreur lors de la réorganisation des marques',
+                    });
+                }
+            }
+        }
+    };
+
     // Soumission du formulaire de client
     const onSubmitClient = async (data: Client) => {
         setSavingClient(true);
@@ -537,6 +818,42 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
         });
         setPreviewClientImage(null);
         setPreviewClientBgImage(null);
+    };
+
+    // Gérer la fin du drag and drop pour les clients
+    const handleClientDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (over && active.id !== over.id) {
+            const oldIndex = clients.findIndex((client) => client.id === active.id);
+            const newIndex = clients.findIndex((client) => client.id === over.id);
+
+            if (oldIndex !== -1 && newIndex !== -1) {
+                const newClients = arrayMove(clients, oldIndex, newIndex);
+
+                // Mettre à jour les ordres
+                newClients.forEach((client, idx) => {
+                    client.order = idx;
+                });
+
+                setClients(newClients);
+
+                // Sauvegarder en base
+                try {
+                    await Promise.all(
+                        newClients.map((client) =>
+                            updateDoc(doc(db, 'clients', client.id!), { order: client.order }),
+                        ),
+                    );
+                } catch (error) {
+                    console.error('Erreur lors de la réorganisation des clients:', error);
+                    setStatusMessage({
+                        type: 'error',
+                        message: 'Erreur lors de la réorganisation des clients',
+                    });
+                }
+            }
+        }
     };
 
     return (
@@ -735,81 +1052,28 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                                     </p>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {brands.map((brand) => (
-                                        <div
-                                            key={brand.id}
-                                            className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden"
-                                        >
-                                            <div className="aspect-w-16 aspect-h-9 bg-gray-200">
-                                                <div className="relative h-32 bg-gray-700 flex items-center justify-center">
-                                                    <Image
-                                                        src={getMediaUrl(brand.imageSrc)}
-                                                        alt={brand.name}
-                                                        fill
-                                                        className="object-contain"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="p-4">
-                                                <h4 className="font-medium text-gray-900 mb-3">
-                                                    {brand.name}
-                                                </h4>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handleManageMedia('brand', brand)
-                                                        }
-                                                        className="flex-1 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium"
-                                                    >
-                                                        📁 Médias
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleEditBrand(brand)}
-                                                        className="px-3 py-2 bg-gray-50 text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
-                                                        title="Modifier"
-                                                    >
-                                                        <svg
-                                                            className="h-4 w-4"
-                                                            fill="none"
-                                                            viewBox="0 0 24 24"
-                                                            stroke="currentColor"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                            />
-                                                        </svg>
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleDeleteBrand(brand)}
-                                                        className="px-3 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors"
-                                                        title="Supprimer"
-                                                    >
-                                                        <svg
-                                                            className="h-4 w-4"
-                                                            fill="none"
-                                                            viewBox="0 0 24 24"
-                                                            stroke="currentColor"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                            />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </div>
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleBrandDragEnd}
+                                >
+                                    <SortableContext
+                                        items={brands.map((brand) => brand.id!)}
+                                        strategy={rectSortingStrategy}
+                                    >
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {brands.map((brand) => (
+                                                <SortableBrandCard
+                                                    key={brand.id}
+                                                    brand={brand}
+                                                    onEdit={handleEditBrand}
+                                                    onDelete={handleDeleteBrand}
+                                                    onManageMedia={handleManageMedia}
+                                                />
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
+                                    </SortableContext>
+                                </DndContext>
                             )}
                         </div>
                     </>
@@ -1069,93 +1333,28 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                                     </p>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {clients.map((client) => (
-                                        <div
-                                            key={client.id}
-                                            className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden"
-                                        >
-                                            <div className="relative h-32 bg-gray-200">
-                                                <Image
-                                                    src={getMediaUrl(client.imageBackground)}
-                                                    alt={`${client.name} background`}
-                                                    fill
-                                                    className="object-cover"
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleClientDragEnd}
+                                >
+                                    <SortableContext
+                                        items={clients.map((client) => client.id!)}
+                                        strategy={rectSortingStrategy}
+                                    >
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {clients.map((client) => (
+                                                <SortableClientCard
+                                                    key={client.id}
+                                                    client={client}
+                                                    onEdit={handleEditClient}
+                                                    onDelete={handleDeleteClient}
+                                                    onManageMedia={handleManageMedia}
                                                 />
-                                                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-                                                <div className="absolute bottom-4 left-4">
-                                                    <div className="h-12 w-12 relative">
-                                                        <Image
-                                                            src={getMediaUrl(client.imageSrc)}
-                                                            alt={client.name}
-                                                            fill
-                                                            className="object-cover rounded-full border-2 border-white"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="p-4">
-                                                <h4 className="font-medium text-gray-900 mb-1">
-                                                    {client.name}
-                                                </h4>
-                                                <p className="text-sm text-gray-500 mb-3">
-                                                    {client.domain}
-                                                </p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handleManageMedia('client', client)
-                                                        }
-                                                        className="flex-1 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium"
-                                                    >
-                                                        📁 Médias
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleEditClient(client)}
-                                                        className="px-3 py-2 bg-gray-50 text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
-                                                        title="Modifier"
-                                                    >
-                                                        <svg
-                                                            className="h-4 w-4"
-                                                            fill="none"
-                                                            viewBox="0 0 24 24"
-                                                            stroke="currentColor"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                            />
-                                                        </svg>
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleDeleteClient(client)}
-                                                        className="px-3 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors"
-                                                        title="Supprimer"
-                                                    >
-                                                        <svg
-                                                            className="h-4 w-4"
-                                                            fill="none"
-                                                            viewBox="0 0 24 24"
-                                                            stroke="currentColor"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                            />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
+                                    </SortableContext>
+                                </DndContext>
                             )}
                         </div>
                     </>

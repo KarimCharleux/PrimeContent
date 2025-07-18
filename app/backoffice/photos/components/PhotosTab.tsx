@@ -1,5 +1,23 @@
 'use client';
 
+// Imports pour drag and drop
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
     collection,
     deleteDoc,
@@ -36,6 +54,70 @@ interface PhotosTabProps {
     onStatusChange?: (status: { type: 'success' | 'error'; message: string } | null) => void;
 }
 
+// Composant pour une ligne triable du tableau
+function SortableRow({
+    photo,
+    onEdit,
+    onDelete,
+}: {
+    photo: Photo;
+    onEdit: (photo: Photo) => void;
+    onDelete: (id: string) => void;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+        id: photo.id!,
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <tr ref={setNodeRef} style={style} className="bg-white hover:bg-gray-50">
+            <td className="px-6 py-4 whitespace-nowrap text-center w-20">
+                <button
+                    {...attributes}
+                    {...listeners}
+                    className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing text-lg"
+                    title="Glisser pour réorganiser"
+                >
+                    ☰
+                </button>
+            </td>
+            <td className="px-6 py-4">
+                <div className="h-16 w-16 relative overflow-hidden rounded">
+                    <Image
+                        src={getMediaUrl(photo.source)}
+                        alt={photo.title || 'Photo sans titre'}
+                        fill
+                        className="object-cover"
+                    />
+                </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                {photo.title || <span className="text-gray-400 italic">Sans titre</span>}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">{photo.category}</td>
+            <td className="px-6 py-4 whitespace-nowrap">{photo.format}</td>
+            <td className="px-6 py-4 whitespace-nowrap space-x-2">
+                <button
+                    onClick={() => onEdit(photo)}
+                    className="text-indigo-600 hover:text-indigo-900"
+                >
+                    Modifier
+                </button>
+                <button
+                    onClick={() => onDelete(photo.id!)}
+                    className="text-red-600 hover:text-red-900"
+                >
+                    Supprimer
+                </button>
+            </td>
+        </tr>
+    );
+}
+
 export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
     const [photos, setPhotos] = useState<Photo[]>([]);
     const [loading, setLoading] = useState(true);
@@ -62,6 +144,14 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
         order: 0,
     });
     const [uploadCategory, setUploadCategory] = useState<string>('');
+
+    // Configuration pour le drag and drop
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
+    );
 
     // Extraire les catégories uniques des photos
     const categories = Array.from(new Set(photos.map((photo) => photo.category))).filter(Boolean);
@@ -452,13 +542,39 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
         }
     };
 
-    const handleReorder = async (photoId: string, newOrder: number) => {
-        try {
-            await updateDoc(doc(db, 'photos', photoId), { order: newOrder });
-            fetchPhotos();
-        } catch (error) {
-            console.error('Erreur lors du réordonnancement:', error);
-            setStatusMessage({ type: 'error', message: 'Erreur lors du réordonnancement' });
+    // Gérer la fin du drag and drop
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (over && active.id !== over.id) {
+            const oldIndex = photos.findIndex((photo) => photo.id === active.id);
+            const newIndex = photos.findIndex((photo) => photo.id === over.id);
+
+            if (oldIndex !== -1 && newIndex !== -1) {
+                const newPhotos = arrayMove(photos, oldIndex, newIndex);
+
+                // Mettre à jour les ordres
+                newPhotos.forEach((photo, idx) => {
+                    photo.order = idx;
+                });
+
+                setPhotos(newPhotos);
+
+                // Sauvegarder en base
+                try {
+                    await Promise.all(
+                        newPhotos.map((photo) =>
+                            updateDoc(doc(db, 'photos', photo.id!), { order: photo.order }),
+                        ),
+                    );
+                } catch (error) {
+                    console.error('Erreur lors de la réorganisation:', error);
+                    setStatusMessage({
+                        type: 'error',
+                        message: 'Erreur lors de la réorganisation',
+                    });
+                }
+            }
         }
     };
 
@@ -868,104 +984,53 @@ export default function PhotosTab({ onStatusChange }: PhotosTabProps) {
                     )}
 
                     <div className="mt-8">
-                        <div className="overflow-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Ordre
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Photo
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Titre
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Catégorie
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Format
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {photos.map((photo) => (
-                                        <tr key={photo.id}>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center space-x-2">
-                                                    <button
-                                                        onClick={() =>
-                                                            handleReorder(
-                                                                photo.id!,
-                                                                photo.order - 1,
-                                                            )
-                                                        }
-                                                        disabled={photo.order === 0}
-                                                        className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                                                    >
-                                                        ↑
-                                                    </button>
-                                                    <span>{photo.order}</span>
-                                                    <button
-                                                        onClick={() =>
-                                                            handleReorder(
-                                                                photo.id!,
-                                                                photo.order + 1,
-                                                            )
-                                                        }
-                                                        disabled={photo.order === photos.length - 1}
-                                                        className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                                                    >
-                                                        ↓
-                                                    </button>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="h-16 w-16 relative overflow-hidden rounded">
-                                                    <Image
-                                                        src={getMediaUrl(photo.source)}
-                                                        alt={photo.title || 'Photo sans titre'}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {photo.title || (
-                                                    <span className="text-gray-400 italic">
-                                                        Sans titre
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {photo.category}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {photo.format}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                                                <button
-                                                    onClick={() => handleEdit(photo)}
-                                                    className="text-indigo-600 hover:text-indigo-900"
-                                                >
-                                                    Modifier
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(photo.id!)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                >
-                                                    Supprimer
-                                                </button>
-                                            </td>
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <div className="overflow-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                                                Ordre
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Photo
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Titre
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Catégorie
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Format
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Actions
+                                            </th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <SortableContext
+                                        items={photos.map((photo) => photo.id!)}
+                                        strategy={verticalListSortingStrategy}
+                                    >
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {photos.map((photo) => (
+                                                <SortableRow
+                                                    key={photo.id}
+                                                    photo={photo}
+                                                    onEdit={handleEdit}
+                                                    onDelete={handleDelete}
+                                                />
+                                            ))}
+                                        </tbody>
+                                    </SortableContext>
+                                </table>
+                            </div>
+                        </DndContext>
                     </div>
                 </div>
             </div>
