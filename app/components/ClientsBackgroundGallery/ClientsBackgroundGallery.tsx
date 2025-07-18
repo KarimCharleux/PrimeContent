@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
+import { getMediaUrl } from '@/app/utils/mediaUrl';
+
 import { Project } from '../PortfolioGrid/PortfolioGrid';
 
 import styles from './clientsBackgroundGallery.module.scss';
@@ -203,7 +205,7 @@ export default function ClientsBackgroundGallery({
                     }
 
                     return FALLBACK_IMAGES.map((src: string, index: number) => ({
-                        source: src,
+                        source: getMediaUrl(src),
                         title: `Image de démonstration ${index + 1}`,
                         category: 'Fallback',
                         isVideo: false,
@@ -277,11 +279,12 @@ export default function ClientsBackgroundGallery({
                     reject(error);
                 };
 
+                const imageUrl = getMediaUrl(project.source);
                 console.log(
                     `🎨 [ClientsBackgroundGallery] Tentative de chargement image ${index + 1}:`,
-                    project.source,
+                    imageUrl,
                 );
-                img.src = project.source;
+                img.src = imageUrl;
             });
         });
 
