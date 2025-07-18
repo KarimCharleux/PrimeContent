@@ -50,7 +50,7 @@
     inset: 0;
     background-color: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(8px);
-    z-index: 9999;
+    z-index: 99999; // Augmenté pour iOS Safari
     display: flex;
     align-items: center;
     justify-content: center;
@@ -263,7 +263,7 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 10;
+    z-index: 10000; // Augmenté pour passer au-dessus du Header
     padding: 0 1rem;
     backdrop-filter: blur(4px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
@@ -292,6 +292,7 @@
     width: 50px;
     height: 50px;
     padding: 0;
+    z-index: 10000; // Assurer la priorité au-dessus du Header
 
     &:hover {
         transform: translateY(-50%) scale(1.05);
@@ -325,6 +326,7 @@
     background-color: rgba(40, 40, 40, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.3);
     backdrop-filter: blur(8px);
+    z-index: 10000; // Assurer la priorité au-dessus du Header
 
     &.selected {
         background-color: rgba(255, 255, 255, 0.8);
