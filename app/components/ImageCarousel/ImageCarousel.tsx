@@ -2,15 +2,11 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
+import ReactPlayer from 'react-player';
 
 import { getMediaUrl } from '../../utils/mediaUrl';
-import {
-    VideoProvider,
-    getVideoProvider,
-    getVideoEmbedUrl,
-    isExternalVideo,
-} from '../../utils/videoManager';
+import { VideoProvider, getVideoEmbedUrl, isExternalVideo } from '../../utils/videoManager';
 
 import styles from './ImageCarousel.module.scss';
 
@@ -55,14 +51,10 @@ const ImageCarousel = ({
     // Référence pour détecter les swipes
     const swipeRef = useRef<HTMLDivElement>(null);
     const startXRef = useRef(0);
-    const videoRef = useRef<HTMLVideoElement>(null);
+    const videoRef = useRef<any>(null);
     const currentItem = media[currentIndex];
 
-    // États pour contrôler la vidéo
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [isMuted, setIsMuted] = useState(true);
-    const [videoProgress, setVideoProgress] = useState(0);
-    const [videoDuration, setVideoDuration] = useState(0);
+    // Note: Les contrôles vidéo sont maintenant gérés par ReactPlayer
 
     // Vérifier s'il y a plus d'un élément
     const hasMultipleItems = media.length > 1;
@@ -72,93 +64,9 @@ const ImageCarousel = ({
     const isDailymotion = currentItem?.provider === 'dailymotion';
     const isExternalVid = isExternalVideoSource || isYouTube || isDailymotion;
 
-    // Fonctions de contrôle vidéo (uniquement pour vidéos fichiers locaux)
-    const togglePlay = useCallback(() => {
-        if (!videoRef.current || isExternalVid) return;
+    // Note: Les fonctions de contrôle vidéo sont maintenant gérées par ReactPlayer
 
-        if (isPlaying) {
-            videoRef.current.pause();
-        } else {
-            videoRef.current.play().catch((err) => console.error('Erreur de lecture vidéo:', err));
-        }
-        setIsPlaying(!isPlaying);
-    }, [isPlaying, isExternalVid]);
-
-    const toggleMute = useCallback(() => {
-        if (!videoRef.current || isExternalVid) return;
-
-        videoRef.current.muted = !videoRef.current.muted;
-        setIsMuted(!isMuted);
-    }, [isMuted, isExternalVid]);
-
-    const toggleFullscreen = useCallback(() => {
-        if (!videoRef.current || isExternalVid) return;
-
-        if (document.fullscreenElement) {
-            document
-                .exitFullscreen()
-                .catch((err) => console.error('Erreur lors de la sortie du plein écran:', err));
-        } else {
-            videoRef.current
-                .requestFullscreen()
-                .catch((err) => console.error('Erreur lors du passage en plein écran:', err));
-        }
-    }, [isExternalVid]);
-
-    const handleTimeUpdate = () => {
-        if (!videoRef.current || isExternalVid) return;
-
-        const progress = (videoRef.current.currentTime / videoRef.current.duration) * 100;
-        setVideoProgress(progress);
-    };
-
-    const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!videoRef.current || isExternalVid) return;
-
-        const progressBar = e.currentTarget;
-        const rect = progressBar.getBoundingClientRect();
-        const position = (e.clientX - rect.left) / rect.width;
-        videoRef.current.currentTime = position * videoRef.current.duration;
-    };
-
-    // Formater le temps de la vidéo (secondes -> MM:SS)
-    const formatTime = (timeInSeconds: number) => {
-        const minutes = Math.floor(timeInSeconds / 60);
-        const seconds = Math.floor(timeInSeconds % 60);
-        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-    };
-
-    // Réinitialiser les états vidéo lors du changement d'élément
-    useEffect(() => {
-        setIsPlaying(false);
-
-        if (videoRef.current && !isExternalVid) {
-            videoRef.current.currentTime = 0;
-            setVideoDuration(videoRef.current.duration || 0);
-        }
-    }, [currentIndex, isExternalVid]);
-
-    // Charger la durée vidéo une fois que les métadonnées sont disponibles
-    useEffect(() => {
-        if (isExternalVid) return;
-
-        const handleLoadedMetadata = () => {
-            if (videoRef.current) {
-                setVideoDuration(videoRef.current.duration);
-            }
-        };
-
-        const videoElement = videoRef.current;
-        if (videoElement) {
-            videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
-        }
-
-        return () => {
-            if (videoElement) {
-                videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
-            }
-        };
-    }, [currentItem, isExternalVid]);
+    // Note: ReactPlayer gère automatiquement le changement d'élément et les métadonnées
 
     // Gérer les événements touch pour le swipe
     useEffect(() => {
@@ -197,33 +105,12 @@ const ImageCarousel = ({
                 if (e.key === 'ArrowRight') onNext();
                 if (e.key === 'ArrowLeft') onPrev();
             }
-            if (isVideo && !isExternalVid) {
-                if (e.key === ' ' || e.key === 'k') {
-                    e.preventDefault();
-                    togglePlay();
-                }
-                if (e.key === 'm') {
-                    toggleMute();
-                }
-                if (e.key === 'f') {
-                    toggleFullscreen();
-                }
-            }
+            // Note: Les contrôles vidéo (espace, m, f) sont gérés par ReactPlayer
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [
-        onClose,
-        onNext,
-        onPrev,
-        hasMultipleItems,
-        isVideo,
-        isExternalVid,
-        togglePlay,
-        toggleMute,
-        toggleFullscreen,
-    ]);
+    }, [onClose, onNext, onPrev, hasMultipleItems]);
 
     return (
         <motion.div
@@ -367,172 +254,29 @@ const ImageCarousel = ({
                                     />
                                 </div>
                             ) : (
-                                // Vidéo fichier
+                                // Vidéo fichier avec ReactPlayer
                                 <div className={styles['video-wrapper']}>
-                                    <video
+                                    <ReactPlayer
                                         ref={videoRef}
-                                        src={getMediaUrl(currentItem.src)}
-                                        className={styles['carousel-video']}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            togglePlay();
+                                        url={getMediaUrl(currentItem.src)}
+                                        className="react-player"
+                                        width="100%"
+                                        height="100%"
+                                        controls={true}
+                                        playing={false}
+                                        muted={false}
+                                        loop={true}
+                                        playsinline={true}
+                                        config={{
+                                            file: {
+                                                attributes: {
+                                                    controlsList: 'nodownload',
+                                                    disablePictureInPicture: false,
+                                                },
+                                            },
                                         }}
-                                        onTimeUpdate={handleTimeUpdate}
-                                        loop
-                                        muted={isMuted}
-                                        playsInline
+                                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
                                     />
-
-                                    {/* Contrôles vidéo uniquement pour les vidéos fichiers */}
-                                    <div
-                                        className={styles['video-controls']}
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        {/* Barre de progression */}
-                                        <div
-                                            className={styles['progress-bar']}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleProgressBarClick(e);
-                                            }}
-                                        >
-                                            <div
-                                                className={styles['progress-fill']}
-                                                style={{ width: `${videoProgress}%` }}
-                                            ></div>
-                                        </div>
-
-                                        <div className={styles['controls-row']}>
-                                            {/* Bouton lecture/pause */}
-                                            <button
-                                                className={styles['control-button']}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    togglePlay();
-                                                }}
-                                            >
-                                                {isPlaying ? (
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        className="h-6 w-6"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                        />
-                                                    </svg>
-                                                ) : (
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        className="h-6 w-6"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                                                        />
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                        />
-                                                    </svg>
-                                                )}
-                                            </button>
-
-                                            {/* Affichage du temps */}
-                                            <div className={styles['time-display']}>
-                                                {videoRef.current
-                                                    ? formatTime(videoRef.current.currentTime)
-                                                    : '0:00'}{' '}
-                                                / {formatTime(videoDuration)}
-                                            </div>
-
-                                            <div className="flex-grow"></div>
-
-                                            {/* Bouton mute/unmute */}
-                                            <button
-                                                className={styles['control-button']}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    toggleMute();
-                                                }}
-                                            >
-                                                {isMuted ? (
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        className="h-6 w-6"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
-                                                        />
-                                                    </svg>
-                                                ) : (
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        className="h-6 w-6"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
-                                                        />
-                                                    </svg>
-                                                )}
-                                            </button>
-
-                                            {/* Bouton plein écran */}
-                                            <button
-                                                className={styles['control-button']}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    toggleFullscreen();
-                                                }}
-                                            >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    className="h-6 w-6"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
                                 </div>
                             )
                         ) : (
