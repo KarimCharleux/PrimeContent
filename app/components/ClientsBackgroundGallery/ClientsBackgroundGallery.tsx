@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Project } from '../PortfolioGrid/PortfolioGrid';
 
 import styles from './clientsBackgroundGallery.module.scss';
+import { useBackgroundImages } from './useBackgroundImages';
 
 interface ClientsBackgroundGalleryProps {
     projects: Project[];
@@ -47,43 +48,160 @@ export default function ClientsBackgroundGallery({
     const IMAGE_MARGIN = 16; // Plus d'espace entre les images
     const IMAGE_HEIGHT = 160; // Hauteur plus grande pour l'arrière-plan
 
+    // Hook personnalisé pour charger rapidement les images indépendamment du PortfolioGrid
+    const { backgroundImages, loading: bgLoading } = useBackgroundImages({
+        activeType,
+        activeFilter,
+    });
+
     // Filtrer les projets selon le type et le filtre actifs
     const filteredProjects = useMemo(() => {
+        console.log('🎨 [ClientsBackgroundGallery] Filtrage des projets:', {
+            totalProjects: projects.length,
+            activeType,
+            activeFilter,
+            projectTypes: projects.map((p) => ({
+                clientType: p.clientType,
+                isVideo: p.isVideo,
+                source: p.source,
+            })),
+        });
+
         let filtered = projects.filter((project) =>
             activeType === 'marques'
                 ? project.clientType === 'marque'
                 : project.clientType === 'celebrite',
         );
 
+        console.log('🎨 [ClientsBackgroundGallery] Après filtrage par type:', {
+            count: filtered.length,
+            projects: filtered.map((p) => ({
+                title: p.title,
+                isVideo: p.isVideo,
+                source: p.source,
+            })),
+        });
+
         // Si un filtre spécifique est sélectionné (pas "Tout")
         if (activeFilter && activeFilter !== 'Tout') {
             filtered = filtered.filter((project) => project.clientName === activeFilter);
+            console.log('🎨 [ClientsBackgroundGallery] Après filtrage par client:', {
+                count: filtered.length,
+                filter: activeFilter,
+            });
         }
 
-        // Filtrer uniquement les images (pas les vidéos)
-        const finalFiltered = filtered.filter((project) => !project.isVideo && project.source);
+        // Filtrer uniquement les images (pas les vidéos) - Filtrage renforcé
+        const finalFiltered = filtered.filter((project) => {
+            const hasSource = !!project.source;
+            const isNotVideo = !project.isVideo && !project.provider && !project.isYouTube;
+            const isImageSource =
+                project.source &&
+                !project.source.includes('youtube') &&
+                !project.source.includes('dailymotion');
+
+            const shouldInclude = hasSource && isNotVideo && isImageSource;
+
+            if (!shouldInclude) {
+                console.log('🎨 [ClientsBackgroundGallery] Projet exclu:', {
+                    title: project.title,
+                    hasSource,
+                    isNotVideo,
+                    isImageSource,
+                    isVideo: project.isVideo,
+                    provider: project.provider,
+                    source: project.source,
+                });
+            }
+
+            return shouldInclude;
+        });
+
+        console.log('🎨 [ClientsBackgroundGallery] Images finales sélectionnées:', {
+            count: finalFiltered.length,
+            sources: finalFiltered.map((p) => p.source),
+        });
 
         return finalFiltered;
     }, [projects, activeType, activeFilter]);
 
     // Sélectionner un échantillon aléatoire d'images pour l'arrière-plan
     const selectedImages = useMemo(() => {
+        console.log('🎨 [ClientsBackgroundGallery] Sélection des images:', {
+            backgroundImagesCount: backgroundImages.length,
+            filteredProjectsCount: filteredProjects.length,
+            totalProjectsCount: projects.length,
+            bgLoading,
+            environment: process.env.NODE_ENV,
+        });
+
+        // 1. Priorité aux images du hook personnalisé (plus rapide)
+        if (backgroundImages.length > 0) {
+            console.log(
+                '🎨 [ClientsBackgroundGallery] Utilisation des images du hook personnalisé:',
+                backgroundImages.length,
+            );
+
+            // Sélectionner jusqu'à 12 images
+            const selected = backgroundImages.slice(0, 12);
+
+            console.log('🎨 [ClientsBackgroundGallery] Images sélectionnées via hook:', {
+                count: selected.length,
+                sources: selected.map((img) => img.source),
+            });
+
+            return selected;
+        }
+
+        // 2. Fallback sur les projets filtrés si le hook n'a pas encore chargé ou n'a pas d'images
         if (filteredProjects.length === 0) {
+            console.log(
+                '🎨 [ClientsBackgroundGallery] Aucune image filtrée, recherche de fallback...',
+            );
+
             // Si aucune image spécifique, utiliser toutes les images du type actif
             const allImagesOfType = projects.filter((project) => {
                 const isCorrectType =
                     activeType === 'marques'
                         ? project.clientType === 'marque'
                         : project.clientType === 'celebrite';
-                return isCorrectType && !project.isVideo && project.source;
+                const hasSource = !!project.source;
+                const isNotVideo = !project.isVideo && !project.provider && !project.isYouTube;
+
+                return isCorrectType && hasSource && isNotVideo;
+            });
+
+            console.log('🎨 [ClientsBackgroundGallery] Images du type actif:', {
+                count: allImagesOfType.length,
+                activeType,
+                sources: allImagesOfType.map((p) => p.source),
             });
 
             if (allImagesOfType.length === 0) {
                 // En dernier recours, utiliser toutes les images disponibles
-                const anyImages = projects.filter((project) => !project.isVideo && project.source);
+                const anyImages = projects.filter((project) => {
+                    const hasSource = !!project.source;
+                    const isNotVideo = !project.isVideo && !project.provider && !project.isYouTube;
+                    return hasSource && isNotVideo;
+                });
+
+                console.log('🎨 [ClientsBackgroundGallery] Toutes images disponibles:', {
+                    count: anyImages.length,
+                    sources: anyImages.map((p) => p.source),
+                });
 
                 if (anyImages.length === 0) {
                     // Utiliser les images de fallback statiques pour la démonstration
+                    console.log('🎨 [ClientsBackgroundGallery] Utilisation des images de fallback');
+
+                    // En production, on ne veut pas les fallback
+                    if (process.env.NODE_ENV === 'production') {
+                        console.log(
+                            '🎨 [ClientsBackgroundGallery] Mode production: pas de fallback',
+                        );
+                        return [];
+                    }
+
                     return FALLBACK_IMAGES.map((src: string, index: number) => ({
                         source: src,
                         title: `Image de démonstration ${index + 1}`,
@@ -104,34 +222,88 @@ export default function ClientsBackgroundGallery({
 
         // Si on a peu d'images, les utiliser toutes
         if (filteredProjects.length <= 12) {
+            console.log(
+                '🎨 [ClientsBackgroundGallery] Utilisation de toutes les images filtrées:',
+                filteredProjects.length,
+            );
             return filteredProjects;
         }
 
         // Sinon, sélectionner 12 images aléatoires
         const shuffled = [...filteredProjects].sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, 12);
-    }, [filteredProjects, projects, activeType]);
+        const selected = shuffled.slice(0, 12);
+
+        console.log('🎨 [ClientsBackgroundGallery] Sélection aléatoire:', {
+            total: filteredProjects.length,
+            selected: selected.length,
+            sources: selected.map((p) => p.source),
+        });
+
+        return selected;
+    }, [backgroundImages, filteredProjects, projects, activeType, bgLoading]);
 
     // Précharger les images sélectionnées
     const preloadImages = useCallback(async () => {
+        console.log('🎨 [ClientsBackgroundGallery] Début du préchargement:', {
+            selectedImagesCount: selectedImages.length,
+            sources: selectedImages.map((p) => p.source),
+        });
+
         if (selectedImages.length === 0) {
+            console.log('🎨 [ClientsBackgroundGallery] Aucune image à précharger');
             setLoadedImages([]);
             setIsReady(false);
             return;
         }
 
-        const imagePromises = selectedImages.map((project: Project) => {
+        const imagePromises = selectedImages.map((project: Project, index: number) => {
             return new Promise<HTMLImageElement>((resolve, reject) => {
                 const img = new window.Image();
                 img.crossOrigin = 'anonymous';
-                img.onload = () => resolve(img);
-                img.onerror = reject;
+
+                img.onload = () => {
+                    console.log(
+                        `🎨 [ClientsBackgroundGallery] Image ${index + 1} chargée:`,
+                        project.source,
+                    );
+                    resolve(img);
+                };
+
+                img.onerror = (error) => {
+                    console.error(`🎨 [ClientsBackgroundGallery] Erreur image ${index + 1}:`, {
+                        source: project.source,
+                        error,
+                    });
+                    reject(error);
+                };
+
+                console.log(
+                    `🎨 [ClientsBackgroundGallery] Tentative de chargement image ${index + 1}:`,
+                    project.source,
+                );
                 img.src = project.source;
             });
         });
 
         try {
             const loadedImgs = await Promise.allSettled(imagePromises);
+
+            console.log('🎨 [ClientsBackgroundGallery] Résultats du préchargement:', {
+                total: loadedImgs.length,
+                fulfilled: loadedImgs.filter((r) => r.status === 'fulfilled').length,
+                rejected: loadedImgs.filter((r) => r.status === 'rejected').length,
+            });
+
+            // Log des erreurs
+            loadedImgs.forEach((result, index) => {
+                if (result.status === 'rejected') {
+                    console.error(`🎨 [ClientsBackgroundGallery] Image ${index + 1} rejetée:`, {
+                        source: selectedImages[index]?.source,
+                        reason: result.reason,
+                    });
+                }
+            });
+
             const validImages = loadedImgs
                 .filter(
                     (
@@ -142,10 +314,21 @@ export default function ClientsBackgroundGallery({
                 .map((result: PromiseFulfilledResult<HTMLImageElement>) => result.value)
                 .filter((img: HTMLImageElement) => img.naturalWidth && img.naturalHeight);
 
+            console.log('🎨 [ClientsBackgroundGallery] Images valides chargées:', {
+                count: validImages.length,
+                dimensions: validImages.map((img) => ({
+                    width: img.naturalWidth,
+                    height: img.naturalHeight,
+                })),
+            });
+
             setLoadedImages(validImages);
             setIsReady(validImages.length > 0);
         } catch (error) {
-            console.error('Erreur lors du préchargement des images:', error);
+            console.error(
+                '🎨 [ClientsBackgroundGallery] Erreur globale lors du préchargement des images:',
+                error,
+            );
             setLoadedImages([]);
             setIsReady(false);
         }
@@ -225,11 +408,40 @@ export default function ClientsBackgroundGallery({
                         color: 'white',
                         padding: '10px',
                         borderRadius: '5px',
-                        fontSize: '12px',
+                        fontSize: '11px',
                         zIndex: 9999,
+                        maxWidth: '300px',
+                        lineHeight: '1.3',
                     }}
                 >
-                    Galerie BG: {selectedImages.length} images | Ready: {isReady ? 'Oui' : 'Non'}
+                    <div>
+                        <strong>🎨 ClientsBackgroundGallery Debug</strong>
+                    </div>
+                    <div>
+                        Type: {activeType} | Filtre: {activeFilter}
+                    </div>
+                    <div>
+                        Hook BG: {backgroundImages.length} images{' '}
+                        {bgLoading ? '(⏳ loading...)' : '(✅ loaded)'}
+                    </div>
+                    <div>Projets totaux: {projects.length}</div>
+                    <div>Images sélectionnées: {selectedImages.length}</div>
+                    <div>Images chargées: {loadedImages.length}</div>
+                    <div>Ready: {isReady ? '✅ Oui' : '❌ Non'}</div>
+                    <div>Env: {process.env.NODE_ENV}</div>
+                    {selectedImages.length > 0 && (
+                        <div style={{ marginTop: '5px', fontSize: '10px' }}>
+                            <strong>Sources:</strong>
+                            {selectedImages.slice(0, 3).map((img, i) => (
+                                <div key={i} style={{ wordBreak: 'break-all' }}>
+                                    {i + 1}. {img.source.substring(img.source.lastIndexOf('/') + 1)}
+                                </div>
+                            ))}
+                            {selectedImages.length > 3 && (
+                                <div>... et {selectedImages.length - 3} autres</div>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
 
