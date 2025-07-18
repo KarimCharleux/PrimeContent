@@ -94,6 +94,8 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
     const [dailymotionThumbnails, setDailymotionThumbnails] = useState<{ [key: string]: string }>(
         {},
     );
+    // État pour le chargement initial
+    const [isLoading, setIsLoading] = useState(true);
 
     // Utiliser soit le filtre externe soit l'interne
     const activeFilter = externalActiveFilter || internalActiveFilter;
@@ -203,8 +205,27 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         }
     };
 
+    // Effet pour gérer l'état de loading
+    useEffect(() => {
+        // Si nous avons des projets, on n'est plus en chargement
+        if (projects && projects.length > 0) {
+            setIsLoading(false);
+        }
+        // Si aucun projet après un délai, considérer que le chargement est terminé
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 3000); // 3 secondes max
+
+        return () => clearTimeout(timer);
+    }, [projects]);
+
     // Effet pour filtrer les projets quand le filtre change
     useEffect(() => {
+        // Si on a des projets, montrer un loading bref pendant le filtrage
+        if (projects.length > 0) {
+            setIsLoading(true);
+        }
+
         // Filtrer les projets en fonction du filtre actif
         let newFilteredProjects = projects;
 
@@ -279,8 +300,15 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                     y: 0,
                                     stagger: 0.05,
                                     duration: 0.5,
+                                    onComplete: () => {
+                                        // Arrêter le loading une fois l'animation terminée
+                                        setIsLoading(false);
+                                    },
                                 },
                             );
+                        } else {
+                            // Si pas d'éléments, arrêter le loading immédiatement
+                            setIsLoading(false);
                         }
                     }, 50);
                 },
@@ -288,6 +316,8 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         } else {
             // Si pas d'éléments valides, juste mettre à jour les projets filtrés
             setFilteredProjects(newFilteredProjects);
+            // Arrêter le loading
+            setIsLoading(false);
         }
     }, [activeFilter, projects, activeVideoIndex, customFilters]);
 
@@ -510,166 +540,199 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
 
                 {/* Container avec dégradé optionnel */}
                 <div className="relative">
-                    {/* Grille de projets */}
-                    <div ref={projectsContainerRef} className={styles.portfolioGrid}>
-                        {filteredProjects.length > 0 ? (
-                            filteredProjects.map((project, index) => (
-                                <div
-                                    key={`${project.title || project.category}-${index}`}
-                                    ref={(el) => addProjectRef(el, index)}
-                                    className={`${styles.portfolioItem} ${getItemSizeClass(project)} ${
-                                        selectedItems.has(project.source) ? styles.selected : ''
-                                    } group`}
-                                    onClick={() => {
-                                        if (!project.isVideo || activeVideoIndex !== index) {
-                                            // Trouver l'index correct dans le tableau filtré
-                                            const mediaIndex = filteredProjects.findIndex(
-                                                (p) => p.source === project.source,
-                                            );
-                                            openCarousel(mediaIndex);
-                                        }
-                                    }}
+                    {/* Spinner de chargement */}
+                    {isLoading ? (
+                        <div className={styles.loadingContainer}>
+                            <div className={styles.spinner}>
+                                <svg
+                                    className={styles.spinnerIcon}
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
                                 >
-                                    {project.isVideo ? (
-                                        <div className={styles.portfolioImageContainer}>
-                                            {/* Si on a une miniature ou c'est une vidéo externe, utiliser Image */}
-                                            {project.thumbnail ||
-                                            isExternalVideo(project.source) ||
-                                            (project.provider && project.provider !== 'local') ||
-                                            project.isYouTube ? (
+                                    <circle
+                                        className={styles.spinnerCircle}
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        stroke="currentColor"
+                                        strokeWidth="4"
+                                    />
+                                    <path
+                                        className={styles.spinnerPath}
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    />
+                                </svg>
+                            </div>
+                            <p className={styles.loadingText}>Chargement des médias...</p>
+                        </div>
+                    ) : (
+                        /* Grille de projets */
+                        <div ref={projectsContainerRef} className={styles.portfolioGrid}>
+                            {filteredProjects.length > 0 ? (
+                                filteredProjects.map((project, index) => (
+                                    <div
+                                        key={`${project.title || project.category}-${index}`}
+                                        ref={(el) => addProjectRef(el, index)}
+                                        className={`${styles.portfolioItem} ${getItemSizeClass(project)} ${
+                                            selectedItems.has(project.source) ? styles.selected : ''
+                                        } group`}
+                                        onClick={() => {
+                                            if (!project.isVideo || activeVideoIndex !== index) {
+                                                // Trouver l'index correct dans le tableau filtré
+                                                const mediaIndex = filteredProjects.findIndex(
+                                                    (p) => p.source === project.source,
+                                                );
+                                                openCarousel(mediaIndex);
+                                            }
+                                        }}
+                                    >
+                                        {project.isVideo ? (
+                                            <div className={styles.portfolioImageContainer}>
+                                                {/* Si on a une miniature ou c'est une vidéo externe, utiliser Image */}
+                                                {project.thumbnail ||
+                                                isExternalVideo(project.source) ||
+                                                (project.provider &&
+                                                    project.provider !== 'local') ||
+                                                project.isYouTube ? (
+                                                    <Image
+                                                        src={getProjectThumbnail(project)}
+                                                        alt={project.title ?? ''}
+                                                        fill
+                                                        sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw"
+                                                        style={{ objectFit: 'cover' }}
+                                                    />
+                                                ) : (
+                                                    // Sinon, utiliser la vidéo comme miniature
+                                                    <video
+                                                        src={getMediaUrl(project.source)}
+                                                        muted
+                                                        loop
+                                                        playsInline
+                                                        style={{
+                                                            position: 'absolute',
+                                                            height: '100%',
+                                                            width: '100%',
+                                                            inset: '0px',
+                                                            objectFit: 'cover',
+                                                        }}
+                                                        onLoadedData={(e) => {
+                                                            const video =
+                                                                e.target as HTMLVideoElement;
+                                                            video.currentTime = 1; // Aller à 1 seconde pour éviter le noir
+                                                        }}
+                                                    />
+                                                )}
+
+                                                {/* Badge du fournisseur vidéo supprimé comme demandé */}
+
+                                                <div
+                                                    className={`${styles.videoPlayBtn} ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
+                                                >
+                                                    <div className={styles.videoPlayIcon}>
+                                                        {project.provider === 'youtube' ||
+                                                        project.isYouTube ? (
+                                                            // Icône YouTube
+                                                            <svg
+                                                                className="w-8 h-8 text-white"
+                                                                viewBox="0 0 24 24"
+                                                                fill="currentColor"
+                                                            >
+                                                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                                                            </svg>
+                                                        ) : project.provider === 'dailymotion' ? (
+                                                            // Icône play avec style Dailymotion
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                className="h-8 w-8 text-white"
+                                                                viewBox="0 0 20 20"
+                                                                fill="currentColor"
+                                                            >
+                                                                <path d="M8 5v10l7-5z" />
+                                                            </svg>
+                                                        ) : (
+                                                            // Icône play normale
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                className="h-8 w-8 text-white"
+                                                                viewBox="0 0 20 20"
+                                                                fill="currentColor"
+                                                            >
+                                                                <path
+                                                                    fillRule="evenodd"
+                                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                                                                    clipRule="evenodd"
+                                                                />
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className={styles.portfolioImageContainer}>
                                                 <Image
-                                                    src={getProjectThumbnail(project)}
+                                                    src={getMediaUrl(project.source)}
                                                     alt={project.title ?? ''}
                                                     fill
                                                     sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw"
                                                     style={{ objectFit: 'cover' }}
                                                 />
-                                            ) : (
-                                                // Sinon, utiliser la vidéo comme miniature
-                                                <video
-                                                    src={getMediaUrl(project.source)}
-                                                    muted
-                                                    loop
-                                                    playsInline
-                                                    style={{
-                                                        position: 'absolute',
-                                                        height: '100%',
-                                                        width: '100%',
-                                                        inset: '0px',
-                                                        objectFit: 'cover',
-                                                    }}
-                                                    onLoadedData={(e) => {
-                                                        const video = e.target as HTMLVideoElement;
-                                                        video.currentTime = 1; // Aller à 1 seconde pour éviter le noir
-                                                    }}
-                                                />
-                                            )}
-
-                                            {/* Badge du fournisseur vidéo supprimé comme demandé */}
-
-                                            <div
-                                                className={`${styles.videoPlayBtn} ${activeVideoIndex === index ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}
-                                            >
-                                                <div className={styles.videoPlayIcon}>
-                                                    {project.provider === 'youtube' ||
-                                                    project.isYouTube ? (
-                                                        // Icône YouTube
-                                                        <svg
-                                                            className="w-8 h-8 text-white"
-                                                            viewBox="0 0 24 24"
-                                                            fill="currentColor"
-                                                        >
-                                                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                                                        </svg>
-                                                    ) : project.provider === 'dailymotion' ? (
-                                                        // Icône play avec style Dailymotion
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            className="h-8 w-8 text-white"
-                                                            viewBox="0 0 20 20"
-                                                            fill="currentColor"
-                                                        >
-                                                            <path d="M8 5v10l7-5z" />
-                                                        </svg>
-                                                    ) : (
-                                                        // Icône play normale
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            className="h-8 w-8 text-white"
-                                                            viewBox="0 0 20 20"
-                                                            fill="currentColor"
-                                                        >
-                                                            <path
-                                                                fillRule="evenodd"
-                                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                                                                clipRule="evenodd"
-                                                            />
-                                                        </svg>
-                                                    )}
-                                                </div>
                                             </div>
-                                        </div>
-                                    ) : (
-                                        <div className={styles.portfolioImageContainer}>
-                                            <Image
-                                                src={getMediaUrl(project.source)}
-                                                alt={project.title ?? ''}
-                                                fill
-                                                sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw"
-                                                style={{ objectFit: 'cover' }}
-                                            />
-                                        </div>
-                                    )}
+                                        )}
 
-                                    {project.category && (
-                                        <div className={styles.categoryBadge}>
-                                            {project.category}
-                                        </div>
-                                    )}
+                                        {project.category && (
+                                            <div className={styles.categoryBadge}>
+                                                {project.category}
+                                            </div>
+                                        )}
 
-                                    {project.title && (
-                                        <div
-                                            className={`${styles.titleGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
-                                        >
-                                            <h3 className={styles.itemTitle}>{project.title}</h3>
-                                        </div>
-                                    )}
+                                        {project.title && (
+                                            <div
+                                                className={`${styles.titleGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                                            >
+                                                <h3 className={styles.itemTitle}>
+                                                    {project.title}
+                                                </h3>
+                                            </div>
+                                        )}
 
-                                    {/* Checkbox de sélection (si la sélection est activée) */}
-                                    {selectionEnabled && (
-                                        <div
-                                            className={styles.selectionCheckbox}
-                                            onClick={(e) => toggleSelection(project.source, e)}
-                                        >
-                                            {selectedItems.has(project.source) && (
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    className="h-4 w-4 text-white"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={3}
-                                                        d="M5 13l4 4L19 7"
-                                                    />
-                                                </svg>
-                                            )}
-                                        </div>
-                                    )}
+                                        {/* Checkbox de sélection (si la sélection est activée) */}
+                                        {selectionEnabled && (
+                                            <div
+                                                className={styles.selectionCheckbox}
+                                                onClick={(e) => toggleSelection(project.source, e)}
+                                            >
+                                                {selectedItems.has(project.source) && (
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-4 w-4 text-white"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={3}
+                                                            d="M5 13l4 4L19 7"
+                                                        />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            ) : (
+                                <div className={styles.noProjects}>
+                                    Aucun projet ne correspond à ces critères.
                                 </div>
-                            ))
-                        ) : (
-                            <div className={styles.noProjects}>
-                                Aucun projet ne correspond à ces critères.
-                            </div>
-                        )}
-                    </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Dégradé en bas pour inciter à voir plus */}
-                    {showGradientOverlay && filteredProjects.length > 0 && (
+                    {!isLoading && showGradientOverlay && filteredProjects.length > 0 && (
                         <div className="absolute -bottom-2 left-0 right-0 h-[830px] bg-gradient-to-t from-[#060608] to-[#060608]/50 to-transparent pointer-events-none z-10" />
                     )}
                 </div>

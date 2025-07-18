@@ -542,3 +542,70 @@
         padding: 0.35rem 1rem;
     }
 }
+
+// Styles pour le spinner de chargement
+.loadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    padding: 4rem 0;
+}
+
+.spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.spinnerIcon {
+    width: 3rem;
+    height: 3rem;
+    color: #ffffff;
+    animation: spin 1s linear infinite;
+}
+
+.spinnerCircle {
+    opacity: 0.25;
+}
+
+.spinnerPath {
+    opacity: 0.75;
+}
+
+.loadingText {
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin: 0;
+    opacity: 0.8;
+}
+
+// Animation pour le spinner
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+// Responsive pour le loading
+@media (max-width: 768px) {
+    .loadingContainer {
+        min-height: 300px;
+        padding: 3rem 0;
+    }
+
+    .spinnerIcon {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    .loadingText {
+        font-size: 1rem;
+    }
+}
