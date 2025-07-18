@@ -4,12 +4,7 @@ import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 import { useImageStore } from '../store/imageStore';
-import {
-    isIOSSafari,
-    getOptimizedLimits,
-    deviceLog,
-    cleanupImages,
-} from '../utils/deviceDetection';
+import { isIOSSafari, getOptimizedLimits, cleanupImages } from '../utils/deviceDetection';
 import { getMediaUrl } from '../utils/mediaUrl';
 
 interface SplashScreenProps {
@@ -72,10 +67,6 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                 const limits = getOptimizedLimits();
                 const maxImages = Math.min(limits.maxImages, totalImages);
 
-                deviceLog(
-                    `Chargement de ${maxImages} images par lots de ${limits.maxConcurrentRequests}`,
-                );
-
                 // Fonction de chargement d'une image avec timeout
                 const loadImage = (mediaItem: any): Promise<HTMLImageElement | null> =>
                     new Promise((resolve) => {
@@ -115,9 +106,6 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                         if (!isMounted) break;
 
                         const batch = items.slice(i, i + batchSize);
-                        deviceLog(
-                            `Lot ${Math.floor(i / batchSize) + 1}/${Math.ceil(Math.min(items.length, maxImages) / batchSize)} (${batch.length} images)`,
-                        );
 
                         const batchResults = await Promise.allSettled(
                             batch.map((item) => loadImage(item)),
@@ -143,9 +131,6 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                 if (isMounted) {
                     setPreloadedImages(loadedImages);
                     setImagesLoaded(true);
-                    deviceLog(
-                        `✅ ${loadedImages.length} images chargées avec succès sur ${totalImages} disponibles`,
-                    );
                 }
             } catch (error) {
                 console.error('❌ Erreur lors du chargement des images:', error);
@@ -172,8 +157,6 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
             // Utilisation des délais optimisés selon l'appareil
             const limits = getOptimizedLimits();
             const delay = hasError ? limits.animationDelay / 2 : limits.animationDelay;
-
-            deviceLog(`Fin du chargement - transition dans ${delay}ms`);
 
             // Attendre un peu pour que l'utilisateur puisse voir l'animation du logo
             const timer = setTimeout(() => {

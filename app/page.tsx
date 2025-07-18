@@ -372,7 +372,7 @@ export default function Page() {
 
     useEffect(() => {
         // Import des utilitaires de détection d'appareils
-        const { isIOSSafari, getOptimizedLimits, deviceLog } = require('./utils/deviceDetection');
+        const { getOptimizedLimits } = require('./utils/deviceDetection');
 
         const limits = getOptimizedLimits();
 
@@ -386,7 +386,6 @@ export default function Page() {
                 localStorage.removeItem('splashScreenComplete');
                 // Réinitialiser la position de défilement à 0
                 window.scrollTo(0, 0);
-                deviceLog('Animations activées après SplashScreen');
             }
             // Si on vient d'une autre page (pas de SplashScreen)
             else if (splashScreenComplete !== 'waiting') {
@@ -396,12 +395,10 @@ export default function Page() {
                     sessionStorage.setItem('hasVisitedHome', 'true');
                     setTimeout(() => {
                         setShouldStartAnimations(true);
-                        deviceLog('Animations activées - première visite');
                     }, 100);
                 } else {
                     // Si déjà visité, activer immédiatement
                     setShouldStartAnimations(true);
-                    deviceLog('Animations activées - visite répétée');
                 }
             }
         };
@@ -414,7 +411,6 @@ export default function Page() {
 
         // Timeout de sécurité optimisé
         const safetyTimeout = setTimeout(() => {
-            deviceLog('Timeout de sécurité - activation des animations');
             setShouldStartAnimations(true);
             clearInterval(interval);
         }, limits.safetyTimeout);

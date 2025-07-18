@@ -116,10 +116,6 @@ export async function GET(request: Request) {
         // Appliquer la limite (important pour iOS)
         const limitedMediaObjects = mediaObjects.slice(0, limit);
 
-        console.log(
-            `📱 ${isIOSDevice ? 'iOS' : 'Autre'} - Envoi de ${limitedMediaObjects.length}/${mediaObjects.length} médias pour ${targetPath}`,
-        );
-
         // Retourner la liste des médias avec headers optimisés
         const response = NextResponse.json({
             images: limitedMediaObjects, // Gardé pour compatibilité

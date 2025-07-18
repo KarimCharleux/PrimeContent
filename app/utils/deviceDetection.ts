@@ -47,12 +47,6 @@ export const getOptimizedLimits = () => {
     };
 };
 
-// Log avec préfixe device-specific
-export const deviceLog = (message: string, ...args: any[]) => {
-    const device = isIOSSafari() ? '📱 iOS' : isMobile() ? '📱 Mobile' : '💻 Desktop';
-    console.log(`${device} - ${message}`, ...args);
-};
-
 // Nettoyage mémoire pour iOS
 export const cleanupImages = (images: HTMLImageElement[]) => {
     if (isIOSSafari()) {
