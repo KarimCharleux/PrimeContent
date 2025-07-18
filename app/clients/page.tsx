@@ -393,11 +393,7 @@ function ClientPageContent() {
             <main className="client-page global-main-page">
                 <Header />
                 {/* Galerie 3D en arrière-plan */}
-                <ClientsBackgroundGallery
-                    projects={projects}
-                    activeType={activeType}
-                    activeFilter={urlFilter || 'Tout'}
-                />
+                <ClientsBackgroundGallery />
                 <section className="client-hero">
                     <div className="container mx-auto px-4 py-16">
                         <div className="text-center max-w-4xl mx-auto">
