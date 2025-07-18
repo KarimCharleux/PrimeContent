@@ -5,7 +5,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: -1;
+    z-index: 0; /* Changé pour être visible mais derrière le contenu */
     overflow: hidden;
     pointer-events: none;
 }
@@ -13,10 +13,8 @@
 /* Conteneur de la galerie 3D */
 .gallery-3d-container {
     position: absolute;
-    top: 50%;
-    left: 50%;
     width: 120vw;
-    height: 120vh;
+    height: 100vh;
     transform-origin: center center;
     transform-style: preserve-3d;
     will-change: transform, opacity;
@@ -42,6 +40,11 @@
     overflow: hidden;
     width: 100%;
     position: relative;
+    margin-bottom: 20px; /* Plus d'espace entre les lignes */
+
+    &:last-child {
+        margin-bottom: 0;
+    }
 }
 
 /* Conteneur de défilement */
@@ -63,7 +66,7 @@
     }
 
     &.speed {
-        animation-duration: 45s; // Plus lent pour l'arrière-plan
+        animation-duration: 50s; // Légèrement plus lent avec 4 lignes pour l'arrière-plan
     }
 }
 
@@ -120,13 +123,13 @@
         transform: translateX(0);
     }
     100% {
-        transform: translateX(-33.333%); // Défile d'un tiers pour l'effet infini avec 3 copies
+        transform: translateX(-25%); // Défile d'un quart pour l'effet infini avec 4 copies
     }
 }
 
 @keyframes scrollRight {
     0% {
-        transform: translateX(-33.333%);
+        transform: translateX(-25%);
     }
     100% {
         transform: translateX(0);
@@ -166,7 +169,7 @@
 
     .gallery-scroll {
         &.speed {
-            animation-duration: 35s; // Un peu plus rapide sur mobile
+            animation-duration: 40s; // Un peu plus rapide sur mobile avec 4 lignes
         }
     }
 
