@@ -131,6 +131,8 @@
     max-width: min(calc(100vw - 2rem), calc(120vh * 16 / 9));
     max-height: min(90vh, calc((100vw - 2rem) * 9 / 16));
     width: 100%;
+    position: relative;
+    z-index: 100; // Assurer la priorité au-dessus du Header
 
     @media (max-width: 768px) {
         max-width: calc(100vw - 1rem);
@@ -144,6 +146,8 @@
     height: 100%;
     border: none;
     background: #000;
+    position: relative;
+    z-index: 100; // Légèrement au-dessus du wrapper pour iOS
 
     @media (max-width: 768px) {
         min-height: 250px;
@@ -263,7 +267,7 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 10000; // Augmenté pour passer au-dessus du Header
+    z-index: 11000; // Augmenté pour passer au-dessus du Header
     padding: 0 1rem;
     backdrop-filter: blur(4px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
@@ -292,7 +296,7 @@
     width: 50px;
     height: 50px;
     padding: 0;
-    z-index: 10000; // Assurer la priorité au-dessus du Header
+    z-index: 11000; // Assurer la priorité au-dessus du Header
 
     &:hover {
         transform: translateY(-50%) scale(1.05);
@@ -352,6 +356,7 @@
     right: 0;
     display: flex;
     justify-content: center;
+    z-index: 11000;
 
     .counter-badge {
         background-color: rgba(0, 0, 0, 0.5);

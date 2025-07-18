@@ -123,7 +123,7 @@ const ImageCarousel = ({
                 backdropFilter: { delay: 0.1, duration: 0.5 },
             }}
         >
-            <div className="absolute top-4 right-4 z-10 flex items-center space-x-4">
+            <div className="absolute top-4 right-4 flex items-center space-x-4">
                 {selectionEnabled && (
                     <button
                         className={`${styles['select-button']} ${
@@ -229,6 +229,7 @@ const ImageCarousel = ({
                                 // Vidéo externe (YouTube, Dailymotion)
                                 <div
                                     className={styles['youtube-wrapper']}
+                                    style={{ zIndex: 10000, position: 'relative' }}
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <iframe

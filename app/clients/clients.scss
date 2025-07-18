@@ -59,7 +59,6 @@ $transition: all 0.3s ease;
 // Section galerie
 .client-gallery {
     position: relative;
-    z-index: 10; /* Z-index plus élevé pour être au-dessus de la galerie */
 
     // Améliorer la lisibilité avec l'arrière-plan
     &::before {
