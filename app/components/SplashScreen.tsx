@@ -433,7 +433,7 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                                     {/* Dali */}
                                     <g>
                                         <text
-                                            x="80"
+                                            x="158"
                                             y="70"
                                             fill="none"
                                             stroke="white"
@@ -445,19 +445,19 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                                             }}
                                         >
                                             <tspan className="letter dali-letter-1">D</tspan>
-                                            <tspan className="letter dali-letter-2" x="134">
+                                            <tspan className="letter dali-letter-2" x="212">
                                                 a
                                             </tspan>
-                                            <tspan className="letter dali-letter-3" x="174">
+                                            <tspan className="letter dali-letter-3" x="252">
                                                 l
                                             </tspan>
-                                            <tspan className="letter dali-letter-4" x="194">
+                                            <tspan className="letter dali-letter-4" x="272">
                                                 i
                                             </tspan>
                                         </text>
 
                                         <text
-                                            x="80"
+                                            x="158"
                                             y="70"
                                             stroke="none"
                                             style={{
@@ -471,19 +471,19 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                                             </tspan>
                                             <tspan
                                                 className="letter-fill-white dali-letter-2-fill"
-                                                x="134"
+                                                x="212"
                                             >
                                                 a
                                             </tspan>
                                             <tspan
                                                 className="letter-fill-white dali-letter-3-fill"
-                                                x="174"
+                                                x="252"
                                             >
                                                 l
                                             </tspan>
                                             <tspan
                                                 className="letter-fill-white dali-letter-4-fill"
-                                                x="194"
+                                                x="272"
                                             >
                                                 i
                                             </tspan>
@@ -493,7 +493,7 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                                     {/* Films */}
                                     <g>
                                         <text
-                                            x="210"
+                                            x="288"
                                             y="70"
                                             fill="none"
                                             stroke="#9ca3af"
@@ -505,25 +505,25 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                                             }}
                                         >
                                             <tspan className="letter films-letter-1">f</tspan>
-                                            <tspan className="letter films-letter-2" x="234">
+                                            <tspan className="letter films-letter-2" x="312">
                                                 i
                                             </tspan>
-                                            <tspan className="letter films-letter-3" x="250">
+                                            <tspan className="letter films-letter-3" x="328">
                                                 l
                                             </tspan>
-                                            <tspan className="letter films-letter-4" x="270">
+                                            <tspan className="letter films-letter-4" x="348">
                                                 m
                                             </tspan>
-                                            <tspan className="letter films-letter-5" x="330">
+                                            <tspan className="letter films-letter-5" x="408">
                                                 s
                                             </tspan>
-                                            <tspan className="letter films-letter-6" x="364">
+                                            <tspan className="letter films-letter-6" x="442">
                                                 .
                                             </tspan>
                                         </text>
 
                                         <text
-                                            x="210"
+                                            x="288"
                                             y="70"
                                             stroke="none"
                                             style={{
@@ -537,31 +537,31 @@ export default function SplashScreen({ onLoadingComplete }: SplashScreenProps) {
                                             </tspan>
                                             <tspan
                                                 className="letter-fill-gray films-letter-2-fill"
-                                                x="234"
+                                                x="312"
                                             >
                                                 i
                                             </tspan>
                                             <tspan
                                                 className="letter-fill-gray films-letter-3-fill"
-                                                x="250"
+                                                x="328"
                                             >
                                                 l
                                             </tspan>
                                             <tspan
                                                 className="letter-fill-gray films-letter-4-fill"
-                                                x="270"
+                                                x="348"
                                             >
                                                 m
                                             </tspan>
                                             <tspan
                                                 className="letter-fill-gray films-letter-5-fill"
-                                                x="330"
+                                                x="408"
                                             >
                                                 s
                                             </tspan>
                                             <tspan
                                                 className="letter-fill-gray films-letter-6-fill"
-                                                x="364"
+                                                x="442"
                                             >
                                                 .
                                             </tspan>
