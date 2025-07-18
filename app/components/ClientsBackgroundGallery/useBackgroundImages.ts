@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { getMediaUrl } from '@/app/utils/mediaUrl';
-
 interface BackgroundImage {
     source: string;
     title: string;
@@ -74,7 +72,7 @@ export const useBackgroundImages = ({ activeType, activeFilter }: UseBackgroundI
 
             // Convertir en format BackgroundImage
             const images: BackgroundImage[] = imageFiles.map((media: any) => ({
-                source: getMediaUrl(`${media.path}/${media.name}`),
+                source: `${media.path}/${media.name}`,
                 title: `Image ${activeType}`,
                 category: activeType === 'marques' ? 'Marque' : 'Célébrité',
                 isVideo: false as const,
