@@ -42,8 +42,7 @@ export default function ClientsBackgroundGallery({
     activeFilter,
 }: ClientsBackgroundGalleryProps) {
     const galleryContainerRef = useRef<HTMLDivElement>(null);
-    const [isReady, setIsReady] = useState(false);
-    const [loadedImages, setLoadedImages] = useState<HTMLImageElement[]>([]);
+    const [isReady, setIsReady] = useState(true); // Toujours prêt maintenant
 
     // Configuration de la galerie (4 lignes fixes)
     const ROWS = 4;
@@ -244,136 +243,47 @@ export default function ClientsBackgroundGallery({
         return selected;
     }, [backgroundImages, filteredProjects, projects, activeType, bgLoading]);
 
-    // Précharger les images sélectionnées
-    const preloadImages = useCallback(async () => {
-        console.log('🎨 [ClientsBackgroundGallery] Début du préchargement:', {
-            selectedImagesCount: selectedImages.length,
+    // Effect pour marquer comme prêt quand les images changent
+    useEffect(() => {
+        console.log('🎨 [ClientsBackgroundGallery] Images sélectionnées:', {
+            count: selectedImages.length,
             sources: selectedImages.map((p) => p.source),
         });
-
-        if (selectedImages.length === 0) {
-            console.log('🎨 [ClientsBackgroundGallery] Aucune image à précharger');
-            setLoadedImages([]);
-            setIsReady(false);
-            return;
-        }
-
-        const imagePromises = selectedImages.map((project: Project, index: number) => {
-            return new Promise<HTMLImageElement>((resolve, reject) => {
-                const img = new window.Image();
-                img.crossOrigin = 'anonymous';
-
-                img.onload = () => {
-                    console.log(
-                        `🎨 [ClientsBackgroundGallery] Image ${index + 1} chargée:`,
-                        project.source,
-                    );
-                    resolve(img);
-                };
-
-                img.onerror = (error) => {
-                    console.error(`🎨 [ClientsBackgroundGallery] Erreur image ${index + 1}:`, {
-                        source: project.source,
-                        error,
-                    });
-                    reject(error);
-                };
-
-                const imageUrl = getMediaUrl(project.source);
-                console.log(
-                    `🎨 [ClientsBackgroundGallery] Tentative de chargement image ${index + 1}:`,
-                    imageUrl,
-                );
-                img.src = imageUrl;
-            });
-        });
-
-        try {
-            const loadedImgs = await Promise.allSettled(imagePromises);
-
-            console.log('🎨 [ClientsBackgroundGallery] Résultats du préchargement:', {
-                total: loadedImgs.length,
-                fulfilled: loadedImgs.filter((r) => r.status === 'fulfilled').length,
-                rejected: loadedImgs.filter((r) => r.status === 'rejected').length,
-            });
-
-            // Log des erreurs
-            loadedImgs.forEach((result, index) => {
-                if (result.status === 'rejected') {
-                    console.error(`🎨 [ClientsBackgroundGallery] Image ${index + 1} rejetée:`, {
-                        source: selectedImages[index]?.source,
-                        reason: result.reason,
-                    });
-                }
-            });
-
-            const validImages = loadedImgs
-                .filter(
-                    (
-                        result: PromiseSettledResult<HTMLImageElement>,
-                    ): result is PromiseFulfilledResult<HTMLImageElement> =>
-                        result.status === 'fulfilled',
-                )
-                .map((result: PromiseFulfilledResult<HTMLImageElement>) => result.value)
-                .filter((img: HTMLImageElement) => img.naturalWidth && img.naturalHeight);
-
-            console.log('🎨 [ClientsBackgroundGallery] Images valides chargées:', {
-                count: validImages.length,
-                dimensions: validImages.map((img) => ({
-                    width: img.naturalWidth,
-                    height: img.naturalHeight,
-                })),
-            });
-
-            setLoadedImages(validImages);
-            setIsReady(validImages.length > 0);
-        } catch (error) {
-            console.error(
-                '🎨 [ClientsBackgroundGallery] Erreur globale lors du préchargement des images:',
-                error,
-            );
-            setLoadedImages([]);
-            setIsReady(false);
-        }
+        setIsReady(selectedImages.length > 0);
     }, [selectedImages]);
 
-    // Répartir les images en 4 lignes
+    // Répartir les images en 4 lignes (basé sur selectedImages directement)
     const imageRows = useMemo(() => {
-        if (loadedImages.length === 0) return [[], [], [], []];
+        if (selectedImages.length === 0) return [[], [], [], []];
 
-        const rows: HTMLImageElement[][] = [[], [], [], []];
-        loadedImages.forEach((img, index) => {
-            rows[index % ROWS].push(img);
+        const rows: Project[][] = [[], [], [], []];
+        selectedImages.forEach((project, index) => {
+            rows[index % ROWS].push(project);
         });
 
         return rows;
-    }, [loadedImages, ROWS]);
-
-    // Effect pour précharger les images quand la sélection change
-    useEffect(() => {
-        setIsReady(false);
-        preloadImages();
-    }, [preloadImages]);
+    }, [selectedImages, ROWS]);
 
     // Rendu d'une image dans une ligne
     const renderImageInRow = useCallback(
-        (img: HTMLImageElement, index: number) => {
-            if (!img || !img.naturalWidth) return null;
+        (project: Project, index: number) => {
+            if (!project?.source) return null;
 
-            const imgRatio = img.naturalWidth / img.naturalHeight;
+            // Utiliser un ratio par défaut de 16:9 pour les images
+            const imgRatio = project.format === 'portrait' ? 9 / 16 : 16 / 9;
             const imgWidth = IMAGE_HEIGHT * imgRatio;
 
             return (
                 <div
                     className={styles['gallery-image-container']}
-                    key={`${index}-${img.src}`}
+                    key={`${index}-${project.source}`}
                     style={{ margin: `0 ${IMAGE_MARGIN / 2}px` }}
                 >
                     <Image
-                        src={img.src}
+                        src={getMediaUrl(project.source)}
                         alt=""
-                        width={img.naturalWidth}
-                        height={img.naturalHeight}
+                        width={Math.round(imgWidth)}
+                        height={IMAGE_HEIGHT}
                         className={styles['gallery-image']}
                         style={{
                             height: `${IMAGE_HEIGHT}px`,
@@ -429,7 +339,7 @@ export default function ClientsBackgroundGallery({
                     </div>
                     <div>Projets totaux: {projects.length}</div>
                     <div>Images sélectionnées: {selectedImages.length}</div>
-                    <div>Images chargées: {loadedImages.length}</div>
+                    <div>Images sélectionnées: {selectedImages.length}</div>
                     <div>Ready: {isReady ? '✅ Oui' : '❌ Non'}</div>
                     <div>Env: {process.env.NODE_ENV}</div>
                     {selectedImages.length > 0 && (
