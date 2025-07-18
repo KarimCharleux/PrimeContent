@@ -2,7 +2,7 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 
 import Footer from '../components/Footer';
 import Header from '../components/Header';
@@ -36,7 +36,8 @@ const staggerContainer = {
     },
 };
 
-export default function MariagesPage() {
+// Composant séparé qui utilise useSearchParams
+function MariagesContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
@@ -224,5 +225,37 @@ export default function MariagesPage() {
             </section>
             <Footer />
         </main>
+    );
+}
+
+// Composant de fallback pour Suspense
+function MariagesPageFallback() {
+    return (
+        <main className="global-main-page">
+            <Header />
+            <section className="hero-section text-center py-16">
+                <div className="title-container relative overflow-hidden">
+                    <h1 className="page-title underline-title">MARIAGES</h1>
+                </div>
+                <p className="max-w-3xl mx-auto page-subtitle text-gray-200">
+                    Immortalisez votre grand jour avec des photos inoubliables ✨
+                </p>
+                <div className="container mx-auto">
+                    <div className="loading-container">
+                        <div className="loading-spinner"></div>
+                    </div>
+                </div>
+            </section>
+            <Footer />
+        </main>
+    );
+}
+
+// Composant principal qui enveloppe tout dans Suspense
+export default function MariagesPage() {
+    return (
+        <Suspense fallback={<MariagesPageFallback />}>
+            <MariagesContent />
+        </Suspense>
     );
 }
