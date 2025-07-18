@@ -1,0 +1,218 @@
+/* Conteneur principal de la galerie d'arrière-plan */
+.background-gallery {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* Conteneur de la galerie 3D */
+.gallery-3d-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120vw;
+    height: 120vh;
+    transform-origin: center center;
+    transform-style: preserve-3d;
+    will-change: transform, opacity;
+    filter: blur(2px);
+}
+
+/* Conteneur interne de la galerie */
+.gallery-inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0;
+}
+
+/* Ligne de la galerie */
+.gallery-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    overflow: hidden;
+    width: 100%;
+    position: relative;
+}
+
+/* Conteneur de défilement */
+.gallery-scroll {
+    display: flex;
+    align-items: center;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    will-change: transform;
+
+    &.left {
+        animation-name: scrollLeft;
+        animation-direction: normal;
+    }
+
+    &.right {
+        animation-name: scrollRight;
+        animation-direction: normal;
+    }
+
+    &.speed {
+        animation-duration: 45s; // Plus lent pour l'arrière-plan
+    }
+}
+
+/* Conteneur d'image */
+.gallery-image-container {
+    flex-shrink: 0;
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+/* Image de la galerie */
+.gallery-image {
+    display: block;
+    border-radius: 6px;
+    transition: transform 0.3s ease;
+    object-fit: cover;
+    filter: brightness(0.7) contrast(1.1);
+}
+
+/* Overlay principal sombre */
+.background-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        135deg,
+        rgba(0, 0, 0, 0.6) 0%,
+        rgba(0, 0, 0, 0.4) 50%,
+        rgba(0, 0, 0, 0.7) 100%
+    );
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Overlay de flou supplémentaire */
+.blur-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backdrop-filter: blur(1px);
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Animations de défilement */
+@keyframes scrollLeft {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-33.333%); // Défile d'un tiers pour l'effet infini avec 3 copies
+    }
+}
+
+@keyframes scrollRight {
+    0% {
+        transform: translateX(-33.333%);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
+
+/* Animation de fondu d'entrée */
+@keyframes fadeInBackground {
+    from {
+        opacity: 0;
+        transform: perspective(1200px) rotateX(45deg) rotateY(-5deg) scale(1.1) translateY(-5%);
+    }
+    to {
+        opacity: 0.4;
+        transform: perspective(1200px) rotateX(36deg) rotateY(-3deg) scale(1.2) translateY(-2%);
+    }
+}
+
+/* States pour les transitions */
+.gallery-3d-container {
+    &[data-loading='true'] {
+        opacity: 0;
+        transform: perspective(1200px) rotateX(45deg) rotateY(-5deg) scale(1.1) translateY(-5%);
+    }
+
+    &[data-ready='true'] {
+        animation: fadeInBackground 1s ease-out forwards;
+    }
+}
+
+/* Responsive - Mobile */
+@media (max-width: 768px) {
+    .gallery-3d-container {
+        filter: blur(3px);
+        transform: perspective(800px) rotateX(30deg) rotateY(-2deg) scale(1.1) translateY(-1%);
+    }
+
+    .gallery-scroll {
+        &.speed {
+            animation-duration: 35s; // Un peu plus rapide sur mobile
+        }
+    }
+
+    .background-overlay {
+        background: linear-gradient(
+            135deg,
+            rgba(0, 0, 0, 0.7) 0%,
+            rgba(0, 0, 0, 0.5) 50%,
+            rgba(0, 0, 0, 0.8) 100%
+        );
+    }
+}
+
+/* States pour les changements de filtre */
+.gallery-3d-container.changing {
+    transition:
+        opacity 0.6s ease-in-out,
+        filter 0.6s ease-in-out;
+    opacity: 0.2;
+    filter: blur(4px);
+}
+
+.gallery-3d-container.ready {
+    transition:
+        opacity 0.8s ease-in-out,
+        filter 0.8s ease-in-out;
+    opacity: 0.4;
+    filter: blur(2px);
+}
+
+/* Performance optimizations */
+.gallery-scroll,
+.gallery-image-container,
+.gallery-image {
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+}
+
+/* Réduction de mouvement pour l'accessibilité */
+@media (prefers-reduced-motion: reduce) {
+    .gallery-scroll {
+        animation-duration: 120s !important; // Beaucoup plus lent
+    }
+
+    .gallery-3d-container {
+        filter: blur(1px) !important;
+        transform: perspective(1200px) rotateX(15deg) rotateY(-1deg) scale(1.1) translateY(-1%) !important;
+    }
+}

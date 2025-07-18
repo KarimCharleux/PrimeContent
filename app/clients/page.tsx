@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef, Suspense } from 'react';
 
 import { db } from '../backoffice/lib/firebase-client';
+import ClientsBackgroundGallery from '../components/ClientsBackgroundGallery';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
 import PortfolioGrid, { Project, ClientData } from '../components/PortfolioGrid/PortfolioGrid';
@@ -346,7 +347,6 @@ function ClientPageContent() {
     );
 
     const customFilters = getAvailableFilters();
-    console.log(customFilters);
 
     // Créer les données client pour les filtres avec images
     const createClientData = (): { [key: string]: ClientData } => {
@@ -392,6 +392,12 @@ function ClientPageContent() {
         <>
             <main className="client-page global-main-page">
                 <Header />
+                {/* Galerie 3D en arrière-plan */}
+                <ClientsBackgroundGallery
+                    projects={projects}
+                    activeType={activeType}
+                    activeFilter={urlFilter || 'Tout'}
+                />
                 <section className="client-hero">
                     <div className="container mx-auto px-4 py-16">
                         <div className="text-center max-w-4xl mx-auto">
