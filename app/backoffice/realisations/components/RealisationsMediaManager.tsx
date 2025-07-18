@@ -745,29 +745,54 @@ export default function RealisationsMediaManager({
                             : 'realisations-photos';
                         await deleteDoc(doc(db, collectionName, media.id));
 
-                        // Supprimer le fichier principal
-                        if (media.path) {
+                        // Vérifier si c'est une vidéo externe (YouTube, Dailymotion)
+                        const isExternalVideo =
+                            media.isVideo &&
+                            (media.provider === 'youtube' ||
+                                media.provider === 'dailymotion' ||
+                                media.isYouTube || // Rétrocompatibilité
+                                (media.path &&
+                                    (media.path.includes('youtube.com') ||
+                                        media.path.includes('youtu.be') ||
+                                        media.path.includes('dailymotion.com'))));
+
+                        // Supprimer le fichier principal uniquement pour les médias locaux
+                        if (media.path && !isExternalVideo) {
                             const fileName = media.path.split('/').pop();
                             if (fileName) {
-                                await fetch(
-                                    `/api/delete?path=realisations&name=${encodeURIComponent(fileName)}`,
-                                    {
-                                        method: 'DELETE',
-                                    },
-                                );
+                                try {
+                                    await fetch(
+                                        `/api/delete?path=realisations&name=${encodeURIComponent(fileName)}`,
+                                        {
+                                            method: 'DELETE',
+                                        },
+                                    );
+                                } catch (deleteError) {
+                                    console.warn(
+                                        'Impossible de supprimer le fichier, il peut ne plus exister:',
+                                        deleteError,
+                                    );
+                                }
                             }
                         }
 
-                        // Supprimer la miniature si elle existe
-                        if (media.thumbnail) {
+                        // Supprimer la miniature uniquement si elle est hébergée localement
+                        if (media.thumbnail && !media.thumbnail.startsWith('http')) {
                             const thumbnailName = media.thumbnail.split('/').pop();
                             if (thumbnailName) {
-                                await fetch(
-                                    `/api/delete?path=realisations/thumbnails&name=${encodeURIComponent(thumbnailName)}`,
-                                    {
-                                        method: 'DELETE',
-                                    },
-                                );
+                                try {
+                                    await fetch(
+                                        `/api/delete?path=realisations/thumbnails&name=${encodeURIComponent(thumbnailName)}`,
+                                        {
+                                            method: 'DELETE',
+                                        },
+                                    );
+                                } catch (deleteError) {
+                                    console.warn(
+                                        'Impossible de supprimer la miniature, elle peut ne plus exister:',
+                                        deleteError,
+                                    );
+                                }
                             }
                         }
                     } catch (err) {
@@ -809,29 +834,54 @@ export default function RealisationsMediaManager({
                     : 'realisations-photos';
                 await deleteDoc(doc(db, collectionName, mediaId));
 
-                // Supprimer le fichier
-                if (media.path) {
+                // Vérifier si c'est une vidéo externe (YouTube, Dailymotion)
+                const isExternalVideo =
+                    media.isVideo &&
+                    (media.provider === 'youtube' ||
+                        media.provider === 'dailymotion' ||
+                        media.isYouTube || // Rétrocompatibilité
+                        (media.path &&
+                            (media.path.includes('youtube.com') ||
+                                media.path.includes('youtu.be') ||
+                                media.path.includes('dailymotion.com'))));
+
+                // Supprimer le fichier physique uniquement pour les médias locaux
+                if (media.path && !isExternalVideo) {
                     const fileName = media.path.split('/').pop();
                     if (fileName) {
-                        await fetch(
-                            `/api/delete?path=realisations&name=${encodeURIComponent(fileName)}`,
-                            {
-                                method: 'DELETE',
-                            },
-                        );
+                        try {
+                            await fetch(
+                                `/api/delete?path=realisations&name=${encodeURIComponent(fileName)}`,
+                                {
+                                    method: 'DELETE',
+                                },
+                            );
+                        } catch (deleteError) {
+                            console.warn(
+                                'Impossible de supprimer le fichier, il peut ne plus exister:',
+                                deleteError,
+                            );
+                        }
                     }
                 }
 
-                // Supprimer la miniature
-                if (media.thumbnail) {
+                // Supprimer la miniature uniquement si elle est hébergée localement
+                if (media.thumbnail && !media.thumbnail.startsWith('http')) {
                     const thumbnailName = media.thumbnail.split('/').pop();
                     if (thumbnailName) {
-                        await fetch(
-                            `/api/delete?path=realisations/thumbnails&name=${encodeURIComponent(thumbnailName)}`,
-                            {
-                                method: 'DELETE',
-                            },
-                        );
+                        try {
+                            await fetch(
+                                `/api/delete?path=realisations/thumbnails&name=${encodeURIComponent(thumbnailName)}`,
+                                {
+                                    method: 'DELETE',
+                                },
+                            );
+                        } catch (deleteError) {
+                            console.warn(
+                                'Impossible de supprimer la miniature, elle peut ne plus exister:',
+                                deleteError,
+                            );
+                        }
                     }
                 }
 
@@ -1280,65 +1330,65 @@ export default function RealisationsMediaManager({
                 </div>
 
                 <div className="border rounded-lg overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th scope="col" className="w-16 px-3 py-3 text-center">
-                                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Ordre
-                                    </span>
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                    Aperçu
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                    Type
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                    Titre
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                    Format
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                    Poids
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                    Catégorie
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {medias.length > 0 ? (
-                                <DndContext
-                                    sensors={sensors}
-                                    collisionDetection={closestCenter}
-                                    onDragEnd={handleDragEnd}
-                                >
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th scope="col" className="w-16 px-3 py-3 text-center">
+                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Ordre
+                                        </span>
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >
+                                        Aperçu
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >
+                                        Type
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >
+                                        Titre
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >
+                                        Format
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >
+                                        Poids
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >
+                                        Catégorie
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {medias.length > 0 ? (
                                     <SortableContext
                                         items={medias.map((m) => m.id)}
                                         strategy={verticalListSortingStrategy}
@@ -1356,38 +1406,38 @@ export default function RealisationsMediaManager({
                                                 />
                                             ))}
                                     </SortableContext>
-                                </DndContext>
-                            ) : (
-                                <tr>
-                                    <td colSpan={8} className="px-6 py-10 text-center">
-                                        <div className="flex flex-col items-center justify-center">
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                className="h-12 w-12 text-gray-400 mb-4"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={1}
-                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                                />
-                                            </svg>
-                                            <p className="text-gray-500 text-lg font-medium">
-                                                Aucun média trouvé
-                                            </p>
-                                            <p className="text-gray-400 text-sm mt-1">
-                                                Importez des médias en utilisant la section
-                                                ci-dessus
-                                            </p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                ) : (
+                                    <tr>
+                                        <td colSpan={8} className="px-6 py-10 text-center">
+                                            <div className="flex flex-col items-center justify-center">
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    className="h-12 w-12 text-gray-400 mb-4"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={1}
+                                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                                    />
+                                                </svg>
+                                                <p className="text-gray-500 text-lg font-medium">
+                                                    Aucun média trouvé
+                                                </p>
+                                                <p className="text-gray-400 text-sm mt-1">
+                                                    Importez des médias en utilisant la section
+                                                    ci-dessus
+                                                </p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </DndContext>
                 </div>
             </div>
         </div>
