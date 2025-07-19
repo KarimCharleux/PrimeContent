@@ -288,7 +288,7 @@ export default function EventPage({ evenement }: EventPageProps) {
     const convertMediaToProjects = () => {
         return loadedMedia.map((media) => ({
             title: media.title || '',
-            category: media.category || 'Photo',
+            category: media.category || '',
             source: media.source || media.path,
             isVideo: media.isVideo,
             format: media.format,
