@@ -303,10 +303,10 @@ export default function ContactForm() {
                                     </svg>
                                 </div>
                                 <a
-                                    href={`mailto:${contactInfo?.email || 'contact@primecontent.fr'}`}
+                                    href={`mailto:${contactInfo?.email || 'contact@dalifilms.fr'}`}
                                     className="contact-link"
                                 >
-                                    {contactInfo?.email || 'contact@primecontent.fr'}
+                                    {contactInfo?.email || 'contact@dalifilms.fr'}
                                 </a>
                             </motion.div>
 

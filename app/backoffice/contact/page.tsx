@@ -27,7 +27,7 @@ export default function ContactPage() {
                 // Créer un document par défaut si inexistant
                 const defaultContactInfo: ContactInfo = {
                     telephone: '+33 6 49 09 57 95',
-                    email: 'contact@primecontent.fr',
+                    email: 'contact@dalifilms.fr',
                     adresse: 'Paris, France',
                     reseauxSociaux: [],
                     legacyReseauxSociaux: {
