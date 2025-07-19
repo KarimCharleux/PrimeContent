@@ -912,7 +912,7 @@ export default function EventsMediaManager({
 
     return (
         <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-6">Gestion des médias d'événement</h2>
+            <h2 className="text-xl font-semibold mb-6">Gestion des médias de l&apos;événement</h2>
 
             {/* Formulaire d'ajout de nouveau média */}
             {showForm && (
