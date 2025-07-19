@@ -22,9 +22,9 @@ export default function MediaPageClient(): JSX.Element {
         message: string;
     } | null>(null);
     const [mediaStats, setMediaStats] = useState({
-        totalMedias: 0,
-        totalImages: 0,
-        totalVideos: 0,
+        totalCount: 0,
+        imageCount: 0,
+        videoCount: 0,
         totalSize: 0,
         imagesSize: 0,
         videosSize: 0,
@@ -59,7 +59,11 @@ export default function MediaPageClient(): JSX.Element {
                         description: data.description || '',
                         date: data.date || '',
                         lieu: data.lieu || '',
-                        couverture: data.couverture || '',
+                        imageSrc: data.imageSrc || data.couverture || '',
+                        dossierImages: data.dossierImages || `evenements/${docSnap.id}`,
+                        type: data.type || 'visionner',
+                        visible: data.visible ?? true,
+                        images: data.images || [],
                         motDePasse: data.motDePasse || '',
                         active: data.active || false,
                         ordre: data.ordre || 0,
@@ -77,9 +81,11 @@ export default function MediaPageClient(): JSX.Element {
         fetchEvenement();
     }, [eventId, isMounted]);
 
-    const handleStatusChange = (status: { type: 'success' | 'error'; message: string }) => {
+    const handleStatusChange = (status: { type: 'success' | 'error'; message: string } | null) => {
         setStatusMessage(status);
-        setTimeout(() => setStatusMessage(null), 5000);
+        if (status) {
+            setTimeout(() => setStatusMessage(null), 5000);
+        }
     };
 
     const handleMediaStatsChange = (stats: MediaStats) => {
@@ -137,7 +143,8 @@ export default function MediaPageClient(): JSX.Element {
                 <div className="bg-red-50 border border-red-200 rounded-md p-4">
                     <h3 className="text-lg font-medium text-red-800">Événement non trouvé</h3>
                     <p className="text-red-600 mt-1">
-                        L'événement avec l'ID "{eventId}" n'existe pas ou n'est plus disponible.
+                        L&apos;événement avec l&apos;ID &quot;{eventId}&quot; n&apos;existe pas ou
+                        n&apos;est plus disponible.
                     </p>
                 </div>
                 <Link
@@ -226,7 +233,7 @@ export default function MediaPageClient(): JSX.Element {
                                     d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                                 />
                             </svg>
-                            Voir l'événement
+                            Voir l&apos;événement
                         </Link>
                         <Link
                             href="/backoffice/evenements"
@@ -246,7 +253,7 @@ export default function MediaPageClient(): JSX.Element {
                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                 />
                             </svg>
-                            Modifier l'événement
+                            Modifier l&apos;événement
                         </Link>
                     </div>
                 </div>
@@ -255,15 +262,15 @@ export default function MediaPageClient(): JSX.Element {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
                     <div className="bg-blue-50 p-4 rounded-lg">
                         <p className="text-sm text-blue-600 font-medium">Total médias</p>
-                        <p className="text-2xl font-bold text-blue-900">{mediaStats.totalMedias}</p>
+                        <p className="text-2xl font-bold text-blue-900">{mediaStats.totalCount}</p>
                         <p className="text-xs text-blue-700">
-                            {mediaStats.totalImages} images • {mediaStats.totalVideos} vidéos
+                            {mediaStats.imageCount} images • {mediaStats.videoCount} vidéos
                         </p>
                     </div>
                     <div className="bg-yellow-50 p-4 rounded-lg">
                         <p className="text-sm text-yellow-600 font-medium">Images</p>
                         <p className="text-2xl font-bold text-yellow-900">
-                            {mediaStats.totalImages}
+                            {mediaStats.imageCount}
                         </p>
                         <p className="text-xs text-yellow-700">
                             {formatSize(mediaStats.imagesSize)}
@@ -271,9 +278,7 @@ export default function MediaPageClient(): JSX.Element {
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg">
                         <p className="text-sm text-green-600 font-medium">Vidéos</p>
-                        <p className="text-2xl font-bold text-green-900">
-                            {mediaStats.totalVideos}
-                        </p>
+                        <p className="text-2xl font-bold text-green-900">{mediaStats.videoCount}</p>
                         <p className="text-xs text-green-700">
                             {formatSize(mediaStats.videosSize)}
                         </p>

@@ -339,7 +339,7 @@ function ClientPageContent() {
                 router.replace(`/clients?${params.toString()}`, { scroll: false });
             }
         }
-    }, [loading, projects, urlFilter, activeType, isFilterValidForType]);
+    }, [loading, projects, urlFilter, activeType, isFilterValidForType, router]);
 
     // Gérer le changement de type avec URL
     const handleTypeChange = (type: 'marques' | 'celebrites') => {
