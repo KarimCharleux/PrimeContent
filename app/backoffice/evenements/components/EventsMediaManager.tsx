@@ -320,10 +320,6 @@ export default function EventsMediaManager({
     }, [medias, onStatsChange]);
 
     useEffect(() => {
-        calculateStats();
-    }, [calculateStats]);
-
-    useEffect(() => {
         setMedias(evenement.images || []);
     }, [evenement]);
 
