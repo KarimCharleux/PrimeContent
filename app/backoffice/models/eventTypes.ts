@@ -28,6 +28,14 @@ export interface EventMediaItem {
     order?: number; // Ordre d'affichage
     thumbnail?: string; // Miniature optionnelle pour les vidéos
     size?: number; // Taille en octets
+    // Support des vidéos externes
+    provider?: 'youtube' | 'dailymotion' | 'local'; // Fournisseur de la vidéo
+    videoId?: string; // ID de la vidéo externe
+    embedUrl?: string; // URL d'embed
+    watchUrl?: string; // URL de visionnage
+    // Propriétés de rétrocompatibilité
+    isYouTube?: boolean;
+    youtubeId?: string;
 }
 
 // Interface principale pour un événement

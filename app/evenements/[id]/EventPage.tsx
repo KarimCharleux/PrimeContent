@@ -289,10 +289,18 @@ export default function EventPage({ evenement }: EventPageProps) {
         return loadedMedia.map((media) => ({
             title: media.title || '',
             category: media.category || 'Photo',
-            source: media.path,
+            source: media.source || media.path,
             isVideo: media.isVideo,
             format: media.format,
             thumbnail: media.thumbnail,
+            // Support des vidéos externes
+            provider: media.provider || 'local',
+            videoId: media.videoId,
+            embedUrl: media.embedUrl,
+            watchUrl: media.watchUrl,
+            // Rétrocompatibilité
+            isYouTube: media.isYouTube,
+            youtubeId: media.youtubeId,
         }));
     };
 

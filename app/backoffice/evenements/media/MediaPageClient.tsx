@@ -9,7 +9,7 @@ import { Spinner } from '../../components/Spinner';
 import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../lib/firebase-client';
 import { Evenement } from '../../models/eventTypes';
-import EventMediaManager, { MediaStats } from '../components/EventMediaManager';
+import EventsMediaManager, { MediaStats } from '../components/EventsMediaManager';
 
 export default function MediaPageClient(): JSX.Element {
     const searchParams = useSearchParams();
@@ -296,7 +296,7 @@ export default function MediaPageClient(): JSX.Element {
             </div>
 
             {/* Gestionnaire de médias */}
-            <EventMediaManager
+            <EventsMediaManager
                 evenement={evenement}
                 onStatusChange={handleStatusChange}
                 onStatsChange={handleMediaStatsChange}
