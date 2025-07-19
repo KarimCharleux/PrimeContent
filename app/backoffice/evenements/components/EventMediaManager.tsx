@@ -9,6 +9,19 @@ import { getMediaUrl } from '../../../utils/mediaUrl';
 import { db } from '../../lib/firebase-client';
 import { EventMediaItem, Evenement } from '../../models/eventTypes';
 
+// Fonction utilitaire pour filtrer les champs undefined
+const removeUndefinedFields = (obj: Record<string, any>): Record<string, any> => {
+    return Object.entries(obj)
+        .filter(([_, value]) => value !== undefined)
+        .reduce(
+            (acc, [key, value]) => ({
+                ...acc,
+                [key]: value,
+            }),
+            {},
+        );
+};
+
 interface EventMediaManagerProps {
     readonly evenement: Evenement;
     readonly onStatusChange?: (
@@ -74,8 +87,9 @@ export default function EventMediaManager({
 
                 // Mettre à jour dans Firestore
                 const eventRef = doc(db, 'evenements', evenement.id!);
+                const cleanedImages = imagesWithOrder.map((img) => removeUndefinedFields(img));
                 updateDoc(eventRef, {
-                    images: imagesWithOrder,
+                    images: cleanedImages,
                 });
             }
         }
@@ -126,11 +140,6 @@ export default function EventMediaManager({
         onStatsChange?.(stats);
     }, [images, onStatsChange]);
 
-    // Calculer les statistiques quand les images changent
-    useEffect(() => {
-        calculateStats();
-    }, [calculateStats]);
-
     // Fonction pour gérer le changement d'ordre d'un média
     const handleReorder = async (imageId: string, direction: 'up' | 'down') => {
         try {
@@ -172,8 +181,9 @@ export default function EventMediaManager({
 
             // Mettre à jour Firestore
             const eventRef = doc(db, 'evenements', evenement.id!);
+            const cleanedImages = updatedImages.map((img) => removeUndefinedFields(img));
             await updateDoc(eventRef, {
-                images: updatedImages,
+                images: cleanedImages,
             });
 
             onStatusChange?.({
@@ -237,8 +247,9 @@ export default function EventMediaManager({
 
                 // Mettre à jour Firestore
                 const eventRef = doc(db, 'evenements', evenement.id!);
+                const cleanedImages = updatedImages.map((img) => removeUndefinedFields(img));
                 await updateDoc(eventRef, {
-                    images: updatedImages,
+                    images: cleanedImages,
                 });
 
                 // Mettre à jour l'état local
@@ -478,7 +489,7 @@ export default function EventMediaManager({
                     }
                 }
 
-                newMedias.push({
+                const mediaItem = {
                     id,
                     path: url,
                     title: '',
@@ -490,15 +501,21 @@ export default function EventMediaManager({
                     selected: false,
                     size: file.size,
                     category: selectedCategory || undefined,
-                });
+                };
+
+                // Nettoyer les valeurs undefined avant d'ajouter à la liste
+                newMedias.push(removeUndefinedFields(mediaItem) as EventMediaItem);
             }
 
             const updatedImages = [...images, ...newMedias];
 
+            // Nettoyer les données avant d'envoyer à Firestore
+            const cleanedImages = updatedImages.map((img) => removeUndefinedFields(img));
+
             // Mettre à jour Firestore
             const eventRef = doc(db, 'evenements', evenement.id!);
             await updateDoc(eventRef, {
-                images: updatedImages,
+                images: cleanedImages,
             });
 
             setImages(updatedImages);
@@ -649,8 +666,9 @@ export default function EventMediaManager({
 
             // Mettre à jour Firestore
             const eventRef = doc(db, 'evenements', evenement.id!);
+            const cleanedImages = updatedImages.map((img) => removeUndefinedFields(img));
             await updateDoc(eventRef, {
-                images: updatedImages,
+                images: cleanedImages,
             });
 
             setImages(updatedImages);
