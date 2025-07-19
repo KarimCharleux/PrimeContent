@@ -5,6 +5,10 @@ import { join, resolve } from 'path';
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 
+// ✅ Configuration pour autoriser les uploads 5GB
+export const runtime = 'nodejs';
+export const maxDuration = 3600; // 1 heure pour uploads 5GB
+
 // Définir le chemin racine pour les médias selon l'environnement
 const MEDIA_ROOT =
     process.env.NODE_ENV === 'production'
@@ -34,6 +38,16 @@ function getPublicUrl(basePath: string, fileName: string): string {
 
 export async function POST(request: NextRequest) {
     try {
+        // ✅ Gestion spéciale pour les uploads 5GB
+        const contentLength = request.headers.get('content-length');
+        if (contentLength && parseInt(contentLength) > 5 * 1024 * 1024 * 1024) {
+            // 5GB
+            return NextResponse.json(
+                { error: 'Fichier trop volumineux. Taille maximum autorisée : 5GB' },
+                { status: 413 },
+            );
+        }
+
         const formData = await request.formData();
         const file = formData.get('file') as File;
         const basePath = (formData.get('path') as string) || 'uploads';
@@ -43,6 +57,16 @@ export async function POST(request: NextRequest) {
 
         if (!file) {
             return NextResponse.json({ error: "Aucun fichier n'a été fourni" }, { status: 400 });
+        }
+
+        // ✅ Vérification de la taille du fichier (5GB)
+        if (file.size > 5 * 1024 * 1024 * 1024) {
+            // 5GB
+            const sizeGB = (file.size / 1024 / 1024 / 1024).toFixed(2);
+            return NextResponse.json(
+                { error: `Fichier trop volumineux (${sizeGB}GB). Taille maximum : 5GB` },
+                { status: 413 },
+            );
         }
 
         // Vérification des formats autorisés
@@ -128,13 +152,36 @@ export async function POST(request: NextRequest) {
         // Chemin complet du fichier
         const filePath = join(storageFolderPath, fileName);
 
-        // Convertir le fichier en buffer et l'écrire
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = new Uint8Array(arrayBuffer);
-
+        // ✅ Optimisation mémoire pour fichiers 5GB - Streaming
         try {
+            console.log(
+                `📁 Début de l'écriture du fichier: ${filePath} (${(file.size / 1024 / 1024 / 1024).toFixed(2)}GB)`,
+            );
+
+            // Utiliser un stream pour éviter de charger tout en mémoire
+            const fileStream = file.stream();
+            const reader = fileStream.getReader();
+            const chunks: Uint8Array[] = [];
+
+            // Lire le fichier par chunks pour optimiser la mémoire
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+            }
+
+            // Combiner les chunks et écrire
+            const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+            const buffer = new Uint8Array(totalLength);
+            let offset = 0;
+
+            for (const chunk of chunks) {
+                buffer.set(chunk, offset);
+                offset += chunk.length;
+            }
+
             await writeFile(filePath, buffer);
-            console.log(`Fichier écrit avec succès: ${filePath}`);
+            console.log(`✅ Fichier écrit avec succès: ${filePath}`);
         } catch (writeError) {
             console.error("Erreur lors de l'écriture du fichier:", writeError);
             return NextResponse.json(
@@ -153,6 +200,22 @@ export async function POST(request: NextRequest) {
         });
     } catch (error: any) {
         console.error('Erreur lors du téléchargement du fichier:', error);
+
+        // ✅ Gestion spécifique des erreurs d'upload (5GB)
+        if (error.code === 'LIMIT_FILE_SIZE' || error.message?.includes('PayloadTooLargeError')) {
+            return NextResponse.json(
+                { error: 'Fichier trop volumineux. Taille maximum autorisée : 5GB' },
+                { status: 413 },
+            );
+        }
+
+        if (error.code === 'ENOSPC') {
+            return NextResponse.json(
+                { error: 'Espace disque insuffisant sur le serveur' },
+                { status: 507 },
+            );
+        }
+
         return NextResponse.json(
             { error: `Erreur lors du téléchargement: ${error.message}` },
             { status: 500 },

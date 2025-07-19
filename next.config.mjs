@@ -6,6 +6,7 @@ const nextConfig = {
     experimental: {
         serverActions: {
             allowedOrigins: ['localhost:3000', 'dalifilms.fr', 'www.dalifilms.fr'],
+            bodySizeLimit: '5gb', // ✅ Support uploads 5GB
         },
     },
     trailingSlash: true,

@@ -4,6 +4,10 @@ import { join } from 'path';
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 
+// ✅ Configuration pour autoriser les uploads batch 5GB
+export const runtime = 'nodejs';
+export const maxDuration = 3600; // 1 heure pour uploads 5GB
+
 // Définir le chemin racine pour les médias selon l'environnement
 const MEDIA_ROOT =
     process.env.NODE_ENV === 'production'
@@ -57,6 +61,13 @@ export async function POST(request: NextRequest) {
                 // Vérifier le format
                 if (!allowedFormats.includes(file.type)) {
                     errorFiles.push(file.name);
+                    continue;
+                }
+
+                // ✅ Vérifier la taille du fichier (5GB max)
+                if (file.size > 5 * 1024 * 1024 * 1024) {
+                    // 5GB
+                    errorFiles.push(`${file.name} (trop volumineux)`);
                     continue;
                 }
 

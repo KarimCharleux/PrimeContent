@@ -4,6 +4,10 @@ import { join } from 'path';
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 
+// ✅ Configuration pour autoriser les uploads 5GB de galerie
+export const runtime = 'nodejs';
+export const maxDuration = 3600; // 1 heure pour uploads 5GB
+
 // Définir le chemin racine pour les médias selon l'environnement
 const MEDIA_ROOT =
     process.env.NODE_ENV === 'production'
@@ -52,6 +56,20 @@ export async function POST(request: NextRequest) {
                     invalidFiles: invalidFiles.map((f) => f.name),
                 },
                 { status: 400 },
+            );
+        }
+
+        // ✅ Vérification de la taille des fichiers (5GB max par fichier)
+        const oversizedFiles = files.filter((file) => file.size > 5 * 1024 * 1024 * 1024);
+        if (oversizedFiles.length > 0) {
+            return NextResponse.json(
+                {
+                    error: 'Certains fichiers sont trop volumineux. Taille maximum : 5GB par fichier.',
+                    oversizedFiles: oversizedFiles.map(
+                        (f) => `${f.name} (${(f.size / 1024 / 1024 / 1024).toFixed(2)}GB)`,
+                    ),
+                },
+                { status: 413 },
             );
         }
 
