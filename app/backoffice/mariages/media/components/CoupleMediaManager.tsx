@@ -553,7 +553,7 @@ export default function CoupleMediaManager({
                             <h4 className="text-sm font-medium text-gray-700 mb-2">
                                 Prévisualisation
                             </h4>
-                            <div className="h-64 w-full flex items-center justify-center bg-gray-100 rounded-md overflow-hidden">
+                            <div className="h-64 w-full flex items-center justify-center bg-gray-100 rounded-md overflow-hidden relative">
                                 {previewUrl ? (
                                     watchedFields.type === 'video' ? (
                                         <video
