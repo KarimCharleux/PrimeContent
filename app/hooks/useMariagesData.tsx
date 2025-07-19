@@ -77,7 +77,39 @@ export const useMariagesData = () => {
                 setLoading(true);
                 setError(null);
 
-                // 1. Charger les couples
+                // 1. Charger les médias généraux (non liés à des couples)
+                const generalMediaCollection = collection(db, 'mariageGeneralMedias');
+                const generalMediaSnapshot = await getDocs(generalMediaCollection);
+
+                const generalMediaData: MariageProject[] = [];
+                if (!generalMediaSnapshot.empty) {
+                    const fetchedGeneralMedias = generalMediaSnapshot.docs.map((doc) => doc.data());
+                    const sortedGeneralMedias = fetchedGeneralMedias.sort(
+                        (a: any, b: any) => (a.order || 0) - (b.order || 0),
+                    );
+
+                    sortedGeneralMedias.forEach((media: any) => {
+                        generalMediaData.push({
+                            title: media.title,
+                            category: media.category,
+                            source: media.watchUrl || media.url,
+                            isVideo: media.type !== 'photo',
+                            format: media.format || 'paysage',
+                            thumbnail: media.thumbnail,
+                            provider:
+                                media.type === 'youtube' || media.type === 'dailymotion'
+                                    ? media.type
+                                    : media.type === 'video'
+                                      ? 'local'
+                                      : undefined,
+                            videoId: media.videoId,
+                            embedUrl: media.embedUrl,
+                            watchUrl: media.watchUrl,
+                        });
+                    });
+                }
+
+                // 2. Charger les couples
                 const couplesCollection = collection(db, 'couples');
                 const couplesSnapshot = await getDocs(couplesCollection);
 
@@ -92,7 +124,7 @@ export const useMariagesData = () => {
                     );
                     setCouples(sortedCouples);
 
-                    // 2. Charger les médias pour tous les couples
+                    // 3. Charger les médias pour tous les couples
                     const allMedia: MariageProject[] = [];
                     const allVideos: MariageProject[] = [];
 
@@ -157,8 +189,8 @@ export const useMariagesData = () => {
                         }
                     }
 
-                    // Combiner tous les médias (vidéos externes en premier)
-                    const allPortfolioData = [...allVideos, ...allMedia];
+                    // Combiner tous les médias (médias généraux, puis vidéos externes des couples, puis médias des couples)
+                    const allPortfolioData = [...generalMediaData, ...allVideos, ...allMedia];
                     setPortfolioData(allPortfolioData);
 
                     // 3. Générer les données de témoignages
@@ -174,7 +206,7 @@ export const useMariagesData = () => {
                 } else {
                     // Pas de couples trouvés
                     setCouples([]);
-                    setPortfolioData([]);
+                    setPortfolioData(generalMediaData); // Garder les médias généraux même sans couples
                     setTestimonialsData([]);
                 }
 
