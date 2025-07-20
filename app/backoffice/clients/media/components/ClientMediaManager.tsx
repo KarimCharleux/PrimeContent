@@ -43,16 +43,49 @@ export default function ClientMediaManager({
     const loadMedia = useCallback(async () => {
         try {
             setLoading(true);
+            console.log('Chargement des médias depuis:', basePath);
+
             const response = await fetch(
                 `/api/gallery-images?path=${encodeURIComponent(basePath)}`,
             );
 
             if (!response.ok) {
+                console.error('Erreur API:', response.status, response.statusText);
                 throw new Error('Erreur lors du chargement des médias');
             }
 
             const data = await response.json();
-            setMediaFiles(data.media || data.images || []);
+            console.log('Données reçues:', data);
+
+            // Traiter et normaliser les données reçues
+            let mediaList = data.media || data.images || [];
+
+            // S'assurer que chaque média a les bonnes propriétés
+            mediaList = mediaList.map((media: any) => {
+                // Déterminer le type de fichier à partir de l'extension
+                const fileExtension = media.name?.toLowerCase().split('.').pop() || '';
+                const videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'm4v'];
+                const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
+
+                let type: 'image' | 'video' = 'image';
+                if (videoExtensions.includes(fileExtension)) {
+                    type = 'video';
+                } else if (imageExtensions.includes(fileExtension)) {
+                    type = 'image';
+                }
+
+                return {
+                    name: media.name || '',
+                    path: media.path || basePath,
+                    type: media.type || type,
+                    thumbnail: media.thumbnail,
+                    size: media.size,
+                    lastModified: media.lastModified ? new Date(media.lastModified) : undefined,
+                };
+            });
+
+            console.log('Médias traités:', mediaList);
+            setMediaFiles(mediaList);
         } catch (error) {
             console.error('Erreur lors du chargement des médias:', error);
             setStatusMessage({
@@ -83,6 +116,8 @@ export default function ClientMediaManager({
 
         try {
             for (const file of selectedFiles) {
+                console.log(`Upload du fichier: ${file.name} (${file.type}) vers ${basePath}`);
+
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('path', basePath);
@@ -96,8 +131,13 @@ export default function ClientMediaManager({
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Erreur lors de l'upload de ${file.name}`);
+                    const errorText = await response.text();
+                    console.error(`Erreur upload ${file.name}:`, response.status, errorText);
+                    throw new Error(`Erreur lors de l'upload de ${file.name}: ${response.status}`);
                 }
+
+                const result = await response.json();
+                console.log(`Upload réussi pour ${file.name}:`, result);
 
                 // Simuler le progrès complet
                 setUploadProgress((prev) => ({ ...prev, [file.name]: 100 }));
@@ -111,8 +151,10 @@ export default function ClientMediaManager({
             setSelectedFiles([]);
             setUploadProgress({});
 
-            // Recharger les médias
-            await loadMedia();
+            // Attendre un peu avant de recharger pour s'assurer que les fichiers sont bien écrits
+            setTimeout(async () => {
+                await loadMedia();
+            }, 1000);
         } catch (error) {
             console.error("Erreur lors de l'upload:", error);
             setStatusMessage({
@@ -131,15 +173,26 @@ export default function ClientMediaManager({
         }
 
         try {
-            const response = await fetch(
-                `/api/delete?path=${encodeURIComponent(file.path)}&name=${encodeURIComponent(file.name)}`,
-                {
-                    method: 'DELETE',
-                },
-            );
+            // Construire l'URL avec un double encodage pour les noms de fichiers complexes
+            const encodedPath = encodeURIComponent(file.path);
+            const encodedName = encodeURIComponent(file.name);
+
+            console.log('Suppression du fichier:', {
+                originalPath: file.path,
+                originalName: file.name,
+                encodedPath,
+                encodedName,
+                fullUrl: `/api/delete?path=${encodedPath}&name=${encodedName}`,
+            });
+
+            const response = await fetch(`/api/delete?path=${encodedPath}&name=${encodedName}`, {
+                method: 'DELETE',
+            });
 
             if (!response.ok) {
-                throw new Error('Erreur lors de la suppression');
+                const errorText = await response.text();
+                console.error('Erreur API:', response.status, errorText);
+                throw new Error(`Erreur lors de la suppression: ${response.status}`);
             }
 
             setStatusMessage({
@@ -253,10 +306,24 @@ export default function ClientMediaManager({
 
             {/* Liste des médias */}
             <div className="bg-white rounded-lg shadow">
-                <div className="p-6 border-b border-gray-200">
+                <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                     <h3 className="text-lg font-medium text-gray-900">
                         Médias existants ({mediaFiles.length})
                     </h3>
+                    <button
+                        onClick={loadMedia}
+                        disabled={loading}
+                        className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
+                    >
+                        {loading ? (
+                            <div className="flex items-center">
+                                <Spinner small />
+                                <span className="ml-1">Actualisation...</span>
+                            </div>
+                        ) : (
+                            'Actualiser'
+                        )}
+                    </button>
                 </div>
 
                 <div className="p-6">
@@ -297,9 +364,9 @@ export default function ClientMediaManager({
                                                 className="object-cover"
                                             />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                                            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200 relative">
                                                 <svg
-                                                    className="w-12 h-12 text-gray-400"
+                                                    className="w-12 h-12 text-gray-400 mb-2"
                                                     fill="none"
                                                     stroke="currentColor"
                                                     viewBox="0 0 24 24"
@@ -311,6 +378,17 @@ export default function ClientMediaManager({
                                                         d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
                                                     />
                                                 </svg>
+                                                <span className="text-xs text-gray-500 font-medium">
+                                                    VIDÉO
+                                                </span>
+                                                {file.thumbnail && (
+                                                    <Image
+                                                        src={getMediaUrl(file.thumbnail)}
+                                                        alt={`Miniature de ${file.name}`}
+                                                        fill
+                                                        className="object-cover opacity-50"
+                                                    />
+                                                )}
                                             </div>
                                         )}
                                     </div>
