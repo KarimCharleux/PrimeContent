@@ -86,7 +86,7 @@ const SortableRow: React.FC<SortableRowProps> = ({ review, onEdit, onDelete }) =
             </td>
             <td className="px-6 py-4 whitespace-nowrap">{review.name}</td>
             <td className="px-6 py-4 whitespace-nowrap">{review.role}</td>
-            <td className="px-6 py-4 whitespace-nowrap">{review.company}</td>
+            <td className="px-6 py-4 whitespace-nowrap">{review.company || '-'}</td>
             <td className="px-6 py-4">
                 <div className="max-w-xs truncate">{review.text}</div>
             </td>
@@ -477,7 +477,8 @@ export default function HomeTabReviews() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Entreprise
+                                    Entreprise{' '}
+                                    <span className="text-gray-400 text-xs">(optionnel)</span>
                                 </label>
                                 <input
                                     type="text"
@@ -489,7 +490,6 @@ export default function HomeTabReviews() {
                                         })
                                     }
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                    required
                                 />
                             </div>
                         </div>

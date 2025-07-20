@@ -9,7 +9,7 @@ import { getMediaUrl } from '../utils/mediaUrl';
 export interface Review {
     name: string;
     role: string;
-    company: string;
+    company?: string;
     text: string;
     imageSrc?: string;
     order?: number;
@@ -341,7 +341,8 @@ export default function CustomerReviews({ reviews, autoplaySpeed = 5000 }: Custo
                                                 {review.name}
                                             </p>
                                             <p className="text-blue-100/70 group-hover:text-blue-100 text-xs sm:text-sm select-none transition-colors duration-300">
-                                                {review.role}, {review.company}
+                                                {review.role}{' '}
+                                                {review.company && `, ${review.company}`}
                                             </p>
                                         </div>
                                     </div>
