@@ -219,7 +219,7 @@ function SortableRow({ media, onEdit, onDelete, formatSize, getMediaUrl }: Sorta
                             : 'bg-gray-100 text-gray-800'
                     }`}
                 >
-                    {media.category || 'Non catégorisé'}
+                    {media.category || '-'}
                 </span>
             </td>
 
@@ -455,14 +455,6 @@ export default function MariagesGeneralMediaManager({
             return;
         }
 
-        if (!selectedCategory) {
-            onStatusChange?.({
-                type: 'error',
-                message: 'Veuillez sélectionner une catégorie',
-            });
-            return;
-        }
-
         try {
             setUploading(true);
             setUploadProgress(0);
@@ -527,7 +519,7 @@ export default function MariagesGeneralMediaManager({
                     url,
                     source: url,
                     title: '',
-                    category: selectedCategory,
+                    category: selectedCategory || '',
                     format,
                     order: medias.length + i,
                     thumbnail,
@@ -848,7 +840,7 @@ export default function MariagesGeneralMediaManager({
 
     // Catégories disponibles
     const categories = Array.from(new Set(medias.map((media) => media.category))).filter(
-        Boolean,
+        (category) => category && category.trim() !== '',
     ) as string[];
 
     // Convertir les données du formulaire en GeneralMariageMedia
@@ -1061,7 +1053,8 @@ export default function MariagesGeneralMediaManager({
                 {/* Sélection de catégorie */}
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Catégorie pour les nouveaux médias *
+                        Catégorie pour les nouveaux médias{' '}
+                        <span className="text-gray-400 text-xs">(optionnel)</span>
                     </label>
                     <div className="flex space-x-2">
                         <select
@@ -1145,11 +1138,9 @@ export default function MariagesGeneralMediaManager({
 
                         <button
                             onClick={handleUpload}
-                            disabled={uploading || !selectedCategory}
+                            disabled={uploading}
                             className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                                uploading || !selectedCategory
-                                    ? 'bg-indigo-400'
-                                    : 'bg-black hover:bg-black/80'
+                                uploading ? 'bg-indigo-400' : 'bg-black hover:bg-black/80'
                             } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors`}
                         >
                             {uploading ? (
