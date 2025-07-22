@@ -975,16 +975,7 @@ export default function Page() {
                         </div>
                     ) : (
                         <PortfolioGrid
-                            projects={projects
-                                .filter((p) => p.isLatest)
-                                .map((p) => ({
-                                    title: p.title,
-                                    category: p.category,
-                                    source: p.source,
-                                    isVideo: p.isVideo,
-                                    format: p.format,
-                                    thumbnail: p.thumbnail,
-                                }))}
+                            projects={projects.filter((p) => p.isLatest)}
                             showFilter={false}
                         />
                     )}
