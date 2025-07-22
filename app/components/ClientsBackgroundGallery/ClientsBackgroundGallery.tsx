@@ -1,9 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 
 import { useImageStore } from '../../store/imageStore';
+import ProtectedImage from '../ProtectedImage';
 
 import styles from './clientsBackgroundGallery.module.scss';
 
@@ -58,7 +58,7 @@ export default function ClientsBackgroundGallery() {
                 key={`${index}-${img.src}`}
                 style={{ margin: `0 ${IMAGE_MARGIN / 2}px` }}
             >
-                <Image
+                <ProtectedImage
                     src={img.src}
                     alt=""
                     width={img.naturalWidth}
@@ -70,6 +70,7 @@ export default function ClientsBackgroundGallery() {
                         objectFit: 'cover',
                         borderRadius: '6px',
                     }}
+                    watermarkPosition="bottom-right"
                 />
             </div>
         );

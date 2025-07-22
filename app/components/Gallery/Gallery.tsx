@@ -1,9 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 import { useImageStore } from '../../store/imageStore';
+import ProtectedImage from '../ProtectedImage';
 
 import styles from './gallery.module.scss';
 
@@ -98,7 +98,7 @@ export default function Gallery() {
                     key={`${index}-${img.src}`}
                     style={{ margin: `0 ${galleryConfig.imageMargin / 2}px` }}
                 >
-                    <Image
+                    <ProtectedImage
                         src={img.src}
                         alt=""
                         width={img.naturalWidth}
@@ -110,6 +110,7 @@ export default function Gallery() {
                             objectFit: 'cover',
                             borderRadius: '7px',
                         }}
+                        watermarkPosition="bottom-right"
                     />
                 </div>
             );

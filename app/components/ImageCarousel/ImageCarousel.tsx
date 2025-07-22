@@ -1,12 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import { useEffect, useRef } from 'react';
 import ReactPlayer from 'react-player';
 
 import { getMediaUrl } from '../../utils/mediaUrl';
 import { VideoProvider, getVideoEmbedUrl, isExternalVideo } from '../../utils/videoManager';
+import ProtectedImage from '../ProtectedImage';
 
 import styles from './ImageCarousel.module.scss';
 
@@ -281,7 +281,7 @@ const ImageCarousel = ({
                                 </div>
                             )
                         ) : (
-                            <Image
+                            <ProtectedImage
                                 src={getMediaUrl(currentItem.src)}
                                 alt={`Média ${currentIndex + 1}`}
                                 onClick={(e) => e.stopPropagation()}
@@ -291,6 +291,7 @@ const ImageCarousel = ({
                                 priority
                                 quality={100}
                                 sizes="100vw"
+                                watermarkPosition="bottom-right"
                             />
                         )}
                     </div>

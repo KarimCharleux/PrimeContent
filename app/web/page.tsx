@@ -2,13 +2,13 @@
 
 import { collection, getDocs } from 'firebase/firestore';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
 import { db } from '../backoffice/lib/firebase-client';
 import AnimatedStat from '../components/AnimatedStat';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
+import ProtectedImage from '../components/ProtectedImage';
 import { getMediaUrl } from '../utils/mediaUrl';
 
 // Importation des styles
@@ -348,7 +348,7 @@ export default function WebPage() {
                         >
                             <h2 className="section-title">NOTRE PROCESS</h2>
                             <div className="process-image">
-                                <Image
+                                <ProtectedImage
                                     src={getMediaUrl(
                                         content?.processImage ||
                                             '/home/projects/GROUP PHOTO - CELEBRITES - Â© bastian huber.jpg',
@@ -360,6 +360,7 @@ export default function WebPage() {
                                     width={400}
                                     height={300}
                                     className="rounded-lg"
+                                    watermarkPosition="bottom-right"
                                 />
                             </div>
                         </motion.div>
@@ -443,12 +444,13 @@ export default function WebPage() {
                                 <div className="realisation-date">{realisation.date}</div>
                                 <div className="realisation-content">
                                     <div className="realisation-image">
-                                        <Image
+                                        <ProtectedImage
                                             src={getMediaUrl(realisation.image)}
                                             alt={realisation.title}
                                             width={200}
                                             height={150}
                                             className="rounded-lg"
+                                            watermarkPosition="center"
                                         />
                                     </div>
                                     <div className="realisation-info">
