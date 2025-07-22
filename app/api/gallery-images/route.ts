@@ -31,6 +31,49 @@ function getFileType(fileName: string): 'image' | 'video' {
 
 export async function GET(request: Request) {
     try {
+        // 🚀 Proxy vers l'API de production en mode développement
+        if (process.env.NODE_ENV === 'development') {
+            const { searchParams } = new URL(request.url);
+            const queryString = searchParams.toString();
+
+            console.log("🔄 Mode développement : Proxy vers l'API de production");
+
+            const productionApiUrl = `https://dalifilms.fr/api/gallery-images${queryString ? `?${queryString}` : ''}`;
+
+            try {
+                const response = await fetch(productionApiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'User-Agent': request.headers.get('user-agent') || '',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur API production: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                console.log(
+                    `✅ Données récupérées depuis la production: ${data.count || 0} éléments`,
+                );
+
+                // Retourner les données de production avec les mêmes headers
+                const proxyResponse = NextResponse.json(data);
+                proxyResponse.headers.set(
+                    'Cache-Control',
+                    'public, max-age=3600, stale-while-revalidate=86400',
+                );
+                proxyResponse.headers.set('X-Proxy-Source', 'production');
+
+                return proxyResponse;
+            } catch (error) {
+                console.error('❌ Erreur lors du proxy vers la production:', error);
+                // En cas d'erreur, continuer avec la logique locale
+                console.log('🔄 Fallback vers les données locales');
+            }
+        }
+
         const { searchParams } = new URL(request.url);
         const requestedPath = searchParams.get('path');
         const limitParam = searchParams.get('limit');
