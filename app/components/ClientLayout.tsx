@@ -5,8 +5,6 @@ import Script from 'next/script';
 import { useState, useEffect } from 'react';
 import TagManager from 'react-gtm-module';
 
-import { initializeImageProtection, disableImageProtection } from '../utils/imageProtection';
-
 import SplashScreen from './SplashScreen';
 
 export default function ClientLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -27,24 +25,6 @@ export default function ClientLayout({ children }: Readonly<{ children: React.Re
             gtmId: 'GTM-55WMPSG8',
         });
     }, []);
-
-    // Gestion de la protection des images
-    useEffect(() => {
-        if (isAdminPage) {
-            // Désactiver la protection sur les pages admin
-            disableImageProtection();
-        } else {
-            // Activer la protection sur les pages publiques
-            initializeImageProtection(true);
-        }
-
-        // Cleanup au démontage du composant
-        return () => {
-            if (!isAdminPage) {
-                disableImageProtection();
-            }
-        };
-    }, [isAdminPage]);
 
     return (
         <>

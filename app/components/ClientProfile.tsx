@@ -1,10 +1,9 @@
 'use client';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 
 import { getMediaUrl } from '../utils/mediaUrl';
-
-import ProtectedImage from './ProtectedImage';
 
 interface ClientProfileProps {
     readonly name: string;
@@ -161,14 +160,13 @@ export default function ClientProfile({
                 {/* Fond de la carte */}
                 <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black overflow-hidden">
                     {imageBackground && !imageError ? (
-                        <ProtectedImage
+                        <Image
                             src={getMediaUrl(imageBackground)}
                             alt={`${name} background`}
                             fill
                             style={{ objectFit: 'cover', opacity: 0.6 }}
                             quality={80}
                             className="client-background transition-transform duration-300"
-                            showWatermark={false}
                         />
                     ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 to-black"></div>
@@ -178,14 +176,13 @@ export default function ClientProfile({
                 {/* Image du client avec effet de parallaxe */}
                 <div className="client-image absolute inset-0 transition-transform duration-200 ease-out">
                     {imageSrc && !imageError ? (
-                        <ProtectedImage
+                        <Image
                             src={getMediaUrl(imageSrc)}
                             alt={name}
                             fill
                             style={{ objectFit: 'cover' }}
                             quality={90}
                             onError={() => setImageError(true)}
-                            watermarkPosition="bottom-right"
                         />
                     ) : (
                         <div className="absolute inset-0 flex items-center justify-center text-5xl font-bold text-white/30">
@@ -224,20 +221,19 @@ export default function ClientProfile({
                 <div className="relative w-16 h-16 mb-2 rounded-full overflow-hidden bg-gray-800 border-2 border-white/20">
                     {/* Image de fond */}
                     {imageBackground && (
-                        <ProtectedImage
+                        <Image
                             src={getMediaUrl(imageBackground)}
                             alt={`${name} background`}
                             fill
                             style={{ objectFit: 'cover', opacity: 0.6 }}
                             quality={80}
                             className="absolute inset-0"
-                            showWatermark={false}
                         />
                     )}
 
                     {/* Image principale */}
                     {imageSrc && !imageError ? (
-                        <ProtectedImage
+                        <Image
                             src={getMediaUrl(imageSrc)}
                             alt={name}
                             fill
@@ -245,7 +241,6 @@ export default function ClientProfile({
                             quality={90}
                             onError={() => setImageError(true)}
                             className="relative z-10 transition-transform duration-300 group-hover:scale-110"
-                            watermarkPosition="center"
                         />
                     ) : (
                         <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white/70 z-10">

@@ -1,12 +1,12 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 
 import gsap from '../../lib/gsap-config';
 import { getMediaUrl } from '../../utils/mediaUrl';
 import { VideoProvider, getVideoThumbnail, isExternalVideo } from '../../utils/videoManager';
 import ImageCarousel from '../ImageCarousel/ImageCarousel';
-import ProtectedImage from '../ProtectedImage';
 
 import styles from './PortfolioGrid.module.scss';
 
@@ -487,7 +487,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                                         }}
                                                     />
                                                 )}
-                                                <ProtectedImage
+                                                <Image
                                                     src={getMediaUrl(clientInfo.imageSrc)}
                                                     alt={clientInfo.name}
                                                     width={32}
@@ -497,7 +497,6 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                                             ? styles.filterImageRound
                                                             : styles.filterImageLogo
                                                     }`}
-                                                    showWatermark={false}
                                                 />
                                                 {/* Afficher le nom seulement pour les célébrités */}
                                                 {clientInfo.type === 'celebrity' && (
@@ -597,13 +596,12 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                                 (project.provider &&
                                                     project.provider !== 'local') ||
                                                 project.isYouTube ? (
-                                                    <ProtectedImage
+                                                    <Image
                                                         src={getProjectThumbnail(project)}
                                                         alt={project.title ?? ''}
                                                         fill
                                                         sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw"
                                                         style={{ objectFit: 'cover' }}
-                                                        watermarkPosition="center"
                                                     />
                                                 ) : (
                                                     // Sinon, utiliser la vidéo comme miniature
@@ -673,13 +671,12 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                             </div>
                                         ) : (
                                             <div className={styles.portfolioImageContainer}>
-                                                <ProtectedImage
+                                                <Image
                                                     src={getMediaUrl(project.source)}
                                                     alt={project.title ?? ''}
                                                     fill
                                                     sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw"
                                                     style={{ objectFit: 'cover' }}
-                                                    watermarkPosition="center"
                                                 />
                                             </div>
                                         )}
