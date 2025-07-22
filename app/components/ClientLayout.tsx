@@ -29,13 +29,13 @@ export default function ClientLayout({ children }: Readonly<{ children: React.Re
     return (
         <>
             {/* Google Analytics */}
-            <Script async src="https://www.googletagmanager.com/gtag/js?id=G-N9S47LLDZZ" />
+            <Script async src="https://www.googletagmanager.com/gtag/js?id=G-3DY1CHZPTK" />
             <Script id="google-analytics">
                 {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', 'G-N9S47LLDZZ');
+          gtag('config', 'G-3DY1CHZPTK');
         `}
             </Script>
 
