@@ -1,0 +1,127 @@
+/* Container principal */
+.container {
+    position: relative;
+    display: inline-block;
+    overflow: hidden;
+}
+
+/* Image de base */
+.image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+/* === PROTECTIONS CSS === */
+
+/* Protection générale */
+.protected {
+    /* Désactiver la sélection de texte/image */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+    /* Désactiver le drag and drop */
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+
+    /* Empêcher la sauvegarde sur iOS */
+    -webkit-touch-callout: none;
+
+    /* Désactiver le highlight sur tap mobile */
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Anti-sélection renforcée */
+.noSelect {
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+
+    /* Empêcher la sélection par double-clic */
+    -webkit-touch-callout: none !important;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+}
+
+/* Anti-drag renforcé */
+.noDrag {
+    -webkit-user-drag: none !important;
+    -khtml-user-drag: none !important;
+    -moz-user-drag: none !important;
+    -o-user-drag: none !important;
+    user-drag: none !important;
+    draggable: false !important;
+}
+
+/* Anti-clic droit */
+.noRightClick {
+    pointer-events: auto;
+}
+
+/* Overlay de protection invisible */
+.protectionOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    pointer-events: none; /* Permet le clic normal mais bloque les interactions avancées */
+    background: transparent;
+}
+
+/* Note: Watermark est maintenant intégré directement dans l'image via l'API côté serveur */
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .protected {
+        /* Protections renforcées sur mobile */
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+    }
+}
+
+/* === PROTECTIONS AVANCÉES === */
+
+/* Empêcher l'impression */
+@media print {
+    .protected {
+        display: none !important;
+    }
+}
+
+/* Protection contre les outils de développement */
+.protected::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Note: Animations et hover effects supprimés car le watermark est maintenant côté serveur */
+
+/* Protection contre la copie d'écran sur certains navigateurs */
+.protected {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+}
+
+/* Désactiver les raccourcis clavier communs */
+.protected {
+    /* Ces propriétés aident à bloquer Ctrl+S, Ctrl+A, etc. au niveau CSS */
+    -webkit-user-modify: read-only;
+    -moz-user-modify: read-only;
+    user-modify: read-only;
+}
+
+/* Note: Plus de watermark CSS - protection intégrée dans l'image côté serveur */
