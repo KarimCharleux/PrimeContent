@@ -62,13 +62,13 @@ export async function GET() {
     <loc>https://dalifilms.fr/web/</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
   </url>
     <url>
     <loc>https://dalifilms.fr/clients/</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://dalifilms.fr/mentions-legales/</loc>

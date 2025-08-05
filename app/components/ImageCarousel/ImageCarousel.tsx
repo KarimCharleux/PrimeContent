@@ -281,17 +281,30 @@ const ImageCarousel = ({
                                 </div>
                             )
                         ) : (
-                            <ProtectedImage
-                                src={getMediaUrl(currentItem.src)}
-                                alt={`Média ${currentIndex + 1}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className={styles['carousel-image']}
-                                width={1200}
-                                height={800}
-                                priority
-                                quality={100}
-                                sizes="100vw"
-                            />
+                            <div className="relative w-full h-full flex items-center justify-center">
+                                {/* Overlay transparent pour gérer les clics en dehors */}
+                                <div
+                                    className="absolute inset-0 z-10"
+                                    onClick={onClose}
+                                    style={{ cursor: 'pointer' }}
+                                />
+
+                                {/* Image avec dimensions responsives */}
+                                <div className="relative z-20">
+                                    <ProtectedImage
+                                        src={getMediaUrl(currentItem.src)}
+                                        alt={`Média ${currentIndex + 1}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className={styles['carousel-image']}
+                                        width={1200}
+                                        height={800}
+                                        priority
+                                        quality={100}
+                                        sizes="90vw"
+                                        objectFit="contain"
+                                    />
+                                </div>
+                            </div>
                         )}
                     </div>
                 </motion.div>
