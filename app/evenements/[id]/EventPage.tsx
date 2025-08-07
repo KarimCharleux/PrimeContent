@@ -231,16 +231,15 @@ export default function EventPage({ evenement }: EventPageProps) {
         );
     };
 
-    // Domaine de téléchargement forcé (configurable), pour éviter les chemins locaux
-    const MEDIA_DOWNLOAD_BASE = 'https://media.primecontent.fr';
-
+    // Utiliser notre API proxy pour éviter les problèmes CORS
     const buildDownloadUrl = (path: string): string => {
         if (!path) return '';
-        if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:')) {
+        if (path.startsWith('blob:')) {
             return path;
         }
-        const cleanPath = path.startsWith('/') ? path : `/${path}`;
-        return `${MEDIA_DOWNLOAD_BASE}${cleanPath}`;
+        // Utiliser notre route API proxy
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+        return `/api/download-media?path=${encodeURIComponent('/' + cleanPath)}`;
     };
 
     // Gérer le téléchargement de toutes les photos
@@ -265,14 +264,14 @@ export default function EventPage({ evenement }: EventPageProps) {
                 for (const media of imageItems) {
                     try {
                         const url = buildDownloadUrl(media.path);
-                        const response = await fetch(url, { mode: 'cors', cache: 'no-store' });
+                        const response = await fetch(url);
                         if (!response.ok) throw new Error(`HTTP ${response.status}`);
                         const blob = await response.blob();
                         const nameFromPath =
                             media.originalName || media.path.split('/').pop() || `${media.id}.jpg`;
                         folder?.file(nameFromPath, blob);
                     } catch (e) {
-                        // Continuer malgré l’erreur sur un fichier
+                        // Continuer malgré l'erreur sur un fichier
                         console.error('Erreur téléchargement media:', media.path, e);
                     } finally {
                         completed += 1;
@@ -310,6 +309,79 @@ export default function EventPage({ evenement }: EventPageProps) {
         }
     };
 
+    // Gérer le téléchargement des médias sélectionnés
+    const handleDownloadSelectedMedia = () => {
+        if (isDownloadingZip) return;
+        try {
+            const selectedMediaPaths = Array.from(selectedItems);
+            const selectedMediaItems = (evenement.images || []).filter(
+                (m) => selectedMediaPaths.includes(m.path) && !m.isVideo,
+            );
+
+            if (selectedMediaItems.length === 0) {
+                alert('Aucun média sélectionné à télécharger.');
+                return;
+            }
+
+            const startDownload = async () => {
+                setIsDownloadingZip(true);
+                setDownloadProgress(0);
+
+                const zip = new JSZip();
+                const folder = zip.folder('medias-selectionnes');
+                let completed = 0;
+
+                // Téléchargement séquentiel pour éviter de saturer le réseau
+                for (const media of selectedMediaItems) {
+                    try {
+                        const url = buildDownloadUrl(media.path);
+                        const response = await fetch(url);
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        const blob = await response.blob();
+                        const nameFromPath =
+                            media.originalName || media.path.split('/').pop() || `${media.id}.jpg`;
+                        folder?.file(nameFromPath, blob);
+                    } catch (e) {
+                        // Continuer malgré l'erreur sur un fichier
+                        console.error('Erreur téléchargement media:', media.path, e);
+                    } finally {
+                        completed += 1;
+                        setDownloadProgress(
+                            Math.round((completed / selectedMediaItems.length) * 100),
+                        );
+                    }
+                }
+
+                // Générer le ZIP
+                const safeTitle = (evenement.titre || 'evenement')
+                    .toString()
+                    .normalize('NFD')
+                    .replace(/[^\w\s-]/g, '')
+                    .trim()
+                    .replace(/\s+/g, '-')
+                    .toLowerCase();
+
+                const content = await zip.generateAsync({
+                    type: 'blob',
+                    compression: 'DEFLATE',
+                    compressionOptions: { level: 6 },
+                });
+
+                saveAs(content, `${safeTitle}-selection.zip`);
+            };
+
+            void startDownload().finally(() => {
+                setIsDownloadingZip(false);
+                setDownloadProgress(0);
+            });
+        } catch (err) {
+            console.error('Erreur lors du téléchargement des médias sélectionnés:', err);
+            setIsDownloadingZip(false);
+            setDownloadProgress(0);
+            alert('Erreur lors du téléchargement des médias sélectionnés.');
+        }
+    };
+
     // Gérer le paiement pour télécharger toutes les photos
     const handlePayForAllPhotos = () => {
         alert(
@@ -321,8 +393,25 @@ export default function EventPage({ evenement }: EventPageProps) {
     const renderActionButton = () => {
         switch (evenement.type) {
             case 'selection':
-                if (!evenement.prixParPhoto) return null;
                 if (selectedItems.size === 0) return null;
+
+                // Si le prix par photo n'est pas défini, téléchargement gratuit
+                if (!evenement.prixParPhoto) {
+                    return (
+                        <PrimaryButton
+                            text={
+                                isDownloadingZip
+                                    ? `Téléchargement... ${downloadProgress}%`
+                                    : `Télécharger ma sélection (${selectedItems.size} média${selectedItems.size > 1 ? 's' : ''})`
+                            }
+                            onClick={handleDownloadSelectedMedia}
+                            animateOnMount={true}
+                            delay={0.5}
+                        />
+                    );
+                }
+
+                // Sinon, paiement requis
                 return (
                     <PrimaryButton
                         text={`Payer mes medias (${calculateTotalPrice().toFixed(2)}€)`}
