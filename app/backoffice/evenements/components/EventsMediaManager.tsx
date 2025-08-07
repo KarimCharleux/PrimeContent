@@ -391,12 +391,19 @@ export default function EventsMediaManager({
 
             // Traiter chaque fichier
             const newMedias: EventMediaItem[] = [];
-            for (let i = 0; i < selectedFiles.length; i++) {
-                const file = selectedFiles[i];
-                const url = uploadResult.fileUrls[i];
-                const originalName = uploadResult.originalNames[i];
 
-                if (!url) continue;
+            // Vérifier que fileUrls existe et a des éléments
+            if (!uploadResult.fileUrls || !Array.isArray(uploadResult.fileUrls)) {
+                throw new Error('Aucun fichier uploadé avec succès');
+            }
+
+            for (let i = 0; i < uploadResult.fileUrls.length; i++) {
+                const url = uploadResult.fileUrls[i];
+                // Trouver le fichier correspondant (il peut y avoir des décalages à cause des erreurs)
+                const file = selectedFiles[i];
+                const originalName = file?.name || '';
+
+                if (!url || !file) continue;
 
                 const id = url.split('/').pop()?.split('.')[0] || `media-${Date.now()}`;
                 const isVideo = file.type.startsWith('video/');

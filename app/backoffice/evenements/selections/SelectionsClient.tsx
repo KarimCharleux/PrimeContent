@@ -4,6 +4,7 @@ import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
+import { getMediaUrl } from '../../../utils/mediaUrl';
 import { db } from '../../lib/firebase-client';
 import { Evenement, EventMediaItem } from '../../models/eventTypes';
 
@@ -30,6 +31,11 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
     const [evenement, setEvenement] = useState<Evenement | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [hoveredMedia, setHoveredMedia] = useState<string | null>(null);
+    const [previewPosition, setPreviewPosition] = useState<{ x: number; y: number }>({
+        x: 0,
+        y: 0,
+    });
 
     useEffect(() => {
         const fetchData = async () => {
@@ -78,6 +84,28 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
 
         const media = evenement.images.find((img) => img.path === mediaPath);
         return media?.originalName || mediaPath.split('/').pop() || mediaPath;
+    };
+
+    // Fonctions pour gérer le survol
+    const handleMouseEnter = (mediaPath: string, event: React.MouseEvent) => {
+        setHoveredMedia(mediaPath);
+        setPreviewPosition({ x: event.clientX + 10, y: event.clientY + 10 });
+    };
+
+    const handleMouseMove = (event: React.MouseEvent) => {
+        setPreviewPosition({ x: event.clientX + 10, y: event.clientY + 10 });
+    };
+
+    const handleMouseLeave = () => {
+        setHoveredMedia(null);
+    };
+
+    // Fonction pour vérifier si un média est une image
+    const isImage = (mediaPath: string): boolean => {
+        if (!evenement?.images) return true; // Par défaut, on assume que c'est une image
+
+        const media = evenement.images.find((img) => img.path === mediaPath);
+        return !media?.isVideo;
     };
 
     // Fonction pour formater les informations de l'appareil
@@ -233,9 +261,49 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
                                                 {selection.medias.map((mediaPath, mediaIndex) => (
                                                     <span
                                                         key={mediaIndex}
-                                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 cursor-pointer hover:bg-green-200 transition-colors relative"
+                                                        onMouseEnter={(e) =>
+                                                            isImage(mediaPath) &&
+                                                            handleMouseEnter(mediaPath, e)
+                                                        }
+                                                        onMouseMove={handleMouseMove}
+                                                        onMouseLeave={handleMouseLeave}
                                                     >
-                                                        {getMediaOriginalName(mediaPath)}
+                                                        {isImage(mediaPath) ? (
+                                                            <>
+                                                                <svg
+                                                                    className="w-3 h-3 mr-1 text-green-600"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    viewBox="0 0 24 24"
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        strokeWidth={2}
+                                                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                                                    />
+                                                                </svg>
+                                                                {getMediaOriginalName(mediaPath)}
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <svg
+                                                                    className="w-3 h-3 mr-1 text-green-600"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    viewBox="0 0 24 24"
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        strokeWidth={2}
+                                                                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                                                    />
+                                                                </svg>
+                                                                {getMediaOriginalName(mediaPath)}
+                                                            </>
+                                                        )}
                                                     </span>
                                                 ))}
                                             </div>
@@ -276,6 +344,35 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
                     Retour aux événements
                 </Link>
             </div>
+
+            {/* Preview d'image au survol */}
+            {hoveredMedia && isImage(hoveredMedia) && (
+                <div
+                    className="fixed z-50 pointer-events-none transition-opacity duration-200"
+                    style={{
+                        left: `${previewPosition.x}px`,
+                        top: `${previewPosition.y}px`,
+                        maxWidth: '300px',
+                        maxHeight: '200px',
+                    }}
+                >
+                    <div className="bg-white rounded-lg shadow-xl border-2 border-gray-200 overflow-hidden">
+                        <img
+                            src={getMediaUrl(hoveredMedia)}
+                            alt="Preview"
+                            className="max-w-full max-h-full object-contain"
+                            style={{ maxWidth: '300px', maxHeight: '200px' }}
+                            onError={(e) => {
+                                // En cas d'erreur, masquer la preview
+                                setHoveredMedia(null);
+                            }}
+                        />
+                        <div className="p-2 bg-gray-50 text-xs text-gray-600 border-t">
+                            {getMediaOriginalName(hoveredMedia)}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
