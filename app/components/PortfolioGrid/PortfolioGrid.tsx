@@ -330,7 +330,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
             // Arrêter le loading
             setIsLoading(false);
         }
-    }, [activeFilter, customFilters, projects]); // Garder projects mais optimiser la logique
+    }, [activeFilter, customFilters, projects, activeVideoIndex, previousFilter]);
 
     // Gestion de la lecture des vidéos
     useEffect(() => {
