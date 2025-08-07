@@ -228,11 +228,13 @@ export default function ClientProfile({
                             fill
                             style={{ objectFit: 'cover', opacity: 0.6 }}
                             quality={80}
-                            className="absolute inset-0"
+                            className="inset-0"
+                            containerClassName="absolute inset-0 z-0"
+                            containerStyle={{ position: 'absolute' }}
                         />
                     )}
 
-                    {/* Image principale */}
+                    {/* Image principale au-dessus du fond, sans effet hover */}
                     {imageSrc && !imageError ? (
                         <ProtectedImage
                             src={getMediaUrl(imageSrc)}
@@ -241,10 +243,12 @@ export default function ClientProfile({
                             style={{ objectFit: 'cover' }}
                             quality={90}
                             onError={() => setImageError(true)}
-                            className="relative z-10 transition-transform duration-300 group-hover:scale-110"
+                            className="inset-0"
+                            containerClassName="absolute inset-0 z-20"
+                            containerStyle={{ position: 'absolute' }}
                         />
                     ) : (
-                        <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white/70 z-10">
+                        <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white/70 z-20">
                             {name
                                 .split(' ')
                                 .map((part) => part[0])

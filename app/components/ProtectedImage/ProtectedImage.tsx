@@ -34,9 +34,17 @@ interface ProtectedImageProps {
      */
     readonly className?: string;
     /**
-     * Styles inline
+     * Styles inline pour l'élément image/canvas
      */
     readonly style?: React.CSSProperties;
+    /**
+     * Classes CSS pour le conteneur wrapper
+     */
+    readonly containerClassName?: string;
+    /**
+     * Styles inline pour le conteneur wrapper
+     */
+    readonly containerStyle?: React.CSSProperties;
     /**
      * Forcer la protection même sur les pages admin (par défaut: false)
      */
@@ -75,6 +83,8 @@ export default function ProtectedImage({
     fill = false,
     className = '',
     style = {},
+    containerClassName = '',
+    containerStyle = {},
     forceProtection = false,
     quality = 90,
     objectFit = 'cover',
@@ -286,8 +296,11 @@ export default function ProtectedImage({
     // Mode protégé avec canvas
     return (
         <div
-            className={`${styles.container} ${protectionClasses}`}
-            style={fill ? { position: 'relative', width: '100%', height: '100%' } : {}}
+            className={`${styles.container} ${protectionClasses} ${containerClassName}`}
+            style={{
+                ...(fill ? { position: 'relative', width: '100%', height: '100%' } : {}),
+                ...containerStyle,
+            }}
         >
             <canvas
                 ref={canvasRef}
