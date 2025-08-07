@@ -394,6 +394,7 @@ export default function EventsMediaManager({
             for (let i = 0; i < selectedFiles.length; i++) {
                 const file = selectedFiles[i];
                 const url = uploadResult.fileUrls[i];
+                const originalName = uploadResult.originalNames[i];
 
                 if (!url) continue;
 
@@ -440,6 +441,7 @@ export default function EventsMediaManager({
                     size: file.size,
                     category: selectedCategory || undefined,
                     provider: 'local' as const,
+                    originalName,
                 };
 
                 newMedias.push(removeUndefinedFields(mediaItem) as EventMediaItem);

@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Evenement, EventMediaItem } from '../../backoffice/models/eventTypes';
 import PortfolioGrid from '../../components/PortfolioGrid/PortfolioGrid';
 import PrimaryButton from '../../components/PrimaryButton';
+import { useSelectionPersistence } from '../../hooks/useSelectionPersistence';
 import { getMediaUrl } from '../../utils/mediaUrl';
 
 // Variants pour les animations
@@ -80,6 +81,40 @@ export default function EventPage({ evenement }: EventPageProps) {
         }
         return 0;
     };
+
+    const {
+        userId,
+        selection,
+        loading: selectionLoading,
+        saveSelection,
+    } = useSelectionPersistence(evenement.id!);
+
+    // Synchronise la sélection Firestore avec l'état local au chargement
+    useEffect(() => {
+        if (
+            evenement.type === 'selection' &&
+            selection &&
+            selection.medias &&
+            JSON.stringify(Array.from(selectedItems)) !== JSON.stringify(selection.medias)
+        ) {
+            setSelectedItems(new Set(selection.medias));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [evenement.type, selection]);
+
+    // Sauvegarde la sélection à chaque modification
+    useEffect(() => {
+        if (
+            evenement.type === 'selection' &&
+            userId &&
+            !selectionLoading &&
+            selection &&
+            JSON.stringify(Array.from(selectedItems)) !== JSON.stringify(selection.medias)
+        ) {
+            saveSelection(Array.from(selectedItems));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedItems]);
 
     useEffect(() => {
         // Réinitialiser l'état lors du changement d'événement
@@ -205,14 +240,15 @@ export default function EventPage({ evenement }: EventPageProps) {
         switch (evenement.type) {
             case 'selection':
                 if (!evenement.prixParPhoto) return null;
-                return selectedItems.size > 0 ? (
+                if (selectedItems.size === 0) return null;
+                return (
                     <PrimaryButton
                         text={`Payer mes medias (${calculateTotalPrice().toFixed(2)}€)`}
                         onClick={handlePaySelectedPhotos}
                         animateOnMount={true}
                         delay={0.5}
                     />
-                ) : null;
+                );
             case 'paye':
                 return (
                     <PrimaryButton
@@ -312,7 +348,7 @@ export default function EventPage({ evenement }: EventPageProps) {
                     initial={{ opacity: 0, y: -20 }}
                     animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
                     transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
-                    className="title-container relative overflow-hidden"
+                    className="title-container relative overflow-hidden !m-0"
                 >
                     <motion.h2
                         className="evenement-page-title underline-title"
@@ -340,9 +376,9 @@ export default function EventPage({ evenement }: EventPageProps) {
             </div>
 
             {/* Info prix par photo (mode sélection) */}
-            {evenement.type === 'selection' && evenement.prixParPhoto && (
+            {evenement.prixParPhoto && evenement.type === 'selection' ? (
                 <motion.div
-                    className="info-box"
+                    className="info-box flex gap-4 my-6"
                     initial={{ opacity: 0, y: 20 }}
                     animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                     transition={{ duration: 0.6, delay: 0.3 }}
@@ -369,7 +405,7 @@ export default function EventPage({ evenement }: EventPageProps) {
                         puis procédez au paiement pour pouvoir les télécharger.
                     </div>
                 </motion.div>
-            )}
+            ) : null}
 
             {/* Informations sur les remises (mode sélection uniquement) */}
             {renderDiscountInfo()}
@@ -381,18 +417,17 @@ export default function EventPage({ evenement }: EventPageProps) {
                 animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
             >
-                {evenement.type === 'selection' && selectedItems.size > 0 && (
+                {evenement.type === 'selection' && selectedItems.size > 0 ? (
                     <div className="counter-text">
-                        {selectedItems.size} photos sélectionnées
                         {evenement.tarifDegressif &&
-                            evenement.tarifDegressif.length > 0 &&
-                            evenement.prixParPhoto && (
-                                <span className="price-text">
-                                    Total: {calculateTotalPrice().toFixed(2)}€
-                                </span>
-                            )}
+                        evenement.tarifDegressif.length > 0 &&
+                        evenement.prixParPhoto ? (
+                            <span className="price-text">
+                                Total: {calculateTotalPrice().toFixed(2)}€
+                            </span>
+                        ) : null}
                     </div>
-                )}
+                ) : null}
                 <div className="w-full flex justify-center">{renderActionButton()}</div>
             </motion.div>
 

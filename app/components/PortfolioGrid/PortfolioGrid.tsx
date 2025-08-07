@@ -100,6 +100,9 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
     // Utiliser soit le filtre externe soit l'interne
     const activeFilter = externalActiveFilter || internalActiveFilter;
 
+    // État pour tracker le filtre précédent et éviter les animations inutiles
+    const [previousFilter, setPreviousFilter] = useState(activeFilter);
+
     // Utiliser soit les selectedItems externes soit les internes
     const selectedItems = externalSelectedItems || internalSelectedItems;
 
@@ -221,10 +224,17 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
 
     // Effet pour filtrer les projets quand le filtre change
     useEffect(() => {
-        // Si on a des projets, montrer un loading bref pendant le filtrage
-        if (projects.length > 0) {
+        // Détecter si c'est un vrai changement de filtre ou juste une mise à jour des projets
+        const isFilterChange = activeFilter !== previousFilter;
+
+        // Ne pas montrer le loading si seuls les projets changent (par exemple, lors de sélections)
+        // Seulement afficher le loading pour les vrais changements de filtre
+        if (isFilterChange && projects.length > 0) {
             setIsLoading(true);
         }
+
+        // Mettre à jour le filtre précédent
+        setPreviousFilter(activeFilter);
 
         // Filtrer les projets en fonction du filtre actif
         let newFilteredProjects = projects;
@@ -257,13 +267,14 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
             return 0; // garder l'ordre original
         });
 
-        // Animation de sortie
-        const tl = gsap.timeline();
-
         // Filtrer les références valides (non nulles)
         const validProjectRefs = projectRefs.current.filter((ref) => ref !== null);
 
-        if (validProjectRefs.length > 0) {
+        // Faire les animations seulement si c'est un vrai changement de filtre
+        if (isFilterChange && validProjectRefs.length > 0) {
+            // Animation de sortie
+            const tl = gsap.timeline();
+
             tl.to(validProjectRefs, {
                 opacity: 0,
                 y: 20,
@@ -314,12 +325,12 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                 },
             });
         } else {
-            // Si pas d'éléments valides, juste mettre à jour les projets filtrés
+            // Si pas de changement de filtre ou pas d'éléments valides, juste mettre à jour les projets filtrés sans animation
             setFilteredProjects(newFilteredProjects);
             // Arrêter le loading
             setIsLoading(false);
         }
-    }, [activeFilter, projects, activeVideoIndex, customFilters]);
+    }, [activeFilter, customFilters, projects]); // Garder projects mais optimiser la logique
 
     // Gestion de la lecture des vidéos
     useEffect(() => {

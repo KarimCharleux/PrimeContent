@@ -110,10 +110,6 @@ export default function ProtectedImage({
         setCanvasError(true);
     }, []);
 
-    // Calculer les dimensions effectives
-    const actualWidth = fill ? '100%' : width;
-    const actualHeight = fill ? '100%' : height;
-
     // Charger et dessiner l'image dans le canvas
     useEffect(() => {
         if (!shouldProtect || canvasError) return;
