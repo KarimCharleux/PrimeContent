@@ -1,6 +1,8 @@
 'use client';
 
+import { saveAs } from 'file-saver';
 import { motion } from 'framer-motion';
+import JSZip from 'jszip';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 
@@ -43,6 +45,9 @@ export default function EventPage({ evenement }: EventPageProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [loadedMedia, setLoadedMedia] = useState<EventMediaItem[]>([]);
     const [loadingProgress, setLoadingProgress] = useState(0);
+    const [loadedCountState, setLoadedCountState] = useState(0);
+    const [isDownloadingZip, setIsDownloadingZip] = useState(false);
+    const [downloadProgress, setDownloadProgress] = useState(0);
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
@@ -121,6 +126,7 @@ export default function EventPage({ evenement }: EventPageProps) {
         setIsLoading(true);
         setLoadedMedia([]);
         setLoadingProgress(0);
+        setLoadedCountState(0);
         setSelectedItems(new Set());
         setErrorMessage(null);
         // Réinitialiser le flag de chargement initial
@@ -156,6 +162,7 @@ export default function EventPage({ evenement }: EventPageProps) {
                 img.onload = () => {
                     loadedCount++;
                     setLoadingProgress(Math.round((loadedCount / totalMedia) * 100));
+                    setLoadedCountState(loadedCount);
                     resolve(mediaItem);
                 };
                 img.onerror = () => reject(mediaItem);
@@ -178,6 +185,7 @@ export default function EventPage({ evenement }: EventPageProps) {
                                 validMedia.push(media);
                                 loadedCount++;
                                 setLoadingProgress(Math.round((loadedCount / totalMedia) * 100));
+                                setLoadedCountState(loadedCount);
                             } else {
                                 // Pour les images, nous les préchargeons
                                 const loadedMedia = await preloadImage(media);
@@ -223,9 +231,83 @@ export default function EventPage({ evenement }: EventPageProps) {
         );
     };
 
+    // Domaine de téléchargement forcé (configurable), pour éviter les chemins locaux
+    const MEDIA_DOWNLOAD_BASE = 'https://media.primecontent.fr';
+
+    const buildDownloadUrl = (path: string): string => {
+        if (!path) return '';
+        if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:')) {
+            return path;
+        }
+        const cleanPath = path.startsWith('/') ? path : `/${path}`;
+        return `${MEDIA_DOWNLOAD_BASE}${cleanPath}`;
+    };
+
     // Gérer le téléchargement de toutes les photos
     const handleDownloadAllPhotos = () => {
-        alert('Téléchargement de toutes les photos...');
+        if (isDownloadingZip) return;
+        try {
+            const imageItems = (evenement.images || []).filter((m) => m.path && !m.isVideo);
+            if (imageItems.length === 0) {
+                alert('Aucune photo à télécharger.');
+                return;
+            }
+
+            const startDownload = async () => {
+                setIsDownloadingZip(true);
+                setDownloadProgress(0);
+
+                const zip = new JSZip();
+                const folder = zip.folder('photos');
+                let completed = 0;
+
+                // Téléchargement séquentiel pour éviter de saturer le réseau/appareils mobiles
+                for (const media of imageItems) {
+                    try {
+                        const url = buildDownloadUrl(media.path);
+                        const response = await fetch(url, { mode: 'cors', cache: 'no-store' });
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        const blob = await response.blob();
+                        const nameFromPath =
+                            media.originalName || media.path.split('/').pop() || `${media.id}.jpg`;
+                        folder?.file(nameFromPath, blob);
+                    } catch (e) {
+                        // Continuer malgré l’erreur sur un fichier
+                        console.error('Erreur téléchargement media:', media.path, e);
+                    } finally {
+                        completed += 1;
+                        setDownloadProgress(Math.round((completed / imageItems.length) * 100));
+                    }
+                }
+
+                // Générer le ZIP
+                const safeTitle = (evenement.titre || 'evenement')
+                    .toString()
+                    .normalize('NFD')
+                    .replace(/[^\w\s-]/g, '')
+                    .trim()
+                    .replace(/\s+/g, '-')
+                    .toLowerCase();
+
+                const content = await zip.generateAsync({
+                    type: 'blob',
+                    compression: 'DEFLATE',
+                    compressionOptions: { level: 6 },
+                });
+
+                saveAs(content, `${safeTitle}-photos.zip`);
+            };
+
+            void startDownload().finally(() => {
+                setIsDownloadingZip(false);
+                setDownloadProgress(0);
+            });
+        } catch (err) {
+            console.error('Erreur lors du téléchargement des photos:', err);
+            setIsDownloadingZip(false);
+            setDownloadProgress(0);
+            alert('Erreur lors du téléchargement des photos.');
+        }
     };
 
     // Gérer le paiement pour télécharger toutes les photos
@@ -252,7 +334,11 @@ export default function EventPage({ evenement }: EventPageProps) {
             case 'paye':
                 return (
                     <PrimaryButton
-                        text="Télécharger toutes mes medias"
+                        text={
+                            isDownloadingZip
+                                ? `Téléchargement... ${downloadProgress}%`
+                                : 'Télécharger toutes mes photos'
+                        }
                         onClick={handleDownloadAllPhotos}
                         animateOnMount={true}
                         delay={0.5}
@@ -440,6 +526,9 @@ export default function EventPage({ evenement }: EventPageProps) {
                 >
                     <div className="loader-spinner"></div>
                     <div className="loading-progress">
+                        <div className="progress-count">
+                            {loadedCountState}/{evenement.images.length}
+                        </div>
                         <div className="progress-bar">
                             <div
                                 className="progress-fill"
@@ -447,8 +536,7 @@ export default function EventPage({ evenement }: EventPageProps) {
                             ></div>
                         </div>
                         <div className="progress-text">
-                            Chargement des médias: {loadingProgress}% ({loadedMedia.length}/
-                            {evenement.images.length})
+                            Chargement des médias: {loadingProgress}%
                         </div>
                     </div>
                 </motion.div>
