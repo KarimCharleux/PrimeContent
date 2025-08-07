@@ -423,7 +423,7 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
                 >
                     <div className="bg-white rounded-lg shadow-xl border-2 border-gray-200 p-4">
                         <h4 className="text-sm font-medium text-gray-900 mb-3">
-                            📱 Informations de l'appareil
+                            📱 Informations de l&apos;appareil
                         </h4>
                         <div className="space-y-2 text-xs">
                             <div>
