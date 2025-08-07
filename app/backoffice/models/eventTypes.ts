@@ -46,7 +46,6 @@ export interface Evenement {
     imageSrc: string;
     // Champs optionnels
     categorie?: string;
-    dossierImages: string;
     date?: string; // Date optionnelle au format YYYY-MM-DD
     lieu?: string; // Lieu optionnel
     type: EventType;

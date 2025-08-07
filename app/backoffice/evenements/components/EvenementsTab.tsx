@@ -61,7 +61,6 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
         lieu: '',
         type: 'visionner',
         visible: true,
-        dossierImages: '',
         images: [],
     });
 
@@ -384,7 +383,6 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
             lieu: '',
             type: 'visionner',
             visible: true,
-            dossierImages: '',
             images: [],
         });
         setImageFile(null);

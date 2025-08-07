@@ -60,7 +60,6 @@ export default function MediaPageClient(): JSX.Element {
                         date: data.date || '',
                         lieu: data.lieu || '',
                         imageSrc: data.imageSrc || data.couverture || '',
-                        dossierImages: data.dossierImages || `evenements/${docSnap.id}`,
                         type: data.type || 'visionner',
                         visible: data.visible ?? true,
                         images: data.images || [],
