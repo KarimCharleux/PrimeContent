@@ -204,6 +204,7 @@ export default function EventPage({ evenement }: EventPageProps) {
     const renderActionButton = () => {
         switch (evenement.type) {
             case 'selection':
+                if (!evenement.prixParPhoto) return null;
                 return selectedItems.size > 0 ? (
                     <PrimaryButton
                         text={`Payer mes medias (${calculateTotalPrice().toFixed(2)}€)`}
@@ -338,10 +339,10 @@ export default function EventPage({ evenement }: EventPageProps) {
                 )}
             </div>
 
-            {/* Informations selon le type d'événement */}
-            {evenement.type === 'selection' && (
+            {/* Info prix par photo (mode sélection) */}
+            {evenement.type === 'selection' && evenement.prixParPhoto && (
                 <motion.div
-                    className="photo-selection-info"
+                    className="info-box"
                     initial={{ opacity: 0, y: 20 }}
                     animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                     transition={{ duration: 0.6, delay: 0.3 }}
@@ -349,8 +350,8 @@ export default function EventPage({ evenement }: EventPageProps) {
                     <div className="info-icon">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            width="20"
-                            height="20"
+                            width="24"
+                            height="24"
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"
@@ -383,11 +384,13 @@ export default function EventPage({ evenement }: EventPageProps) {
                 {evenement.type === 'selection' && selectedItems.size > 0 && (
                     <div className="counter-text">
                         {selectedItems.size} photos sélectionnées
-                        {evenement.tarifDegressif && evenement.tarifDegressif.length > 0 && (
-                            <span className="price-text">
-                                Total: {calculateTotalPrice().toFixed(2)}€
-                            </span>
-                        )}
+                        {evenement.tarifDegressif &&
+                            evenement.tarifDegressif.length > 0 &&
+                            evenement.prixParPhoto && (
+                                <span className="price-text">
+                                    Total: {calculateTotalPrice().toFixed(2)}€
+                                </span>
+                            )}
                     </div>
                 )}
                 <div className="w-full flex justify-center">{renderActionButton()}</div>

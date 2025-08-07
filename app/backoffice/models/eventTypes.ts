@@ -36,6 +36,7 @@ export interface EventMediaItem {
     // Propriétés de rétrocompatibilité
     isYouTube?: boolean;
     youtubeId?: string;
+    originalName?: string; // Nom d'origine du fichier uploadé
 }
 
 // Interface principale pour un événement

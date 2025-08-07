@@ -447,13 +447,22 @@ export default function EventForm({
                                         onChange={(e) =>
                                             setFormData({
                                                 ...formData,
-                                                prixParPhoto: parseFloat(e.target.value),
+                                                prixParPhoto:
+                                                    e.target.value === ''
+                                                        ? undefined
+                                                        : parseFloat(e.target.value),
                                             })
                                         }
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                         placeholder="Prix par photo"
-                                        required={formData.type === 'selection'}
                                     />
+                                    {formData.type === 'selection' && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Optionnel pour les sélections. Si laissé vide, aucune
+                                            tarification ne sera appliquée et le téléchargement sera
+                                            gratuit.
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="mb-2">

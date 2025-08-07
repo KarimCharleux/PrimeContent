@@ -197,6 +197,7 @@ export async function POST(request: NextRequest) {
             success: true,
             fileUrl,
             storagePath: filePath,
+            originalName: file.name,
         });
     } catch (error: any) {
         console.error('Erreur lors du téléchargement du fichier:', error);

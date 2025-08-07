@@ -453,6 +453,7 @@ export default function EventMediaManager({
             for (let i = 0; i < selectedFiles.length; i++) {
                 const file = selectedFiles[i];
                 const url = uploadResult.fileUrls[i];
+                const originalName = file.name;
 
                 if (!url) continue;
 
@@ -501,6 +502,7 @@ export default function EventMediaManager({
                     selected: false,
                     size: file.size,
                     category: selectedCategory || undefined,
+                    originalName, // Ajout du nom d'origine
                 };
 
                 // Nettoyer les valeurs undefined avant d'ajouter à la liste
