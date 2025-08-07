@@ -36,13 +36,6 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
                         ...eventDoc.data(),
                     } as Evenement;
 
-                    // Vérifier si l'événement est visible
-                    if (!eventData.visible) {
-                        setError("Cet événement n'est pas disponible.");
-                        setLoading(false);
-                        return;
-                    }
-
                     setEvenement(eventData);
 
                     // Vérifier si l'événement est protégé par mot de passe

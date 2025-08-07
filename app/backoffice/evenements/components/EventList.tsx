@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 
 import EventCard from '../../../components/EventCard';
 import { Evenement } from '../../models/eventTypes';
@@ -72,6 +73,17 @@ export default function EventList({ evenements, handleEdit, handleDelete }: Even
         );
     };
 
+    const [copiedId, setCopiedId] = useState<string | null>(null);
+
+    // Fonction pour copier le lien public de l'événement
+    const handleShare = (eventId: string) => {
+        const publicUrl = `${window.location.origin}/evenements/${eventId}`;
+        navigator.clipboard.writeText(publicUrl).then(() => {
+            setCopiedId(eventId);
+            setTimeout(() => setCopiedId(null), 2000);
+        });
+    };
+
     if (evenements.length === 0) {
         return (
             <div className="text-center py-12">
@@ -115,7 +127,7 @@ export default function EventList({ evenements, handleEdit, handleDelete }: Even
 
                         {/* Overlay d'actions */}
                         <div className="absolute inset-0 flex flex-col justify-center items-center bg-black bg-opacity-70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 rounded-lg">
-                            <div className="flex flex-col gap-3">
+                            <div className="flex flex-col gap-3 items-center">
                                 <button
                                     onClick={() => handleEdit(evenement)}
                                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors w-32"
@@ -134,6 +146,50 @@ export default function EventList({ evenements, handleEdit, handleDelete }: Even
                                 >
                                     Supprimer
                                 </button>
+                                {/* Bouton copier/feedback */}
+                                {copiedId === evenement.id ? (
+                                    <span className="w-32 flex items-center justify-center px-4 py-2 bg-green-100 text-green-800 rounded-md shadow-md font-semibold text-sm transition-all duration-300">
+                                        Lien copié !
+                                    </span>
+                                ) : (
+                                    <button
+                                        onClick={() => handleShare(evenement.id!)}
+                                        className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 transition-colors w-32 flex items-center justify-center gap-2 shadow-md"
+                                        type="button"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-5 w-5 mr-1"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <rect
+                                                x="9"
+                                                y="9"
+                                                width="13"
+                                                height="13"
+                                                rx="2"
+                                                ry="2"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                fill="white"
+                                            />
+                                            <rect
+                                                x="3"
+                                                y="3"
+                                                width="13"
+                                                height="13"
+                                                rx="2"
+                                                ry="2"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                fill="none"
+                                            />
+                                        </svg>
+                                        Partager
+                                    </button>
+                                )}
                             </div>
 
                             {/* Type d'événement */}

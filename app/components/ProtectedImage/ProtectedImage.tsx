@@ -213,8 +213,7 @@ export default function ProtectedImage({
 
                 // L'image est maintenant rendue dans le canvas
                 // Le canvas est automatiquement "tainted" (protégé) car les images viennent de media.dalifilms.fr
-                //setImageLoaded(true);
-                setImageError(true);
+                setImageLoaded(true);
             } catch (error) {
                 console.error('Erreur lors du rendu canvas:', error);
                 handleCanvasError();
