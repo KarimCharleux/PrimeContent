@@ -1,6 +1,7 @@
 'use client';
 
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
@@ -33,6 +34,13 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
     const [error, setError] = useState<string | null>(null);
     const [hoveredMedia, setHoveredMedia] = useState<string | null>(null);
     const [previewPosition, setPreviewPosition] = useState<{ x: number; y: number }>({
+        x: 0,
+        y: 0,
+    });
+    const [hoveredDeviceInfo, setHoveredDeviceInfo] = useState<SelectionData['deviceInfo'] | null>(
+        null,
+    );
+    const [deviceTooltipPosition, setDeviceTooltipPosition] = useState<{ x: number; y: number }>({
         x: 0,
         y: 0,
     });
@@ -98,6 +106,23 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
 
     const handleMouseLeave = () => {
         setHoveredMedia(null);
+    };
+
+    // Fonctions pour gérer le survol des informations d'appareil
+    const handleDeviceMouseEnter = (
+        deviceInfo: SelectionData['deviceInfo'],
+        event: React.MouseEvent,
+    ) => {
+        setHoveredDeviceInfo(deviceInfo);
+        setDeviceTooltipPosition({ x: event.clientX + 10, y: event.clientY + 10 });
+    };
+
+    const handleDeviceMouseMove = (event: React.MouseEvent) => {
+        setDeviceTooltipPosition({ x: event.clientX + 10, y: event.clientY + 10 });
+    };
+
+    const handleDeviceMouseLeave = () => {
+        setHoveredDeviceInfo(null);
     };
 
     // Fonction pour vérifier si un média est une image
@@ -225,7 +250,17 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
                                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                     {selection.medias.length} média(s)
                                                 </span>
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                <span
+                                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 cursor-pointer hover:bg-gray-200 transition-colors"
+                                                    onMouseEnter={(e) =>
+                                                        handleDeviceMouseEnter(
+                                                            selection.deviceInfo,
+                                                            e,
+                                                        )
+                                                    }
+                                                    onMouseMove={handleDeviceMouseMove}
+                                                    onMouseLeave={handleDeviceMouseLeave}
+                                                >
                                                     {formatDeviceInfo(selection.deviceInfo)}
                                                 </span>
                                             </div>
@@ -357,18 +392,64 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
                     }}
                 >
                     <div className="bg-white rounded-lg shadow-xl border-2 border-gray-200 overflow-hidden">
-                        <img
-                            src={getMediaUrl(hoveredMedia)}
-                            alt="Preview"
-                            className="max-w-full max-h-full object-contain"
-                            style={{ maxWidth: '300px', maxHeight: '200px' }}
-                            onError={(e) => {
-                                // En cas d'erreur, masquer la preview
-                                setHoveredMedia(null);
-                            }}
-                        />
+                        <div className="relative w-[300px] h-[200px]">
+                            <Image
+                                src={getMediaUrl(hoveredMedia)}
+                                alt="Preview"
+                                fill
+                                className="object-contain"
+                                onError={(e) => {
+                                    // En cas d'erreur, masquer la preview
+                                    setHoveredMedia(null);
+                                }}
+                            />
+                        </div>
                         <div className="p-2 bg-gray-50 text-xs text-gray-600 border-t">
                             {getMediaOriginalName(hoveredMedia)}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Tooltip détaillé pour les informations d'appareil */}
+            {hoveredDeviceInfo && (
+                <div
+                    className="fixed z-50 pointer-events-none transition-opacity duration-200"
+                    style={{
+                        left: `${deviceTooltipPosition.x}px`,
+                        top: `${deviceTooltipPosition.y}px`,
+                        maxWidth: '350px',
+                    }}
+                >
+                    <div className="bg-white rounded-lg shadow-xl border-2 border-gray-200 p-4">
+                        <h4 className="text-sm font-medium text-gray-900 mb-3">
+                            📱 Informations de l'appareil
+                        </h4>
+                        <div className="space-y-2 text-xs">
+                            <div>
+                                <span className="font-medium text-gray-700">Plateforme :</span>
+                                <br />
+                                <span className="text-gray-600">
+                                    {hoveredDeviceInfo.platform || 'Non définie'}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="font-medium text-gray-700">Langue :</span>
+                                <br />
+                                <span className="text-gray-600">
+                                    {hoveredDeviceInfo.language || 'Non définie'}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="font-medium text-gray-700">User Agent :</span>
+                                <br />
+                                <span
+                                    className="text-gray-600 break-all font-mono"
+                                    style={{ fontSize: '10px' }}
+                                >
+                                    {hoveredDeviceInfo.userAgent || 'Non défini'}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
