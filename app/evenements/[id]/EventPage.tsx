@@ -156,7 +156,7 @@ export default function EventPage({ evenement }: EventPageProps) {
 
         // Fonction pour précharger une image
         const preloadImage = (mediaItem: EventMediaItem) => {
-            return new Promise<EventMediaItem>((resolve) => {
+            return new Promise<EventMediaItem>((resolve, reject) => {
                 const img = new window.Image();
                 img.src = getMediaUrl(mediaItem.path);
                 img.onload = () => {
@@ -171,7 +171,7 @@ export default function EventPage({ evenement }: EventPageProps) {
                     setLoadingProgress(Math.round((loadedCount / totalMedia) * 100));
                     setLoadedCountState(loadedCount);
                     // Résoudre avec l'item pour l'afficher ensuite (chargement normal par le composant)
-                    resolve(mediaItem);
+                    reject(mediaItem);
                 };
             });
         };
