@@ -165,14 +165,7 @@ export default function EventPage({ evenement }: EventPageProps) {
                     setLoadedCountState(loadedCount);
                     resolve(mediaItem);
                 };
-                img.onerror = () => {
-                    // Compter quand même pour ne pas bloquer la progression
-                    loadedCount++;
-                    setLoadingProgress(Math.round((loadedCount / totalMedia) * 100));
-                    setLoadedCountState(loadedCount);
-                    // Résoudre avec l'item pour l'afficher ensuite (chargement normal par le composant)
-                    reject(mediaItem);
-                };
+                img.onerror = () => reject(mediaItem);
             });
         };
 
