@@ -73,6 +73,10 @@ interface ProtectedImageProps {
      * Gestionnaire de clic
      */
     readonly onClick?: (e: React.MouseEvent) => void;
+    /**
+     * Callback lorsqu'un clic est fait en dehors de la zone réellement dessinée (pixels transparents)
+     */
+    readonly onOutsideClick?: (e: React.MouseEvent) => void;
 }
 
 export default function ProtectedImage({
@@ -92,9 +96,14 @@ export default function ProtectedImage({
     priority = false,
     onError,
     onClick,
+    onOutsideClick,
 }: ProtectedImageProps) {
     const pathname = usePathname();
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+    const drawRectRef = useRef<{ x: number; y: number; width: number; height: number } | null>(
+        null,
+    );
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
     const [canvasError, setCanvasError] = useState(false);
@@ -134,6 +143,7 @@ export default function ProtectedImage({
             handleCanvasError();
             return;
         }
+        ctxRef.current = ctx;
 
         // Dimensions du canvas
         let canvasWidth = width;
@@ -176,7 +186,10 @@ export default function ProtectedImage({
                 const imgAspectRatio = img.width / img.height;
                 const canvasAspectRatio = canvasWidth / canvasHeight;
 
-                let drawWidth, drawHeight, drawX, drawY;
+                let drawWidth: number;
+                let drawHeight: number;
+                let drawX: number;
+                let drawY: number;
 
                 switch (objectFit) {
                     case 'cover':
@@ -216,6 +229,9 @@ export default function ProtectedImage({
 
                 // Dessiner l'image
                 ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+
+                // Sauvegarder la zone réellement dessinée pour la détection de clic "hors image"
+                drawRectRef.current = { x: drawX, y: drawY, width: drawWidth, height: drawHeight };
 
                 // L'image est maintenant rendue dans le canvas
                 // Le canvas est automatiquement "tainted" (protégé) car les images viennent de media.dalifilms.fr
@@ -320,7 +336,28 @@ export default function ProtectedImage({
                 }}
                 onContextMenu={handleContextMenu}
                 onDragStart={handleDragStart}
-                onClick={onClick}
+                onClick={(e) => {
+                    const canvas = canvasRef.current;
+                    const rectDrawn = drawRectRef.current;
+                    if (!canvas || !rectDrawn) {
+                        if (onClick) onClick(e);
+                        return;
+                    }
+                    const rect = canvas.getBoundingClientRect();
+                    // Coordonnées cliquées en pixels canvas
+                    const x = ((e.clientX - rect.left) / rect.width) * canvas.width;
+                    const y = ((e.clientY - rect.top) / rect.height) * canvas.height;
+                    const inside =
+                        x >= rectDrawn.x &&
+                        x <= rectDrawn.x + rectDrawn.width &&
+                        y >= rectDrawn.y &&
+                        y <= rectDrawn.y + rectDrawn.height;
+                    if (!inside) {
+                        if (onOutsideClick) onOutsideClick(e);
+                        return;
+                    }
+                    if (onClick) onClick(e);
+                }}
                 draggable={false}
                 data-protected="true"
             />

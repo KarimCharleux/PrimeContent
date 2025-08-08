@@ -10,8 +10,10 @@ export async function GET(request: NextRequest) {
         }
 
         // Construire l'URL complète du média
-        const MEDIA_BASE_URL = 'https://media.primecontent.fr';
-        const cleanPath = mediaPath.startsWith('/') ? mediaPath : `/${mediaPath}`;
+        const MEDIA_BASE_URL = process.env.MEDIA_BASE_URL || 'https://media.dalifilms.fr';
+        const rawCleanPath = mediaPath.startsWith('/') ? mediaPath : `/${mediaPath}`;
+        // Encoder le chemin pour éviter les espaces/caractères spéciaux
+        const cleanPath = encodeURI(rawCleanPath);
         const fullUrl = `${MEDIA_BASE_URL}${cleanPath}`;
 
         // Propager éventuellement l'en-tête Range si fourni (support téléchargements partiels)
@@ -30,7 +32,7 @@ export async function GET(request: NextRequest) {
 
         if (!response.ok && response.status !== 206) {
             console.error(
-                `Erreur lors du téléchargement: ${response.status} ${response.statusText}`,
+                `Erreur lors du téléchargement: ${response.status} ${response.statusText} pour ${fullUrl}`,
             );
             return NextResponse.json(
                 { error: `Impossible de télécharger le fichier: ${response.status}` },
@@ -38,33 +40,29 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Récupérer le flux binaire de la réponse origin
-        const readableStream = response.body;
-        if (!readableStream) {
-            console.error('Réponse origin sans corps/stream');
-            return NextResponse.json({ error: 'Flux de données indisponible' }, { status: 502 });
-        }
+        // Lire entièrement la réponse en binaire pour garantir l'intégrité
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
 
-        // Propager les headers importants
+        // Déterminer le type de contenu
         const contentType = response.headers.get('content-type') || 'application/octet-stream';
-        const contentLength = response.headers.get('content-length') || undefined;
         const contentDisposition =
             response.headers.get('content-disposition') ||
-            `inline; filename="${cleanPath.split('/').pop() || 'media'}"`;
+            `inline; filename="${decodeURIComponent(rawCleanPath.split('/').pop() || 'media')}"`;
         const acceptRanges = response.headers.get('accept-ranges') || 'bytes';
 
-        return new NextResponse(readableStream as any, {
+        return new NextResponse(buffer, {
             status: response.status,
             headers: {
                 'Content-Type': contentType,
-                ...(contentLength ? { 'Content-Length': contentLength } : {}),
+                'Content-Length': String(buffer.byteLength),
                 'Content-Disposition': contentDisposition,
                 'Accept-Ranges': acceptRanges,
-                // CORS permissif pour usage via fetch sur même origine
+                // CORS permissif
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, Range',
-                // Désactiver le cache côté CDN/clients pour éviter des payloads HTML en cache
+                // Pas de cache
                 'Cache-Control': 'no-store, no-cache, must-revalidate',
             },
         });
