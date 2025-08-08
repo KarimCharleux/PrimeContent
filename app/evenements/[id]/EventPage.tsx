@@ -156,7 +156,7 @@ export default function EventPage({ evenement }: EventPageProps) {
 
         // Fonction pour précharger une image
         const preloadImage = (mediaItem: EventMediaItem) => {
-            return new Promise<EventMediaItem>((resolve, reject) => {
+            return new Promise<EventMediaItem>((resolve) => {
                 const img = new window.Image();
                 img.src = getMediaUrl(mediaItem.path);
                 img.onload = () => {
@@ -165,7 +165,14 @@ export default function EventPage({ evenement }: EventPageProps) {
                     setLoadedCountState(loadedCount);
                     resolve(mediaItem);
                 };
-                img.onerror = () => reject(mediaItem);
+                img.onerror = () => {
+                    // Compter quand même pour ne pas bloquer la progression
+                    loadedCount++;
+                    setLoadingProgress(Math.round((loadedCount / totalMedia) * 100));
+                    setLoadedCountState(loadedCount);
+                    // Résoudre avec l'item pour l'afficher ensuite (chargement normal par le composant)
+                    resolve(mediaItem);
+                };
             });
         };
 
@@ -193,7 +200,9 @@ export default function EventPage({ evenement }: EventPageProps) {
                             }
                         }
                     } catch (error) {
-                        console.error(`Impossible de charger le média: ${media.path}`);
+                        // Ne pas bloquer le flux: on ajoute quand même le média
+                        console.warn(`Préchargement échoué, média ajouté: ${media.path}`);
+                        validMedia.push(media);
                     }
                 }
             }
