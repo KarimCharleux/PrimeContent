@@ -84,6 +84,25 @@
     border-radius: 4px;
 }
 
+// Nouveau conteneur pour gérer les images en mode fill
+.carousel-image-container {
+    position: relative;
+    width: min(100vw, 100%);
+    height: min(90vh, 100%);
+    max-width: 100vw;
+    max-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .carousel-image-container {
+        width: 100vw;
+        height: 85vh; // Laisser un peu d'espace pour les contrôles/gestures
+    }
+}
+
 // Style pour la vidéo
 .video-wrapper {
     position: relative;

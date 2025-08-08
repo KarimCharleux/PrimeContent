@@ -290,17 +290,19 @@ const ImageCarousel = ({
                                 />
 
                                 {/* Image avec dimensions responsives */}
-                                <div className="relative z-20">
+                                <div className="relative z-20 w-full h-[85vh] sm:h-[90vh]">
                                     <ProtectedImage
                                         src={getMediaUrl(currentItem.src)}
                                         alt={`Média ${currentIndex + 1}`}
                                         onClick={(e) => e.stopPropagation()}
+                                        onOutsideClick={() => onClose()}
                                         className={styles['carousel-image']}
-                                        width={1200}
-                                        height={800}
+                                        containerClassName={styles['carousel-image-container']}
+                                        containerStyle={{ width: '100%', height: '100%' }}
+                                        fill
                                         priority
                                         quality={100}
-                                        sizes="90vw"
+                                        sizes="100vw"
                                         objectFit="contain"
                                     />
                                 </div>
