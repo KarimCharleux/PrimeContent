@@ -6,7 +6,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef, Suspense, useCallback, useMemo } from 'react';
 
 import { db } from '../backoffice/lib/firebase-client';
-import ClientsBackgroundGallery from '../components/ClientsBackgroundGallery';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
 import PortfolioGrid, { Project, ClientData } from '../components/PortfolioGrid/PortfolioGrid';
@@ -455,98 +454,94 @@ function ClientPageContent() {
     }
 
     return (
-        <>
-            <main className="client-page global-main-page">
-                <Header />
-                {/* Galerie 3D en arrière-plan */}
-                <ClientsBackgroundGallery />
-                <section className="client-hero">
-                    <div className="container mx-auto px-4 py-16">
-                        <div className="text-center max-w-4xl mx-auto">
-                            <h1 ref={titleRef} className="client-title">
-                                Ils nous ont fait confiance
-                            </h1>
-                            <p ref={descriptionRef} className="client-description">
-                                Découvrez les créations réalisées pour les marques prestigieuses et
-                                célébrités qui nous ont fait confiance pour leurs projets de contenu
-                                visuel.
-                            </p>
+        <main className="client-page global-main-page">
+            <Header />
+            <section className="client-hero">
+                <div className="container mx-auto px-4 py-16">
+                    <div className="text-center max-w-4xl mx-auto">
+                        <h1 ref={titleRef} className="client-title">
+                            Ils nous ont fait confiance
+                        </h1>
+                        <p ref={descriptionRef} className="client-description">
+                            Découvrez les créations réalisées pour les marques prestigieuses et
+                            célébrités qui nous ont fait confiance pour leurs projets de contenu
+                            visuel.
+                        </p>
 
-                            {/* Toggle moderne */}
-                            <div ref={toggleRef} className="client-toggle">
-                                <div className="toggle-container">
-                                    <button
-                                        className={`toggle-btn ${activeType === 'marques' ? 'active' : ''}`}
-                                        onClick={() => handleTypeChange('marques')}
-                                    >
-                                        Marques
-                                    </button>
-                                    <button
-                                        className={`toggle-btn ${activeType === 'celebrites' ? 'active' : ''}`}
-                                        onClick={() => handleTypeChange('celebrites')}
-                                    >
-                                        Célébrités
-                                    </button>
-                                    <div
-                                        className={`toggle-slider ${activeType === 'celebrites' ? 'right' : 'left'}`}
-                                    ></div>
-                                </div>
+                        {/* Toggle moderne */}
+                        <div ref={toggleRef} className="client-toggle">
+                            <div className="toggle-container">
+                                <button
+                                    className={`toggle-btn ${activeType === 'marques' ? 'active' : ''}`}
+                                    onClick={() => handleTypeChange('marques')}
+                                >
+                                    Marques
+                                </button>
+                                <button
+                                    className={`toggle-btn ${activeType === 'celebrites' ? 'active' : ''}`}
+                                    onClick={() => handleTypeChange('celebrites')}
+                                >
+                                    Célébrités
+                                </button>
+                                <div
+                                    className={`toggle-slider ${activeType === 'celebrites' ? 'right' : 'left'}`}
+                                ></div>
                             </div>
                         </div>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <section className="client-gallery">
-                    <div className="container mx-auto px-4 pb-16">
-                        {filteredProjects.length > 0 ? (
-                            <PortfolioGrid
-                                projects={filteredProjects}
-                                showFilter={customFilters.length > 0}
-                                customFilters={customFilters}
-                                activeFilter={validActiveFilter}
-                                onFilterChange={(filter) => {
-                                    const params = new URLSearchParams();
-                                    params.set('type', activeType);
-                                    if (filter !== 'Tout') {
-                                        params.set('filter', filter);
-                                    }
-                                    router.push(`/clients?${params.toString()}`, { scroll: false });
-                                }}
-                                filterWithImages={true}
-                                clientData={createClientData()}
-                                activeClientType={activeType}
-                            />
-                        ) : (
-                            <div className="text-center py-16">
-                                <div className="max-w-md mx-auto">
-                                    <svg
-                                        className="mx-auto h-16 w-16 text-gray-400 mb-4"
-                                        stroke="currentColor"
-                                        fill="none"
-                                        viewBox="0 0 48 48"
-                                    >
-                                        <path
-                                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                                            strokeWidth={2}
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                    </svg>
-                                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                        Aucun média disponible
-                                    </h3>
-                                    <p className="text-gray-500">
-                                        Aucun média n&apos;a encore été ajouté pour les{' '}
-                                        {activeType === 'marques' ? 'marques' : 'célébrités'}.
-                                    </p>
-                                </div>
+            <section className="client-gallery">
+                <div className="container mx-auto px-4 pb-16">
+                    {filteredProjects.length > 0 ? (
+                        <PortfolioGrid
+                            projects={filteredProjects}
+                            showFilter={customFilters.length > 0}
+                            customFilters={customFilters}
+                            activeFilter={validActiveFilter}
+                            onFilterChange={(filter) => {
+                                const params = new URLSearchParams();
+                                params.set('type', activeType);
+                                if (filter !== 'Tout') {
+                                    params.set('filter', filter);
+                                }
+                                router.push(`/clients?${params.toString()}`, { scroll: false });
+                            }}
+                            filterWithImages={true}
+                            clientData={createClientData()}
+                            activeClientType={activeType}
+                        />
+                    ) : (
+                        <div className="text-center py-16">
+                            <div className="max-w-md mx-auto">
+                                <svg
+                                    className="mx-auto h-16 w-16 text-gray-400 mb-4"
+                                    stroke="currentColor"
+                                    fill="none"
+                                    viewBox="0 0 48 48"
+                                >
+                                    <path
+                                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                        strokeWidth={2}
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
+                                </svg>
+                                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                    Aucun média disponible
+                                </h3>
+                                <p className="text-gray-500">
+                                    Aucun média n&apos;a encore été ajouté pour les{' '}
+                                    {activeType === 'marques' ? 'marques' : 'célébrités'}.
+                                </p>
                             </div>
-                        )}
-                    </div>
-                </section>
-                <Footer />
-            </main>
-        </>
+                        </div>
+                    )}
+                </div>
+            </section>
+            <Footer />
+        </main>
     );
 }
 
