@@ -486,23 +486,14 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                             onClick={() => handleFilterChange(category)}
                                         >
                                             <div className={styles.filterImageContainer}>
-                                                {/* Background image si disponible */}
-                                                {clientInfo.imageBackground && (
-                                                    <div
-                                                        className={styles.filterImageBackground}
-                                                        style={{
-                                                            backgroundImage: `url(${getMediaUrl(clientInfo.imageBackground)})`,
-                                                            backgroundSize: 'cover',
-                                                            backgroundPosition: 'center',
-                                                            backgroundRepeat: 'no-repeat',
-                                                        }}
-                                                    />
-                                                )}
                                                 <ProtectedImage
                                                     src={getMediaUrl(clientInfo.imageSrc)}
                                                     alt={clientInfo.name}
-                                                    width={32}
-                                                    height={32}
+                                                    width={
+                                                        clientInfo.type === 'celebrity' ? 64 : 96
+                                                    }
+                                                    height={64}
+                                                    style={{ objectFit: 'contain' }}
                                                     className={`${styles.filterImage} ${
                                                         clientInfo.type === 'celebrity'
                                                             ? styles.filterImageRound
