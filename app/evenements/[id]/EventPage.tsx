@@ -48,15 +48,13 @@ export default function EventPage({ evenement }: EventPageProps) {
     const [loadedCountState, setLoadedCountState] = useState(0);
     const [isDownloadingZip, setIsDownloadingZip] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState(0);
+    const [selectionConfirmed, setSelectionConfirmed] = useState(false);
+    const [confirmationMessage, setConfirmationMessage] = useState<string | null>(null);
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
     // Utiliser une ref pour suivre si le chargement initial a été fait
     const initialLoadDone = useRef(false);
-
-    // État pour le carrousel
-    const [isCarouselOpen, setIsCarouselOpen] = useState(false);
-    const [carouselIndex, setCarouselIndex] = useState(0);
 
     // Calculer le prix total en fonction des sélections et des remises
     const calculateTotalPrice = () => {
@@ -219,6 +217,12 @@ export default function EventPage({ evenement }: EventPageProps) {
     // Gestion de la sélection d'items
     const handleSelectionChange = (newSelection: Set<string>) => {
         setSelectedItems(newSelection);
+
+        // Si la sélection était confirmée et qu'elle a changé, réinitialiser la confirmation
+        if (selectionConfirmed) {
+            setSelectionConfirmed(false);
+            setConfirmationMessage(null);
+        }
     };
 
     // Gérer le paiement des photos sélectionnées
@@ -391,37 +395,96 @@ export default function EventPage({ evenement }: EventPageProps) {
         );
     };
 
+    // Fonction pour confirmer la sélection (nouveau comportement pour les sélections sans téléchargement immédiat)
+    const handleConfirmSelection = async () => {
+        if (selectedItems.size === 0) {
+            alert('Aucun média sélectionné.');
+            return;
+        }
+
+        try {
+            // Enregistrer la sélection en base de données
+            await saveSelection(Array.from(selectedItems));
+
+            // Afficher le message de confirmation
+            setConfirmationMessage(
+                `Votre sélection de ${selectedItems.size} média${selectedItems.size > 1 ? 's' : ''} a été enregistrée avec succès !`,
+            );
+            setSelectionConfirmed(true);
+
+            // Masquer le message après 5 secondes
+            setTimeout(() => {
+                setConfirmationMessage(null);
+            }, 5000);
+        } catch (error) {
+            console.error('Erreur lors de la confirmation de la sélection:', error);
+            alert("Erreur lors de l'enregistrement de votre sélection. Veuillez réessayer.");
+        }
+    };
+
     // Fonction pour rendre le bouton approprié selon le type d'événement
     const renderActionButton = () => {
         switch (evenement.type) {
             case 'selection':
                 if (selectedItems.size === 0) return null;
 
-                // Si le prix par photo n'est pas défini, téléchargement gratuit
-                if (!evenement.prixParPhoto) {
-                    return (
-                        <PrimaryButton
-                            text={
-                                isDownloadingZip
-                                    ? `Téléchargement... ${downloadProgress}%`
-                                    : `Télécharger ma sélection (${selectedItems.size} média${selectedItems.size > 1 ? 's' : ''})`
-                            }
-                            onClick={handleDownloadSelectedMedia}
-                            animateOnMount={true}
-                            delay={0.5}
-                        />
-                    );
-                }
+                // Nouvelle logique avec l'option telechargerActif
+                if (evenement.telechargerActif) {
+                    // Si le téléchargement est activé, vérifier si la sélection est confirmée
+                    if (!selectionConfirmed) {
+                        // Bouton de confirmation de sélection
+                        return (
+                            <PrimaryButton
+                                text={`Confirmer ma sélection (${selectedItems.size} média${selectedItems.size > 1 ? 's' : ''})`}
+                                onClick={handleConfirmSelection}
+                                animateOnMount={true}
+                                delay={0.5}
+                            />
+                        );
+                    }
 
-                // Sinon, paiement requis
-                return (
-                    <PrimaryButton
-                        text={`Payer mes medias (${calculateTotalPrice().toFixed(2)}€)`}
-                        onClick={handlePaySelectedPhotos}
-                        animateOnMount={true}
-                        delay={0.5}
-                    />
-                );
+                    // Après confirmation, proposer le téléchargement ou le paiement
+                    if (!evenement.prixParPhoto) {
+                        // Téléchargement gratuit après confirmation
+                        return (
+                            <PrimaryButton
+                                text={
+                                    isDownloadingZip
+                                        ? `Téléchargement... ${downloadProgress}%`
+                                        : `Télécharger ma sélection (${selectedItems.size} média${selectedItems.size > 1 ? 's' : ''})`
+                                }
+                                onClick={handleDownloadSelectedMedia}
+                                animateOnMount={true}
+                                delay={0.5}
+                            />
+                        );
+                    } else {
+                        // Paiement requis après confirmation
+                        return (
+                            <PrimaryButton
+                                text={`Payer mes médias (${calculateTotalPrice().toFixed(2)}€)`}
+                                onClick={handlePaySelectedPhotos}
+                                animateOnMount={true}
+                                delay={0.5}
+                            />
+                        );
+                    }
+                } else {
+                    // Ancien comportement: seulement confirmation de sélection (pas de téléchargement)
+                    if (!selectionConfirmed) {
+                        return (
+                            <PrimaryButton
+                                text={`Confirmer ma sélection (${selectedItems.size} média${selectedItems.size > 1 ? 's' : ''})`}
+                                onClick={handleConfirmSelection}
+                                animateOnMount={true}
+                                delay={0.5}
+                            />
+                        );
+                    } else {
+                        // Après confirmation, aucun bouton (sélection terminée)
+                        return null;
+                    }
+                }
             case 'paye':
                 return (
                     <PrimaryButton
@@ -453,6 +516,7 @@ export default function EventPage({ evenement }: EventPageProps) {
     const renderDiscountInfo = () => {
         if (
             evenement.type !== 'selection' ||
+            !evenement.prixParPhoto ||
             !evenement.tarifDegressif ||
             evenement.tarifDegressif.length === 0
         ) {
@@ -552,8 +616,8 @@ export default function EventPage({ evenement }: EventPageProps) {
                 )}
             </div>
 
-            {/* Info prix par photo (mode sélection) */}
-            {evenement.prixParPhoto && evenement.type === 'selection' ? (
+            {/* Info pour les événements de type sélection */}
+            {evenement.type === 'selection' ? (
                 <motion.div
                     className="info-box flex gap-4 my-6"
                     initial={{ opacity: 0, y: 20 }}
@@ -578,8 +642,25 @@ export default function EventPage({ evenement }: EventPageProps) {
                         </svg>
                     </div>
                     <div className="info-text">
-                        Sélectionnez vos photos préférées ({evenement.prixParPhoto}€ par photo),
-                        puis procédez au paiement pour pouvoir les télécharger.
+                        {evenement.telechargerActif ? (
+                            evenement.prixParPhoto ? (
+                                <>
+                                    Sélectionnez vos photos préférées ({evenement.prixParPhoto}€ par
+                                    photo), confirmez votre sélection puis procédez au paiement pour
+                                    pouvoir les télécharger.
+                                </>
+                            ) : (
+                                <>
+                                    Sélectionnez vos photos préférées, confirmez votre sélection
+                                    puis téléchargez-les gratuitement.
+                                </>
+                            )
+                        ) : (
+                            <>
+                                Sélectionnez vos photos préférées et confirmez votre choix. Vos
+                                sélections seront enregistrées !
+                            </>
+                        )}
                     </div>
                 </motion.div>
             ) : null}
@@ -605,6 +686,37 @@ export default function EventPage({ evenement }: EventPageProps) {
                         ) : null}
                     </div>
                 ) : null}
+
+                {/* Message de confirmation après sélection */}
+                {confirmationMessage && (
+                    <motion.div
+                        className="confirmation-message my-4 p-4 bg-green-50 border border-green-200 rounded-lg text-center"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        <div className="flex items-center justify-center">
+                            <svg
+                                className="w-5 h-5 text-green-500 mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                            </svg>
+                            <span className="text-green-700 font-medium">
+                                {confirmationMessage}
+                            </span>
+                        </div>
+                    </motion.div>
+                )}
+
                 <div className="w-full flex justify-center">{renderActionButton()}</div>
             </motion.div>
 

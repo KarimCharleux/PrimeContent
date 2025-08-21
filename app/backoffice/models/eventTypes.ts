@@ -53,6 +53,7 @@ export interface Evenement {
     prixParPhoto?: number;
     tarifDegressif?: TarifDegressif[];
     protectionMotDePasse?: ProtectionMotDePasse;
+    telechargerActif?: boolean; // Pour les événements de type "selection" - active le téléchargement après confirmation
     visible: boolean;
     images: EventMediaItem[];
     createdAt?: Timestamp;

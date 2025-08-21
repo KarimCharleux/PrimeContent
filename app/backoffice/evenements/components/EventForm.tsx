@@ -107,6 +107,7 @@ export default function EventForm({
                 ...prev,
                 prixParPhoto: undefined,
                 tarifDegressif: undefined,
+                telechargerActif: undefined,
             }));
         }
     };
@@ -430,138 +431,182 @@ export default function EventForm({
 
                         {/* Options spécifiques pour le type "Sélection" */}
                         {formData.type === 'selection' && (
-                            <div className="mt-6 p-6 border border-pink-200 rounded-lg bg-pink-50">
-                                <h4 className="text-md font-medium mb-4">
-                                    Options de tarification
-                                </h4>
+                            <>
+                                {/* Toggle pour activer le téléchargement */}
+                                <div className="mt-6 p-4 border border-pink-200 rounded-lg bg-white">
+                                    <h5 className="text-sm font-medium text-gray-900 mb-3">
+                                        Options de téléchargement
+                                    </h5>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Prix par photo (en €)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={formData.prixParPhoto || ''}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                prixParPhoto:
-                                                    e.target.value === ''
-                                                        ? undefined
-                                                        : parseFloat(e.target.value),
-                                            })
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        placeholder="Prix par photo"
-                                    />
-                                    {formData.type === 'selection' && (
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            Optionnel pour les sélections. Si laissé vide, aucune
-                                            tarification ne sera appliquée et le téléchargement sera
-                                            gratuit.
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="mb-2">
-                                    <div className="flex justify-between items-center">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Tarifs dégressifs
-                                        </label>
-                                        <button
-                                            type="button"
-                                            onClick={ajouterTarifDegressif}
-                                            className="px-2 py-1 bg-pink-600 text-white rounded-md hover:bg-pink-700 text-xs"
+                                    <div className="flex items-center">
+                                        <div className="relative inline-block w-auto mr-2 align-middle select-none">
+                                            <input
+                                                type="checkbox"
+                                                id="toggle-telecharger"
+                                                checked={formData.telechargerActif || false}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        telechargerActif: e.target.checked,
+                                                    })
+                                                }
+                                                className="toggle-checkbox"
+                                            />
+                                            <label
+                                                htmlFor="toggle-telecharger"
+                                                className={`toggle-label toggle-pink`}
+                                            ></label>
+                                        </div>
+                                        <label
+                                            htmlFor="toggle-telecharger"
+                                            className="text-sm text-gray-700 ml-2"
                                         >
-                                            Ajouter un palier
-                                        </button>
+                                            {formData.telechargerActif
+                                                ? 'Téléchargement activé'
+                                                : 'Téléchargement désactivé'}
+                                        </label>
                                     </div>
-                                    <p className="text-xs text-gray-500 mb-2">
-                                        Définissez des remises en fonction du nombre de photos
-                                        achetées.
-                                    </p>
 
-                                    {formData.tarifDegressif &&
-                                    formData.tarifDegressif.length > 0 ? (
-                                        <div className="space-y-3">
-                                            {formData.tarifDegressif.map((tarif, index) => (
-                                                <div
-                                                    key={index}
-                                                    className="flex items-center space-x-4 p-3 bg-white rounded-lg border border-pink-100"
-                                                >
-                                                    <div className="flex-1">
-                                                        <label className="block text-xs text-gray-500 mb-1">
-                                                            À partir de
-                                                        </label>
-                                                        <input
-                                                            type="number"
-                                                            min="1"
-                                                            value={tarif.quantite}
-                                                            onChange={(e) =>
-                                                                updateTarifDegressif(
-                                                                    index,
-                                                                    'quantite',
-                                                                    parseInt(e.target.value),
-                                                                )
-                                                            }
-                                                            className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-pink-500 focus:border-pink-500 text-sm"
-                                                        />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <label className="block text-xs text-gray-500 mb-1">
-                                                            Remise (%)
-                                                        </label>
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            max="100"
-                                                            value={tarif.pourcentageRemise}
-                                                            onChange={(e) =>
-                                                                updateTarifDegressif(
-                                                                    index,
-                                                                    'pourcentageRemise',
-                                                                    parseInt(e.target.value),
-                                                                )
-                                                            }
-                                                            className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-pink-500 focus:border-pink-500 text-sm"
-                                                        />
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            supprimerTarifDegressif(index)
-                                                        }
-                                                        className="text-red-500 hover:text-red-700"
-                                                    >
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            className="h-5 w-5"
-                                                            fill="none"
-                                                            viewBox="0 0 24 24"
-                                                            stroke="currentColor"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                            />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-4 bg-white rounded-lg border border-dashed border-gray-300">
-                                            <p className="text-sm text-gray-500">
-                                                Aucun tarif dégressif défini
-                                            </p>
-                                        </div>
-                                    )}
+                                    <p className="mt-2 text-xs text-gray-500">
+                                        {formData.telechargerActif
+                                            ? 'Après confirmation de leur sélection, les utilisateurs pourront télécharger leurs médias.'
+                                            : 'Les utilisateurs pourront seulement sélectionner et confirmer leurs médias sans pouvoir les télécharger.'}
+                                    </p>
                                 </div>
-                            </div>
+
+                                <div className="mt-6 p-6 border border-pink-200 rounded-lg bg-pink-50">
+                                    <h4 className="text-md font-medium mb-4">
+                                        Options de tarification
+                                    </h4>
+
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Prix par photo (en €)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value={formData.prixParPhoto || ''}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    prixParPhoto:
+                                                        e.target.value === ''
+                                                            ? undefined
+                                                            : parseFloat(e.target.value),
+                                                })
+                                            }
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                            placeholder="Prix par photo"
+                                        />
+                                        {formData.type === 'selection' && (
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Optionnel pour les sélections. Si laissé vide,
+                                                aucune tarification ne sera appliquée et le
+                                                téléchargement sera gratuit.
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="mb-2">
+                                        <div className="flex justify-between items-center">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Tarifs dégressifs
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={ajouterTarifDegressif}
+                                                className="px-2 py-1 bg-pink-600 text-white rounded-md hover:bg-pink-700 text-xs"
+                                            >
+                                                Ajouter un palier
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-gray-500 mb-2">
+                                            Définissez des remises en fonction du nombre de photos
+                                            achetées.
+                                        </p>
+
+                                        {formData.tarifDegressif &&
+                                        formData.tarifDegressif.length > 0 ? (
+                                            <div className="space-y-3">
+                                                {formData.tarifDegressif.map((tarif, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className="flex items-center space-x-4 p-3 bg-white rounded-lg border border-pink-100"
+                                                    >
+                                                        <div className="flex-1">
+                                                            <label className="block text-xs text-gray-500 mb-1">
+                                                                À partir de
+                                                            </label>
+                                                            <input
+                                                                type="number"
+                                                                min="1"
+                                                                value={tarif.quantite}
+                                                                onChange={(e) =>
+                                                                    updateTarifDegressif(
+                                                                        index,
+                                                                        'quantite',
+                                                                        parseInt(e.target.value),
+                                                                    )
+                                                                }
+                                                                className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-pink-500 focus:border-pink-500 text-sm"
+                                                            />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <label className="block text-xs text-gray-500 mb-1">
+                                                                Remise (%)
+                                                            </label>
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                max="100"
+                                                                value={tarif.pourcentageRemise}
+                                                                onChange={(e) =>
+                                                                    updateTarifDegressif(
+                                                                        index,
+                                                                        'pourcentageRemise',
+                                                                        parseInt(e.target.value),
+                                                                    )
+                                                                }
+                                                                className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-pink-500 focus:border-pink-500 text-sm"
+                                                            />
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                supprimerTarifDegressif(index)
+                                                            }
+                                                            className="text-red-500 hover:text-red-700"
+                                                        >
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                className="h-5 w-5"
+                                                                fill="none"
+                                                                viewBox="0 0 24 24"
+                                                                stroke="currentColor"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    strokeWidth={2}
+                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                                />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-4 bg-white rounded-lg border border-dashed border-gray-300">
+                                                <p className="text-sm text-gray-500">
+                                                    Aucun tarif dégressif défini
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </>
                         )}
                     </div>
                 )}
