@@ -179,7 +179,7 @@ function ClientPageContent() {
                             category: 'Marque',
                             source: `${media.path}/${media.name}`,
                             isVideo: media.type === 'video',
-                            format: media.type === 'video' ? 'paysage' : 'paysage',
+                            format: media.type === 'video' ? 'paysage' : 'portrait',
                             clientType: 'marque',
                             clientName: brandName,
                             thumbnail: media.thumbnail,
