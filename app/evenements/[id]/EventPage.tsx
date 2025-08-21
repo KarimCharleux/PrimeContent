@@ -470,7 +470,7 @@ export default function EventPage({ evenement }: EventPageProps) {
                         );
                     }
                 } else {
-                    // Ancien comportement: seulement confirmation de sélection (pas de téléchargement)
+                    // Téléchargement désactivé: seulement confirmation de sélection puis optionnellement paiement
                     if (!selectionConfirmed) {
                         return (
                             <PrimaryButton
@@ -481,8 +481,20 @@ export default function EventPage({ evenement }: EventPageProps) {
                             />
                         );
                     } else {
-                        // Après confirmation, aucun bouton (sélection terminée)
-                        return null;
+                        // Après confirmation, si il y a un prix défini, proposer le paiement
+                        if (evenement.prixParPhoto) {
+                            return (
+                                <PrimaryButton
+                                    text={`Payer mes médias (${calculateTotalPrice().toFixed(2)}€)`}
+                                    onClick={handlePaySelectedPhotos}
+                                    animateOnMount={true}
+                                    delay={0.5}
+                                />
+                            );
+                        } else {
+                            // Sinon, sélection terminée (aucun bouton)
+                            return null;
+                        }
                     }
                 }
             case 'paye':
@@ -510,56 +522,6 @@ export default function EventPage({ evenement }: EventPageProps) {
             default:
                 return null;
         }
-    };
-
-    // Fonction pour afficher les infos sur les remises (pour le mode sélection)
-    const renderDiscountInfo = () => {
-        if (
-            evenement.type !== 'selection' ||
-            !evenement.prixParPhoto ||
-            !evenement.tarifDegressif ||
-            evenement.tarifDegressif.length === 0
-        ) {
-            return null;
-        }
-
-        // Trier les tarifs par quantité croissante
-        const sortedTarifs = [...evenement.tarifDegressif].sort((a, b) => a.quantite - b.quantite);
-
-        return (
-            <motion.div
-                className="discount-info"
-                initial={{ opacity: 0, y: 20 }}
-                animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-                transition={{ duration: 0.6, delay: 0.35 }}
-            >
-                <div className="info-icon">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    >
-                        <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
-                    </svg>
-                </div>
-                <div className="info-text">
-                    <strong>Remises disponibles :</strong>
-                    <ul className="discount-list">
-                        {sortedTarifs.map((tarif, index) => (
-                            <li key={index}>
-                                {tarif.quantite}+ photos : {tarif.pourcentageRemise}% de remise
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </motion.div>
-        );
     };
 
     // Convertir les médias EventMediaItem en format Project pour PortfolioGrid
@@ -665,9 +627,6 @@ export default function EventPage({ evenement }: EventPageProps) {
                 </motion.div>
             ) : null}
 
-            {/* Informations sur les remises (mode sélection uniquement) */}
-            {renderDiscountInfo()}
-
             {/* Compteur de sélection et bouton d'action */}
             <motion.div
                 className="pb-5"
@@ -675,18 +634,6 @@ export default function EventPage({ evenement }: EventPageProps) {
                 animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
             >
-                {evenement.type === 'selection' && selectedItems.size > 0 ? (
-                    <div className="counter-text">
-                        {evenement.tarifDegressif &&
-                        evenement.tarifDegressif.length > 0 &&
-                        evenement.prixParPhoto ? (
-                            <span className="price-text">
-                                Total: {calculateTotalPrice().toFixed(2)}€
-                            </span>
-                        ) : null}
-                    </div>
-                ) : null}
-
                 {/* Message de confirmation après sélection */}
                 {confirmationMessage && (
                     <motion.div
