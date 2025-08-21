@@ -1,6 +1,6 @@
 'use client';
 
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -10,6 +10,7 @@ import { db } from '../../lib/firebase-client';
 import { Evenement, EventMediaItem } from '../../models/eventTypes';
 
 interface SelectionData {
+    id?: string; // Ajout de l'ID du document
     userId: string;
     medias: string[];
     email?: string;
@@ -32,6 +33,11 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
     const [evenement, setEvenement] = useState<Evenement | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [deletingSelections, setDeletingSelections] = useState<Set<string>>(new Set());
+    const [statusMessage, setStatusMessage] = useState<{
+        type: 'success' | 'error';
+        message: string;
+    } | null>(null);
     const [hoveredMedia, setHoveredMedia] = useState<string | null>(null);
     const [previewPosition, setPreviewPosition] = useState<{ x: number; y: number }>({
         x: 0,
@@ -70,8 +76,11 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
                 const selectionsSnap = await getDocs(selectionsRef);
 
                 const selectionsData: SelectionData[] = [];
-                selectionsSnap.forEach((doc) => {
-                    selectionsData.push(doc.data() as SelectionData);
+                selectionsSnap.forEach((docSnap) => {
+                    selectionsData.push({
+                        id: docSnap.id,
+                        ...docSnap.data(),
+                    } as SelectionData);
                 });
 
                 setSelections(selectionsData);
@@ -85,6 +94,55 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
 
         fetchData();
     }, [eventId]);
+
+    // Fonction pour supprimer une sélection
+    const handleDeleteSelection = async (selection: SelectionData) => {
+        if (!selection.id) {
+            setStatusMessage({
+                type: 'error',
+                message: 'Impossible de supprimer la sélection : ID manquant',
+            });
+            return;
+        }
+
+        const confirmDelete = window.confirm(
+            `Êtes-vous sûr de vouloir supprimer la sélection de l'utilisateur #${
+                selections.findIndex((s) => s.id === selection.id) + 1
+            } ?\n\nCette action supprimera définitivement ${selection.medias.length} média(s) sélectionné(s).`,
+        );
+
+        if (!confirmDelete) return;
+
+        try {
+            setDeletingSelections((prev) => new Set(prev).add(selection.id!));
+
+            // Supprimer le document de Firestore
+            await deleteDoc(doc(db, 'evenements', eventId, 'selections', selection.id));
+
+            // Mettre à jour la liste locale
+            setSelections((prev) => prev.filter((s) => s.id !== selection.id));
+
+            setStatusMessage({
+                type: 'success',
+                message: 'Sélection supprimée avec succès',
+            });
+
+            // Masquer le message après 3 secondes
+            setTimeout(() => setStatusMessage(null), 3000);
+        } catch (error) {
+            console.error('Erreur lors de la suppression de la sélection:', error);
+            setStatusMessage({
+                type: 'error',
+                message: 'Erreur lors de la suppression de la sélection',
+            });
+        } finally {
+            setDeletingSelections((prev) => {
+                const newSet = new Set(prev);
+                newSet.delete(selection.id!);
+                return newSet;
+            });
+        }
+    };
 
     // Fonction pour obtenir le nom original d'un média par son ID
     const getMediaOriginalName = (mediaPath: string): string => {
@@ -225,6 +283,75 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
                 </p>
             </div>
 
+            {/* Messages de statut */}
+            {statusMessage && (
+                <div
+                    className={`mb-6 p-4 rounded-md ${
+                        statusMessage.type === 'success'
+                            ? 'bg-green-50 text-green-700 border border-green-200'
+                            : 'bg-red-50 text-red-700 border border-red-200'
+                    }`}
+                >
+                    <div className="flex">
+                        <div className="flex-shrink-0">
+                            {statusMessage.type === 'success' ? (
+                                <svg
+                                    className="h-5 w-5 text-green-400"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                        clipRule="evenodd"
+                                    />
+                                </svg>
+                            ) : (
+                                <svg
+                                    className="h-5 w-5 text-red-400"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                        clipRule="evenodd"
+                                    />
+                                </svg>
+                            )}
+                        </div>
+                        <div className="ml-3">
+                            <p className="text-sm font-medium">{statusMessage.message}</p>
+                        </div>
+                        <div className="ml-auto pl-3">
+                            <div className="-mx-1.5 -my-1.5">
+                                <button
+                                    type="button"
+                                    className="inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                    onClick={() => setStatusMessage(null)}
+                                >
+                                    <span className="sr-only">Fermer</span>
+                                    <svg
+                                        className="h-5 w-5"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                            clipRule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {selections.length === 0 ? (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
                     <svg
@@ -249,14 +376,14 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
                 <div className="bg-white shadow overflow-hidden sm:rounded-md">
                     <ul className="divide-y divide-gray-200">
                         {selections.map((selection, index) => (
-                            <li key={selection.userId} className="px-6 py-4">
+                            <li key={selection.id || selection.userId} className="px-6 py-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex-1">
                                         <div className="flex items-center justify-between">
                                             <h3 className="text-lg font-medium text-gray-900">
                                                 Utilisateur #{index + 1}
                                             </h3>
-                                            <div className="flex space-x-2">
+                                            <div className="flex items-center space-x-2">
                                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                     {selection.medias.length} média(s)
                                                 </span>
@@ -273,6 +400,37 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
                                                 >
                                                     {formatDeviceInfo(selection.deviceInfo)}
                                                 </span>
+                                                {/* Bouton de suppression */}
+                                                {selection.id && (
+                                                    <button
+                                                        onClick={() =>
+                                                            handleDeleteSelection(selection)
+                                                        }
+                                                        disabled={deletingSelections.has(
+                                                            selection.id,
+                                                        )}
+                                                        className="inline-flex items-center p-1.5 border border-red-300 rounded-md text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                        title="Supprimer cette sélection"
+                                                    >
+                                                        {deletingSelections.has(selection.id) ? (
+                                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                                                        ) : (
+                                                            <svg
+                                                                className="w-4 h-4"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                viewBox="0 0 24 24"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    strokeWidth={2}
+                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                                />
+                                                            </svg>
+                                                        )}
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
 
