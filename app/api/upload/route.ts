@@ -78,12 +78,11 @@ export async function POST(request: NextRequest) {
             'video/mp4',
             'video/webm',
             'video/ogg',
-            'video/quicktime', // Support pour les fichiers .mov
         ];
         if (!allowedFormats.includes(file.type)) {
             return NextResponse.json(
                 {
-                    error: 'Format de fichier non supporté. Utilisez JPEG, PNG, GIF, WEBP, MP4, WEBM, OGG ou MOV.',
+                    error: 'Format de fichier non supporté. Utilisez JPEG, PNG, GIF, WEBP, MP4, WEBM ou OGG.',
                 },
                 { status: 400 },
             );
