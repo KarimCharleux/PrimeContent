@@ -178,16 +178,15 @@ function SortableClientCard({
             style={style}
             className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden"
         >
-            <div
-                className="relative h-48 bg-gray-700 flex items-center justify-center"
-                style={{
-                    backgroundImage: client.imageBackground
-                        ? `url(${getMediaUrl(client.imageBackground)})`
-                        : 'none',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                }}
-            >
+            <div className="relative h-48 bg-gray-700 flex items-center justify-center">
+                {client.imageBackground && (
+                    <Image
+                        src={getMediaUrl(client.imageBackground)}
+                        alt={`Arrière-plan de ${client.name}`}
+                        fill
+                        className="object-cover"
+                    />
+                )}
                 <div className="absolute inset-0 bg-black bg-opacity-40"></div>
                 <div className="relative z-10 text-center">
                     <div className="relative w-16 h-16 mx-auto mb-2">
