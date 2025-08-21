@@ -130,7 +130,17 @@ export default function SelectionsClient({ eventId }: SelectionsClientProps) {
         if (!evenement?.images) return true; // Par défaut, on assume que c'est une image
 
         const media = evenement.images.find((img) => img.path === mediaPath);
-        return !media?.isVideo;
+
+        // Si le média n'est pas trouvé, vérifier par extension de fichier
+        if (!media) {
+            console.warn(`Média non trouvé pour le path: ${mediaPath}`);
+            // Vérifier par extension de fichier comme fallback
+            const extension = mediaPath.toLowerCase().split('.').pop();
+            const videoExtensions = ['mp4', 'webm', 'ogg', 'avi', 'mov', 'mkv'];
+            return !videoExtensions.includes(extension || '');
+        }
+
+        return !media.isVideo;
     };
 
     // Fonction pour formater les informations de l'appareil

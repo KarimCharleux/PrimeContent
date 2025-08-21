@@ -58,14 +58,15 @@ interface ClientVideosManagerProps {
     readonly onStatusChange?: (
         status: { type: 'success' | 'error'; message: string } | null,
     ) => void;
+    readonly onVideoDeleted?: () => void;
 }
 
 // Composant SortableVideoCard
 interface SortableVideoCardProps {
-    video: ClientVideo;
-    index: number;
-    onEdit: (video: ClientVideo) => void;
-    onDelete: (video: ClientVideo) => void;
+    readonly video: ClientVideo;
+    readonly index: number;
+    readonly onEdit: (video: ClientVideo) => void;
+    readonly onDelete: (video: ClientVideo) => void;
 }
 
 function SortableVideoCard({ video, index, onEdit, onDelete }: SortableVideoCardProps) {
@@ -212,6 +213,7 @@ export default function ClientVideosManager({
     clientId,
     clientName,
     onStatusChange,
+    onVideoDeleted,
 }: ClientVideosManagerProps) {
     const [videos, setVideos] = useState<ClientVideo[]>([]);
     const [loading, setLoading] = useState(true);
@@ -378,6 +380,9 @@ export default function ClientVideosManager({
             await deleteDoc(doc(db, 'client-videos', video.id));
             onStatusChange?.({ type: 'success', message: 'Vidéo supprimée avec succès !' });
             await loadVideos();
+
+            // Notifier le parent pour forcer un refresh complet
+            onVideoDeleted?.();
         } catch (error) {
             console.error('Erreur lors de la suppression:', error);
             onStatusChange?.({ type: 'error', message: 'Erreur lors de la suppression' });

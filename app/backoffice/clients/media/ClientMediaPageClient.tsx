@@ -16,6 +16,7 @@ export default function ClientMediaPageClient() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'media' | 'videos'>('media');
+    const [refreshKey, setRefreshKey] = useState(0);
     const [statusMessage, setStatusMessage] = useState<{
         type: 'success' | 'error';
         message: string;
@@ -26,6 +27,16 @@ export default function ClientMediaPageClient() {
             setIsLoading(false);
         }
     }, [clientType, clientName, clientId]);
+
+    // Fonction pour forcer le refresh des composants enfants après suppression
+    const handleMediaDeleted = () => {
+        setRefreshKey((prev) => prev + 1);
+        // Optionnel : afficher un message de confirmation
+        setStatusMessage({
+            type: 'success',
+            message: 'Média supprimé avec succès',
+        });
+    };
 
     if (isLoading) {
         return (
@@ -239,16 +250,20 @@ export default function ClientMediaPageClient() {
                 {/* Contenu des onglets */}
                 {activeTab === 'media' ? (
                     <ClientMediaManager
+                        key={`media-${refreshKey}`}
                         clientType={clientType}
                         clientName={clientName}
                         clientId={clientId}
+                        onMediaDeleted={handleMediaDeleted}
                     />
                 ) : (
                     <ClientVideosManager
+                        key={`videos-${refreshKey}`}
                         clientType={clientType === 'marques' ? 'brand' : 'celebrity'}
                         clientId={clientId}
                         clientName={displayName}
                         onStatusChange={setStatusMessage}
+                        onVideoDeleted={handleMediaDeleted}
                     />
                 )}
             </div>

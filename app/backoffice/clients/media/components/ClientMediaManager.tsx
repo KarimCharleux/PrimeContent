@@ -16,15 +16,17 @@ interface MediaFile {
 }
 
 interface ClientMediaManagerProps {
-    clientType: string;
-    clientName: string;
-    clientId: string;
+    readonly clientType: string;
+    readonly clientName: string;
+    readonly clientId: string;
+    readonly onMediaDeleted?: () => void;
 }
 
 export default function ClientMediaManager({
     clientType,
     clientName,
     clientId,
+    onMediaDeleted,
 }: ClientMediaManagerProps) {
     const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
     const [loading, setLoading] = useState(true);
@@ -35,6 +37,7 @@ export default function ClientMediaManager({
         type: 'success' | 'error';
         message: string;
     } | null>(null);
+    const [cacheTimestamp, setCacheTimestamp] = useState(Date.now());
 
     // Chemin de base pour les médias du client
     const basePath = `client/${clientType}/${clientName}`;
@@ -200,8 +203,14 @@ export default function ClientMediaManager({
                 message: 'Fichier supprimé avec succès',
             });
 
+            // Mettre à jour le timestamp pour forcer le cache busting
+            setCacheTimestamp(Date.now());
+
             // Recharger les médias
             await loadMedia();
+
+            // Notifier le parent pour forcer un refresh complet
+            onMediaDeleted?.();
         } catch (error) {
             console.error('Erreur lors de la suppression:', error);
             setStatusMessage({
@@ -358,7 +367,7 @@ export default function ClientMediaManager({
                                     <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                                         {file.type === 'image' ? (
                                             <Image
-                                                src={getMediaUrl(`${file.path}/${file.name}`)}
+                                                src={`${getMediaUrl(`${file.path}/${file.name}`)}?t=${cacheTimestamp}`}
                                                 alt={file.name}
                                                 fill
                                                 className="object-cover"
@@ -383,7 +392,7 @@ export default function ClientMediaManager({
                                                 </span>
                                                 {file.thumbnail && (
                                                     <Image
-                                                        src={getMediaUrl(file.thumbnail)}
+                                                        src={`${getMediaUrl(file.thumbnail)}?t=${cacheTimestamp}`}
                                                         alt={`Miniature de ${file.name}`}
                                                         fill
                                                         className="object-cover opacity-50"
