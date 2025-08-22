@@ -2,7 +2,7 @@
 
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { motion } from 'framer-motion';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 import { db } from '../backoffice/lib/firebase-client';
 import Footer from '../components/Footer';
@@ -144,7 +144,14 @@ export default function PhotosPage() {
                             variants={fadeIn}
                             className="portfolio-container"
                         >
-                            <PortfolioGrid projects={photos} showFilter={true} />
+                            <PortfolioGrid
+                                projects={photos}
+                                showFilter={true}
+                                enablePagination={true}
+                                itemsPerPageDesktop={24}
+                                itemsPerPageMobile={12}
+                                enableRandomShuffle={false}
+                            />
                         </motion.div>
                     )}
                 </div>
