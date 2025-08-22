@@ -52,9 +52,11 @@ interface CoupleMedia {
 }
 
 interface CoupleMediaManagerProps {
-    coupleId: string;
-    coupleName: string;
-    onStatusChange: (status: { type: 'success' | 'error'; message: string } | null) => void;
+    readonly coupleId: string;
+    readonly coupleName: string;
+    readonly onStatusChange: (
+        status: { type: 'success' | 'error'; message: string } | null,
+    ) => void;
 }
 
 // Composant pour un élément média triable
@@ -63,9 +65,9 @@ function SortableMediaItem({
     onEdit,
     onDelete,
 }: {
-    media: CoupleMedia;
-    onEdit: (media: CoupleMedia) => void;
-    onDelete: (media: CoupleMedia) => void;
+    readonly media: CoupleMedia;
+    readonly onEdit: (media: CoupleMedia) => void;
+    readonly onDelete: (media: CoupleMedia) => void;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
         id: media.id!,
@@ -182,13 +184,19 @@ export default function CoupleMediaManager({
     coupleId,
     coupleName,
     onStatusChange,
-}: CoupleMediaManagerProps) {
+}: Readonly<CoupleMediaManagerProps>) {
     const [medias, setMedias] = useState<CoupleMedia[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [editing, setEditing] = useState<CoupleMedia | null>(null);
     const [showForm, setShowForm] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    // États pour l'upload multiple
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [isDragging, setIsDragging] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     // Configuration pour le drag and drop
     const sensors = useSensors(
@@ -276,7 +284,7 @@ export default function CoupleMediaManager({
         return false;
     };
 
-    // Fonction pour gérer l'upload de média
+    // Fonction pour gérer l'upload de média (formulaire individuel)
     const handleMediaUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -307,6 +315,120 @@ export default function CoupleMediaManager({
             });
         } finally {
             setUploading(false);
+        }
+    };
+
+    // Gestion des fichiers multiples
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const filesArray = Array.from(e.target.files);
+            setSelectedFiles(filesArray);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const filesArray = Array.from(e.dataTransfer.files);
+            setSelectedFiles(filesArray);
+        }
+    };
+
+    const triggerFileInput = () => {
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
+
+    // Upload des médias multiples
+    const handleBatchUpload = async () => {
+        if (selectedFiles.length === 0) {
+            onStatusChange({
+                type: 'error',
+                message: 'Aucun fichier sélectionné',
+            });
+            return;
+        }
+
+        try {
+            setUploading(true);
+            setUploadProgress(0);
+
+            const formData = new FormData();
+            selectedFiles.forEach((file) => {
+                formData.append('files', file);
+            });
+            formData.append('path', `mariages/${coupleId}`);
+            formData.append('useUuid', 'true');
+
+            const response = await fetch('/api/upload/batch', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error("Erreur lors de l'upload des médias");
+            }
+
+            const uploadResult = await response.json();
+
+            // Traiter chaque fichier
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const url = uploadResult.fileUrls[i];
+
+                if (!url) continue;
+
+                const fileType = file.type.startsWith('video/') ? 'video' : 'photo';
+                const maxOrder =
+                    medias.length > 0
+                        ? Math.max(...medias.map((media) => media.order || 0)) + 1
+                        : 0;
+
+                // Ajouter à Firestore
+                const mediaData: Partial<CoupleMedia> = {
+                    coupleId,
+                    type: fileType,
+                    url,
+                    filename: file.name,
+                    title: '', // Titre vide par défaut
+                    order: maxOrder + i,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                };
+
+                const docRef = await addDoc(collection(db, 'coupleMedias'), mediaData);
+
+                // Mettre à jour l'état local
+                setMedias((prev) => [...prev, { ...mediaData, id: docRef.id } as CoupleMedia]);
+            }
+
+            setSelectedFiles([]);
+            onStatusChange({
+                type: 'success',
+                message: `${selectedFiles.length} média(s) importé(s) avec succès`,
+            });
+        } catch (error) {
+            console.error("Erreur lors de l'upload:", error);
+            onStatusChange({
+                type: 'error',
+                message: "Erreur lors de l'upload des médias",
+            });
+        } finally {
+            setUploading(false);
+            setUploadProgress(100);
         }
     };
 
@@ -432,46 +554,166 @@ export default function CoupleMediaManager({
 
     return (
         <div className="space-y-6">
-            {/* Bouton d'ajout */}
-            <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium text-gray-900">
-                    Médias du couple ({medias.length})
-                </h3>
-                <button
-                    onClick={() => {
-                        setEditing(null);
-                        reset();
-                        setPreviewUrl(null);
-                        setShowForm(true);
-                    }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+            {/* Section d'import multiple */}
+            <div className="mb-8">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium text-gray-900">
+                        Médias du couple ({medias.length})
+                    </h3>
+                    <button
+                        onClick={() => {
+                            setEditing(null);
+                            reset();
+                            setPreviewUrl(null);
+                            setShowForm(true);
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
                     >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 4v16m8-8H4"
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 4v16m8-8H4"
+                            />
+                        </svg>
+                        <span>Ajouter un média</span>
+                    </button>
+                </div>
+
+                {/* Zone d'upload multiple par glisser-déposer */}
+                <div className="bg-white rounded-lg shadow border border-gray-200 p-6 mb-6">
+                    <div
+                        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                            isDragging
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        onClick={triggerFileInput}
+                    >
+                        <input
+                            type="file"
+                            multiple
+                            accept="image/*,video/*"
+                            className="hidden"
+                            ref={fileInputRef}
+                            onChange={handleFileSelect}
                         />
-                    </svg>
-                    <span>Ajouter un média</span>
-                </button>
+
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-12 w-12 mx-auto text-gray-400 mb-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1}
+                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                            />
+                        </svg>
+
+                        <p className="text-gray-600 mb-2">
+                            Glissez-déposez vos photos et vidéos ici ou cliquez pour parcourir
+                        </p>
+                        <p className="text-gray-500 text-sm">
+                            Formats acceptés: JPG, PNG, GIF pour les images, MP4, WEBM pour les
+                            vidéos
+                        </p>
+                    </div>
+
+                    {selectedFiles.length > 0 && (
+                        <div className="mt-4">
+                            <div className="flex justify-between items-center mb-2">
+                                <p className="text-sm text-gray-600">
+                                    {selectedFiles.length} fichier(s) sélectionné(s)
+                                </p>
+                                <button
+                                    onClick={() => setSelectedFiles([])}
+                                    className="text-red-500 hover:text-red-700 text-sm"
+                                >
+                                    Réinitialiser
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+                                {selectedFiles.map((file) => (
+                                    <div
+                                        key={`${file.name}-${file.size}`}
+                                        className="bg-gray-100 p-2 rounded text-center"
+                                    >
+                                        <div className="text-xs text-gray-600 truncate">
+                                            {file.name}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                            {file.type.startsWith('video/') ? '🎥' : '📷'}{' '}
+                                            {(file.size / (1024 * 1024)).toFixed(1)} Mo
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={handleBatchUpload}
+                                disabled={uploading}
+                                className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                                    uploading
+                                        ? 'bg-blue-400 cursor-not-allowed'
+                                        : 'bg-blue-600 hover:bg-blue-700'
+                                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors`}
+                            >
+                                {uploading ? (
+                                    <span className="flex items-center justify-center">
+                                        <svg
+                                            className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            ></path>
+                                        </svg>
+                                        Upload en cours... {Math.round(uploadProgress)}%
+                                    </span>
+                                ) : (
+                                    'Importer les médias'
+                                )}
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* Formulaire de média */}
+            {/* Formulaire de média individuel */}
             {showForm && (
                 <form
                     onSubmit={handleSubmit(onSubmit)}
                     className="bg-white rounded-lg shadow border border-gray-200 p-6"
                 >
                     <h4 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4">
-                        {editing ? 'Modifier le média' : 'Ajouter un nouveau média'}
+                        🎯 {editing ? 'Modifier le média' : 'Ajouter un nouveau média'}
                     </h4>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -573,56 +815,61 @@ export default function CoupleMediaManager({
                 </form>
             )}
 
-            {/* Liste des médias */}
-            {loading ? (
-                <div className="flex justify-center py-10">
-                    <Spinner />
-                </div>
-            ) : medias.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-lg">
-                    <div className="text-gray-400 mb-4">
-                        <svg
-                            className="mx-auto h-12 w-12"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1}
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                        </svg>
+            {/* Liste des médias existants */}
+            <div className="mt-8">
+                <h4 className="text-lg font-medium text-gray-900 mb-4">
+                    🖼️ Médias existants ({medias.length})
+                </h4>
+                {loading ? (
+                    <div className="flex justify-center py-10">
+                        <Spinner />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun média</h3>
-                    <p className="text-gray-500 mb-4">
-                        Commencez par ajouter des photos ou vidéos pour ce couple
-                    </p>
-                </div>
-            ) : (
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                >
-                    <SortableContext
-                        items={medias.map((media) => media.id!)}
-                        strategy={rectSortingStrategy}
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {medias.map((media) => (
-                                <SortableMediaItem
-                                    key={media.id}
-                                    media={media}
-                                    onEdit={handleEdit}
-                                    onDelete={handleDelete}
+                ) : medias.length === 0 ? (
+                    <div className="text-center py-12 bg-gray-50 rounded-lg">
+                        <div className="text-gray-400 mb-4">
+                            <svg
+                                className="mx-auto h-12 w-12"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={1}
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                                 />
-                            ))}
+                            </svg>
                         </div>
-                    </SortableContext>
-                </DndContext>
-            )}
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun média</h3>
+                        <p className="text-gray-500 mb-4">
+                            Commencez par ajouter des photos ou vidéos pour ce couple
+                        </p>
+                    </div>
+                ) : (
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <SortableContext
+                            items={medias.map((media) => media.id!)}
+                            strategy={rectSortingStrategy}
+                        >
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {medias.map((media) => (
+                                    <SortableMediaItem
+                                        key={media.id}
+                                        media={media}
+                                        onEdit={handleEdit}
+                                        onDelete={handleDelete}
+                                    />
+                                ))}
+                            </div>
+                        </SortableContext>
+                    </DndContext>
+                )}
+            </div>
         </div>
     );
 }
