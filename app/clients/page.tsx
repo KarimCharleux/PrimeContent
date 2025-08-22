@@ -511,6 +511,11 @@ function ClientPageContent() {
                             filterWithImages={true}
                             clientData={createClientData()}
                             activeClientType={activeType}
+                            // Activer la pagination avec mélange aléatoire
+                            enablePagination={true}
+                            enableRandomShuffle={true}
+                            itemsPerPageDesktop={24}
+                            itemsPerPageMobile={12}
                         />
                     ) : (
                         <div className="text-center py-16">

@@ -62,6 +62,11 @@ interface PortfolioGridProps {
     filterWithImages?: boolean;
     clientData?: { [key: string]: ClientData };
     activeClientType?: 'marques' | 'celebrites';
+    // Options pour la pagination
+    enablePagination?: boolean;
+    itemsPerPageDesktop?: number;
+    itemsPerPageMobile?: number;
+    enableRandomShuffle?: boolean;
 }
 
 const PortfolioGrid: React.FC<PortfolioGridProps> = ({
@@ -78,11 +83,18 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
     filterWithImages = false,
     clientData,
     activeClientType,
+    // Options de pagination
+    enablePagination = false,
+    itemsPerPageDesktop = 24,
+    itemsPerPageMobile = 12,
+    enableRandomShuffle = false,
 }) => {
     // État pour le filtre actif
     const [internalActiveFilter, setInternalActiveFilter] = useState('Tout');
-    // État pour les projets filtrés
-    const [filteredProjects, setFilteredProjects] = useState<Project[]>(projects);
+    // État pour les projets filtrés (tous les projets après filtrage)
+    const [allFilteredProjects, setAllFilteredProjects] = useState<Project[]>(projects);
+    // État pour les projets affichés (avec pagination)
+    const [displayedProjects, setDisplayedProjects] = useState<Project[]>(projects);
     // État pour la vidéo en cours de lecture
     const [activeVideoIndex, setActiveVideoIndex] = useState<number | null>(null);
     // État pour le carrousel d'images
@@ -96,6 +108,11 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
     );
     // État pour le chargement initial
     const [isLoading, setIsLoading] = useState(true);
+
+    // États pour la pagination
+    const [hasMore, setHasMore] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
 
     // Utiliser soit le filtre externe soit l'interne
     const activeFilter = externalActiveFilter || internalActiveFilter;
@@ -199,6 +216,16 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         }
     };
 
+    // Fonction pour mélanger aléatoirement un tableau
+    const shuffleArray = <T,>(array: T[]): T[] => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    };
+
     // Fonction pour gérer le changement de filtre
     const handleFilterChange = (filter: string) => {
         if (onFilterChange) {
@@ -206,6 +233,36 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         } else {
             setInternalActiveFilter(filter);
         }
+    };
+
+    // Détection mobile (si pagination activée)
+    useEffect(() => {
+        if (!enablePagination) return;
+
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, [enablePagination]);
+
+    // Fonction pour charger plus d'éléments
+    const loadMoreProjects = () => {
+        if (!enablePagination || loadingMore || !hasMore) return;
+
+        setLoadingMore(true);
+
+        setTimeout(() => {
+            const itemsPerPage = isMobile ? itemsPerPageMobile : itemsPerPageDesktop;
+            const currentLength = displayedProjects.length;
+            const nextItems = allFilteredProjects.slice(
+                currentLength,
+                currentLength + itemsPerPage,
+            );
+
+            setDisplayedProjects((prev) => [...prev, ...nextItems]);
+            setHasMore(currentLength + nextItems.length < allFilteredProjects.length);
+            setLoadingMore(false);
+        }, 300);
     };
 
     // Effet pour gérer l'état de loading
@@ -267,67 +324,84 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
             return 0; // garder l'ordre original
         });
 
+        // Si mélange aléatoire activé et filtre "Tout", mélanger
+        if (enableRandomShuffle && activeFilter === 'Tout') {
+            newFilteredProjects = shuffleArray(newFilteredProjects);
+        }
+
         // Filtrer les références valides (non nulles)
         const validProjectRefs = projectRefs.current.filter((ref) => ref !== null);
 
         // Faire les animations seulement si c'est un vrai changement de filtre
-        if (isFilterChange && validProjectRefs.length > 0) {
-            // Animation de sortie
-            const tl = gsap.timeline();
+        if (isFilterChange) {
+            // Arrêter toutes les vidéos en cours de lecture
+            if (activeVideoIndex !== null) {
+                const currentVideo = videoRefs.current[activeVideoIndex];
+                if (currentVideo) {
+                    currentVideo.pause();
+                    currentVideo.currentTime = 0;
+                }
+                setActiveVideoIndex(null);
+            }
 
-            tl.to(validProjectRefs, {
-                opacity: 0,
-                y: 20,
-                stagger: 0.05,
-                duration: 0.3,
-                onComplete: () => {
-                    // Arrêter toutes les vidéos en cours de lecture
-                    if (activeVideoIndex !== null) {
-                        const currentVideo = videoRefs.current[activeVideoIndex];
-                        if (currentVideo) {
-                            currentVideo.pause();
-                            currentVideo.currentTime = 0;
-                        }
-                        setActiveVideoIndex(null);
-                    }
+            // Mettre à jour les projets filtrés immédiatement
+            setAllFilteredProjects(newFilteredProjects);
 
-                    // Mettre à jour les projets filtrés
-                    setFilteredProjects(newFilteredProjects);
+            // Si pagination activée, gérer l'affichage paginé
+            if (enablePagination) {
+                const itemsPerPage = isMobile ? itemsPerPageMobile : itemsPerPageDesktop;
+                const initialItems = newFilteredProjects.slice(0, itemsPerPage);
+                setDisplayedProjects(initialItems);
+                setHasMore(newFilteredProjects.length > itemsPerPage);
+            } else {
+                setDisplayedProjects(newFilteredProjects);
+                setHasMore(false);
+            }
 
-                    // Animation d'entrée après mise à jour
-                    setTimeout(() => {
-                        const portfolioItems = projectsContainerRef.current?.querySelectorAll(
-                            `.${styles.portfolioItem}`,
-                        );
-                        if (portfolioItems && portfolioItems.length > 0) {
-                            gsap.fromTo(
-                                portfolioItems,
-                                {
-                                    opacity: 0,
-                                    y: 20,
-                                },
-                                {
-                                    opacity: 1,
-                                    y: 0,
-                                    stagger: 0.05,
-                                    duration: 0.5,
-                                    onComplete: () => {
-                                        // Arrêter le loading une fois l'animation terminée
-                                        setIsLoading(false);
-                                    },
-                                },
-                            );
-                        } else {
-                            // Si pas d'éléments, arrêter le loading immédiatement
-                            setIsLoading(false);
-                        }
-                    }, 50);
-                },
-            });
+            // Animation après le re-render de React
+            setTimeout(() => {
+                const portfolioItems = projectsContainerRef.current?.querySelectorAll(
+                    `.${styles.portfolioItem}`,
+                );
+                if (portfolioItems && portfolioItems.length > 0) {
+                    // Animation d'entrée directe
+                    gsap.fromTo(
+                        portfolioItems,
+                        {
+                            opacity: 0,
+                            y: 20,
+                        },
+                        {
+                            opacity: 1,
+                            y: 0,
+                            stagger: 0.05,
+                            duration: 0.4,
+                            ease: 'power2.out',
+                            onComplete: () => {
+                                setIsLoading(false);
+                            },
+                        },
+                    );
+                } else {
+                    setIsLoading(false);
+                }
+            }, 50); // Petit délai pour s'assurer que React a fini de render
         } else {
             // Si pas de changement de filtre ou pas d'éléments valides, juste mettre à jour les projets filtrés sans animation
-            setFilteredProjects(newFilteredProjects);
-            // Arrêter le loading
+            setAllFilteredProjects(newFilteredProjects);
+
+            // Si pagination activée, gérer l'affichage paginé
+            if (enablePagination) {
+                const itemsPerPage = isMobile ? itemsPerPageMobile : itemsPerPageDesktop;
+                const initialItems = newFilteredProjects.slice(0, itemsPerPage);
+                setDisplayedProjects(initialItems);
+                setHasMore(newFilteredProjects.length > itemsPerPage);
+            } else {
+                setDisplayedProjects(newFilteredProjects);
+                setHasMore(false);
+            }
+
+            // Pour les changements sans animation, juste arrêter le loading
             setIsLoading(false);
         }
     }, [activeFilter, customFilters, projects, activeVideoIndex, previousFilter]);
@@ -450,8 +524,11 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         return '/placeholder-photo.png';
     };
 
-    // Préparation des médias pour le carrousel (images et vidéos)
-    const carouselMedia = filteredProjects.map((project) => ({
+    // Pour la compatibilité, utiliser displayedProjects comme filteredProjects
+    const filteredProjects = displayedProjects;
+
+    // Préparation des médias pour le carrousel (images et vidéos) - utiliser TOUS les médias filtrés
+    const carouselMedia = allFilteredProjects.map((project) => ({
         src: project.source,
         isVideo: project.isVideo,
         provider: project.provider || (project.isYouTube ? 'youtube' : 'local'),
@@ -582,8 +659,8 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                         } group`}
                                         onClick={() => {
                                             if (!project.isVideo || activeVideoIndex !== index) {
-                                                // Trouver l'index correct dans le tableau filtré
-                                                const mediaIndex = filteredProjects.findIndex(
+                                                // Trouver l'index correct dans le tableau de TOUS les médias filtrés
+                                                const mediaIndex = allFilteredProjects.findIndex(
                                                     (p) => p.source === project.source,
                                                 );
                                                 openCarousel(mediaIndex);
@@ -730,6 +807,47 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                     Aucun projet ne correspond à ces critères.
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {/* Bouton "Charger plus" (si pagination activée) */}
+                    {enablePagination && hasMore && !isLoading && (
+                        <div className="text-center mt-8">
+                            <button
+                                onClick={loadMoreProjects}
+                                disabled={loadingMore}
+                                className="inline-flex items-center px-6 py-3 bg-white/10 backdrop-blur-sm text-white rounded-full hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-white/20 hover:border-white/40"
+                            >
+                                {loadingMore ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white inline-block mr-3"></div>
+                                        Chargement...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg
+                                            className="w-4 h-4 mr-2"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                            />
+                                        </svg>
+                                        Charger plus (
+                                        {allFilteredProjects.length - displayedProjects.length}{' '}
+                                        restants)
+                                    </>
+                                )}
+                            </button>
+                            <p className="text-white/60 text-sm mt-2">
+                                {displayedProjects.length} sur {allFilteredProjects.length} médias
+                                affichés
+                            </p>
                         </div>
                     )}
 
