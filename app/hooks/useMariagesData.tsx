@@ -146,14 +146,59 @@ export const useMariagesData = () => {
                             );
 
                             sortedMedias.forEach((media) => {
+                                // Fonction pour détecter le format à partir du nom de fichier
+                                const detectFormat = (source: string): 'paysage' | 'portrait' => {
+                                    const filename = source.toLowerCase();
+
+                                    // Mots-clés pour le format portrait
+                                    const portraitKeywords = [
+                                        'portrait',
+                                        'vertical',
+                                        'vert',
+                                        'tall',
+                                        'standing',
+                                        'debout',
+                                    ];
+
+                                    // Mots-clés pour le format paysage
+                                    const paysageKeywords = [
+                                        'paysage',
+                                        'landscape',
+                                        'horizontal',
+                                        'horiz',
+                                        'wide',
+                                        'large',
+                                    ];
+
+                                    // Vérifier les mots-clés portrait en premier
+                                    if (
+                                        portraitKeywords.some((keyword) =>
+                                            filename.includes(keyword),
+                                        )
+                                    ) {
+                                        return 'portrait';
+                                    }
+
+                                    // Vérifier les mots-clés paysage
+                                    if (
+                                        paysageKeywords.some((keyword) =>
+                                            filename.includes(keyword),
+                                        )
+                                    ) {
+                                        return 'paysage';
+                                    }
+
+                                    // Par défaut, considérer comme portrait pour les photos (plus courant en mariage)
+                                    // et paysage pour les vidéos
+                                    return media.type === 'video' ? 'paysage' : 'portrait';
+                                };
+
                                 allMedia.push({
-                                    title:
-                                        media.title ||
-                                        `${couple.coupleDisplayName} - ${media.filename}`,
+                                    title: media.title || couple.coupleDisplayName, // Juste le nom du couple si pas de titre
                                     category: couple.coupleDisplayName,
                                     source: media.url,
                                     isVideo: media.type === 'video',
-                                    format: 'paysage', // On peut détecter cela plus tard
+                                    format: detectFormat(media.filename), // Détection automatique du format
                                     provider: media.type === 'video' ? 'local' : undefined,
                                 });
                             });

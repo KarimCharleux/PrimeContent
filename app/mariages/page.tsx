@@ -171,6 +171,10 @@ function MariagesContent() {
                                 showFilter={true}
                                 activeFilter={activeFilter}
                                 onFilterChange={handleFilterChange}
+                                enablePagination={true}
+                                itemsPerPageDesktop={24}
+                                itemsPerPageMobile={12}
+                                enableRandomShuffle={false}
                             />
                         </motion.div>
                     )}
