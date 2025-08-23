@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Script de déploiement de la configuration Nginx pour les gros uploads
-# Ce script déploie la configuration sécurisée avec support des fichiers de 100MB
-
 set -e
 
 echo "🚀 Déploiement de la configuration Nginx avec support des gros uploads..."
@@ -27,14 +24,6 @@ if [ $? -eq 0 ]; then
     sudo systemctl reload nginx
     
     echo "✅ Configuration Nginx déployée avec succès!"
-    echo "📊 Limites configurées :"
-    echo "   - Taille max des uploads : 5GB 🚀"
-    echo "   - Timeout de lecture : 1 heure"
-    echo "   - Timeout d'envoi : 1 heure" 
-    echo "   - Streaming direct activé (pas de buffering)"
-    echo "   - Protection anti-DDoS activée"
-    echo "   - Headers de sécurité renforcés"
-    
 else
     echo "❌ Erreur dans la configuration Nginx"
     echo "🔄 Restauration de la configuration précédente..."
