@@ -594,9 +594,12 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                                                     src={getMediaUrl(clientInfo.imageSrc)}
                                                     alt={clientInfo.name}
                                                     width={
-                                                        clientInfo.type === 'celebrity' ? 64 : 96
+                                                        clientInfo.type === 'celebrity' ? 128 : 192
                                                     }
-                                                    height={64}
+                                                    height={
+                                                        clientInfo.type === 'celebrity' ? 128 : 128
+                                                    }
+                                                    sizes="(max-width: 480px) 40px, (max-width: 768px) 48px, 64px"
                                                     style={{ objectFit: 'contain' }}
                                                     className={`${styles.filterImage} ${
                                                         clientInfo.type === 'celebrity'
