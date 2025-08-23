@@ -1,6 +1,5 @@
 'use client';
 
-// Imports pour drag and drop
 import {
     DndContext,
     closestCenter,
@@ -19,279 +18,316 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
-    collection,
-    deleteDoc,
     doc,
+    updateDoc,
+    collection,
     getDocs,
     orderBy,
     query,
-    updateDoc,
     addDoc,
+    deleteDoc,
 } from 'firebase/firestore';
 import Image from 'next/image';
-import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 
-import VideoUpload, { VideoData } from '../../../components/VideoUpload';
 import { getMediaUrl } from '../../../utils/mediaUrl';
-import {
-    getVideoProvider,
-    extractVideoId,
-    getVideoThumbnail,
-    isExternalVideo,
-    VideoProvider,
-} from '../../../utils/videoManager';
-import { Spinner } from '../../components/Spinner';
+import { VideoProvider } from '../../../utils/videoManager';
+import MediaForm, { MediaFormData } from '../../components/MediaForm';
 import { db } from '../../lib/firebase-client';
 
+// Fonction utilitaire pour filtrer les champs undefined
+const removeUndefinedFields = (obj: Record<string, any>): Record<string, any> => {
+    return Object.entries(obj)
+        .filter(([_, value]) => value !== undefined)
+        .reduce(
+            (acc, [key, value]) => ({
+                ...acc,
+                [key]: value,
+            }),
+            {},
+        );
+};
+
+// Fonctions helper pour éviter les ternaires imbriqués
+const getProviderBadgeClasses = (provider?: VideoProvider, isYouTube?: boolean): string => {
+    if (provider === 'youtube' || isYouTube) {
+        return 'bg-red-100 text-red-800';
+    }
+    if (provider === 'dailymotion') {
+        return 'bg-orange-100 text-orange-800';
+    }
+    return 'bg-blue-100 text-blue-800';
+};
+
+const getProviderLabel = (provider?: VideoProvider, isYouTube?: boolean): string => {
+    if (provider === 'youtube' || isYouTube) {
+        return 'YouTube';
+    }
+    if (provider === 'dailymotion') {
+        return 'Dailymotion';
+    }
+    return 'Vidéo';
+};
+
 interface Video {
-    id?: string;
+    id: string;
     title?: string;
     category: string;
     source: string;
-    thumbnail: string;
-    duration: number;
+    thumbnail?: string;
+    duration?: number;
     order: number;
-    size: number; // Taille en bytes
-    format: 'portrait' | 'paysage'; // Ajout du format
-    provider?: VideoProvider; // Fournisseur de la vidéo
-    videoId?: string; // ID de la vidéo externe
-    embedUrl?: string; // URL d'embed pour les vidéos externes
-    watchUrl?: string; // URL de visionnage pour les vidéos externes
-    isExternal?: boolean; // Indique si c'est une vidéo externe
-}
-
-interface VideoStats {
-    totalVideos: number;
-    totalDuration: number;
-    averageLoadTime: number;
-    totalSize: number;
+    size?: number;
+    format: 'portrait' | 'paysage';
+    provider: VideoProvider;
+    videoId?: string;
+    embedUrl?: string;
+    watchUrl?: string;
+    isExternal?: boolean;
+    // Propriétés de rétrocompatibilité
+    youtubeUrl?: string;
+    youtubeId?: string;
+    isYouTube?: boolean;
 }
 
 interface VideosTabProps {
-    onStatusChange?: (status: { type: 'success' | 'error'; message: string } | null) => void;
+    readonly onStatusChange?: (
+        status: { type: 'success' | 'error'; message: string } | null,
+    ) => void;
 }
 
-// Composant pour une ligne triable du tableau
+export interface VideoStats {
+    totalCount: number;
+    totalSize: number;
+    videoCount: number;
+    averageLoadTime: number;
+}
+
+// Composant pour chaque ligne sortable
+interface SortableRowProps {
+    readonly video: Video;
+    readonly onEdit: (video: Video) => void;
+    readonly onDelete: (id: string) => void;
+    readonly formatSize: (size: number) => string;
+    readonly formatDuration: (seconds: number) => string;
+    readonly getMediaUrl: (path: string) => string;
+}
+
 function SortableRow({
     video,
     onEdit,
     onDelete,
+    formatSize,
     formatDuration,
-}: {
-    video: Video;
-    onEdit: (video: Video) => void;
-    onDelete: (id: string) => void;
-    formatDuration: (seconds: number) => string;
-}) {
-    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-        id: video.id!,
+    getMediaUrl,
+}: SortableRowProps) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+        id: video.id,
     });
 
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
+        opacity: isDragging ? 0.5 : 1,
     };
 
     return (
-        <tr ref={setNodeRef} style={style} className="bg-white hover:bg-gray-50">
-            <td className="px-6 py-4 whitespace-nowrap text-center w-20">
-                <button
+        <tr
+            ref={setNodeRef}
+            style={style}
+            className={`${isDragging ? 'bg-gray-50 shadow-lg z-10' : ''} hover:bg-gray-50 transition-colors`}
+        >
+            {/* Poignée de drag */}
+            <td className="px-3 py-4 whitespace-nowrap">
+                <div
                     {...attributes}
                     {...listeners}
-                    className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing text-lg"
+                    className="flex items-center justify-center cursor-grab active:cursor-grabbing p-2 rounded hover:bg-gray-100 transition-colors"
                     title="Glisser pour réorganiser"
                 >
-                    ☰
-                </button>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 8h16M4 16h16"
+                        />
+                    </svg>
+                </div>
             </td>
-            <td className="px-6 py-4">
-                <div className="h-16 w-24 relative overflow-hidden rounded">
-                    {video.thumbnail ? (
-                        <Image
-                            src={getMediaUrl(video.thumbnail)}
-                            alt={video.title || 'Vidéo sans titre'}
-                            fill
-                            className="object-cover"
-                        />
-                    ) : (
-                        <video
-                            src={getMediaUrl(video.source)}
-                            className="w-full h-full object-cover"
-                            preload="metadata"
-                        />
-                    )}
-                    <div className="absolute bottom-1 right-1 bg-black bg-opacity-70 text-white px-1 py-0.5 rounded text-xs">
-                        {formatDuration(video.duration)}
+
+            {/* Aperçu */}
+            <td className="px-3 py-4 whitespace-nowrap">
+                <div className="w-20 h-12 relative rounded overflow-hidden">
+                    <div className="absolute inset-0 flex items-center justify-center bg-black">
+                        {video.thumbnail ? (
+                            <Image
+                                src={getMediaUrl(video.thumbnail)}
+                                alt={video.title || 'Miniature vidéo'}
+                                fill
+                                className="object-cover"
+                            />
+                        ) : (
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-8 w-8 text-white"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={1}
+                                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                />
+                            </svg>
+                        )}
                     </div>
                 </div>
             </td>
-            <td className="px-6 py-4 max-w-xs">
-                <div className="truncate" title={video.title || 'Sans titre'}>
-                    {video.title || <span className="text-gray-400 italic">Sans titre</span>}
+
+            {/* Type */}
+            <td className="px-3 py-4 whitespace-nowrap">
+                <div className="flex flex-col space-y-1">
+                    <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-fit ${getProviderBadgeClasses(
+                            video.provider,
+                            video.isYouTube,
+                        )}`}
+                    >
+                        {getProviderLabel(video.provider, video.isYouTube)}
+                    </span>
                 </div>
             </td>
-            <td className="px-6 py-4 whitespace-nowrap">{video.category}</td>
-            <td className="px-6 py-4 whitespace-nowrap">{video.format || 'paysage'}</td>
-            <td className="px-6 py-4 whitespace-nowrap">{formatDuration(video.duration)}</td>
-            <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                <button
-                    onClick={() => onEdit(video)}
-                    className="text-indigo-600 hover:text-indigo-900"
+
+            {/* Titre */}
+            <td className="px-3 py-4 whitespace-nowrap">
+                <div className="max-w-[200px] truncate" title={video.title || 'Sans titre'}>
+                    {video.title || 'Sans titre'}
+                </div>
+            </td>
+
+            {/* Format */}
+            <td className="px-3 py-4 whitespace-nowrap">
+                <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        video.format === 'portrait'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                    }`}
                 >
-                    Modifier
-                </button>
-                <button
-                    onClick={() => onDelete(video.id!)}
-                    className="text-red-600 hover:text-red-900"
+                    {video.format === 'portrait' ? 'Portrait' : 'Paysage'}
+                </span>
+            </td>
+
+            {/* Durée */}
+            <td className="px-3 py-4 whitespace-nowrap">{formatDuration(video.duration || 0)}</td>
+
+            {/* Poids */}
+            <td className="px-3 py-4 whitespace-nowrap">{formatSize(video.size || 0)}</td>
+
+            {/* Catégorie */}
+            <td className="px-3 py-4 whitespace-nowrap">
+                <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        video.category
+                            ? 'bg-indigo-100 text-indigo-800'
+                            : 'bg-gray-100 text-gray-800'
+                    }`}
                 >
-                    Supprimer
-                </button>
+                    {video.category || 'Non catégorisé'}
+                </span>
+            </td>
+
+            {/* Actions */}
+            <td className="px-3 py-4 whitespace-nowrap">
+                <div className="flex space-x-2">
+                    <button
+                        onClick={() => onEdit(video)}
+                        className="text-indigo-600 hover:text-indigo-900 font-medium"
+                    >
+                        Modifier
+                    </button>
+                    <button
+                        onClick={() => onDelete(video.id)}
+                        className="text-red-600 hover:text-red-900 font-medium"
+                    >
+                        Supprimer
+                    </button>
+                </div>
             </td>
         </tr>
     );
 }
 
 export default function VideosTab({ onStatusChange }: VideosTabProps) {
-    const [videos, setVideos] = useState<Video[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [showForm, setShowForm] = useState(false);
-    const [editingVideo, setEditingVideo] = useState<Video | null>(null);
-    const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(null);
-    const [isDragging, setIsDragging] = useState(false);
+    const router = useRouter();
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
-    const [statusMessage, setStatusMessage] = useState<{
-        type: 'success' | 'error';
-        message: string;
-    } | null>(null);
-    const [stats, setStats] = useState<VideoStats>({
-        totalVideos: 0,
-        totalDuration: 0,
-        averageLoadTime: 0,
-        totalSize: 0,
-    });
-    const [formData, setFormData] = useState<Partial<Video>>({
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [videos, setVideos] = useState<Video[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<string>('');
+
+    // États pour l'édition
+    const [editingVideo, setEditingVideo] = useState<Video | null>(null);
+    const [showForm, setShowForm] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    // États pour le nouveau formulaire MediaForm
+    const [formData, setFormData] = useState<MediaFormData>({
         title: '',
         category: '',
         source: '',
-        thumbnail: '',
+        format: 'paysage',
         order: 0,
+        thumbnail: '',
+        isVideo: true,
+        isYouTube: false,
+        provider: 'local',
     });
-    const [videoFile, setVideoFile] = useState<File | null>(null);
-    const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
-    const [uploadCategory, setUploadCategory] = useState<string>('');
-    const [videoData, setVideoData] = useState<VideoData | null>(null);
-    const [uploadMode, setUploadMode] = useState<'file' | 'external'>('file');
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-    // Configuration pour le drag and drop
-    const sensors = useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        }),
-    );
-
-    // Extraire les catégories uniques des vidéos
-    const categories = Array.from(new Set(videos.map((video) => video.category))).filter(Boolean);
-
-    // Fonction pour formater la durée en minutes:secondes
-    const formatDuration = (seconds: number): string => {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    };
-
-    // Fonction pour formater le temps de chargement
-    const formatLoadTime = (ms: number): string => {
-        if (ms < 1000) {
-            return ms.toFixed(0) + ' ms';
-        } else {
-            return (ms / 1000).toFixed(2) + ' s';
-        }
-    };
-
-    // Fonction pour formater le poids
-    const formatSize = (bytes: number): string => {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    };
+    // Statistiques
+    const [stats, setStats] = useState<VideoStats>({
+        totalCount: 0,
+        totalSize: 0,
+        videoCount: 0,
+        averageLoadTime: 0,
+    });
 
     // Fonction pour calculer les statistiques
-    const calculateStats = useCallback(async () => {
-        let totalDuration = 0;
-        let totalLoadTime = 0;
+    const calculateStats = useCallback(() => {
         let totalSize = 0;
 
-        for (const video of videos) {
-            totalDuration += video.duration || 0;
-            totalSize += video.size || 0;
-
-            try {
-                // Estimation du temps de chargement (basé sur une connexion moyenne de 15 Mbps)
-                const loadTime = (((video.size || 0) * 8) / (15 * 1024 * 1024)) * 1000;
-                totalLoadTime += loadTime;
-            } catch (error) {
-                console.error(`Erreur lors de l'analyse de ${video.source}:`, error);
-            }
-        }
-
-        setStats({
-            totalVideos: videos.length,
-            totalDuration,
-            averageLoadTime: videos.length > 0 ? totalLoadTime / videos.length : 0,
-            totalSize,
+        videos.forEach((video) => {
+            totalSize += video.size || 5 * 1024 * 1024; // 5MB par défaut pour les vidéos externes
         });
+
+        const averageLoadTime =
+            videos.length > 0 ? (((totalSize * 8) / (15 * 1024 * 1024)) * 1000) / videos.length : 0;
+
+        const newStats: VideoStats = {
+            totalCount: videos.length,
+            totalSize,
+            videoCount: videos.length,
+            averageLoadTime,
+        };
+
+        setStats(newStats);
     }, [videos]);
 
-    useEffect(() => {
-        fetchVideos();
-    }, []);
-
-    useEffect(() => {
-        if (videos.length > 0) {
-            calculateStats();
-        }
-    }, [videos, calculateStats]);
-
-    // Mettre à jour le statut pour le composant parent
-    useEffect(() => {
-        onStatusChange && onStatusChange(statusMessage);
-    }, [statusMessage, onStatusChange]);
-
-    const handleVideoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setVideoFile(file);
-
-            // Extraire la durée de la vidéo
-            const duration = await extractVideoDuration(file);
-
-            // Détecter le format
-            const format = await detectFormat(file);
-
-            setFormData((prev) => ({
-                ...prev,
-                source: URL.createObjectURL(file),
-                duration,
-                format,
-                size: file.size,
-            }));
-        }
-    };
-
-    const handleThumbnailFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setThumbnailFile(file);
-            setFormData((prev) => ({ ...prev, thumbnail: URL.createObjectURL(file) }));
-            setPreviewThumbnail(URL.createObjectURL(file));
-        }
-    };
-
-    const fetchVideos = async () => {
+    // Charger les vidéos
+    const fetchVideos = useCallback(async () => {
         try {
             setLoading(true);
             const videosCollection = collection(db, 'videos');
@@ -309,69 +345,115 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
             }
         } catch (error) {
             console.error('Erreur lors de la récupération des vidéos:', error);
-            setStatusMessage({
+            onStatusChange?.({
                 type: 'error',
                 message: 'Erreur lors de la récupération des vidéos',
             });
         } finally {
             setLoading(false);
         }
+    }, [onStatusChange]);
+
+    useEffect(() => {
+        fetchVideos();
+    }, [fetchVideos]);
+
+    useEffect(() => {
+        calculateStats();
+    }, [videos, calculateStats]);
+
+    // Gestion des fichiers
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const filesArray = Array.from(e.target.files);
+            setSelectedFiles(filesArray);
+        }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const filesArray = Array.from(e.dataTransfer.files);
+            // Filtrer pour ne garder que les vidéos
+            const videoFiles = filesArray.filter((file) => file.type.startsWith('video/'));
+            setSelectedFiles(videoFiles);
+        }
+    };
+
+    const triggerFileInput = () => {
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
+
+    // Upload des vidéos
+    const handleUpload = async () => {
+        if (selectedFiles.length === 0) {
+            onStatusChange?.({
+                type: 'error',
+                message: 'Aucun fichier sélectionné',
+            });
+            return;
+        }
+
         try {
-            let videoUrl = formData.source;
-            let thumbnailUrl = formData.thumbnail;
-            let videoDataToSave: Partial<Video> = { ...formData };
+            setUploading(true);
+            setUploadProgress(0);
 
-            // Gérer les vidéos externes (YouTube/Dailymotion)
-            if (uploadMode === 'external' && videoData) {
-                if (!videoData.provider || videoData.provider === 'local') {
-                    throw new Error(
-                        'Veuillez sélectionner une vidéo YouTube ou Dailymotion valide',
-                    );
-                }
+            const formData = new FormData();
+            selectedFiles.forEach((file) => {
+                formData.append('files', file);
+            });
+            formData.append('path', 'videos');
+            formData.append('useUuid', 'false');
 
-                videoDataToSave = {
-                    title: videoData.title || formData.title || 'Vidéo sans titre',
-                    category: formData.category || '',
-                    source: videoData.source,
-                    thumbnail: videoData.thumbnail || '',
-                    duration: 0, // La durée pourrait être récupérée via l'API
-                    order: editingVideo ? editingVideo.order : videos.length,
-                    size: 0, // Pas de taille pour les vidéos externes
-                    format: 'paysage', // Par défaut
-                    provider: videoData.provider,
-                    videoId: videoData.videoId,
-                    embedUrl: videoData.embedUrl,
-                    watchUrl: videoData.watchUrl,
-                    isExternal: true,
-                };
-            } else {
-                // Gérer les fichiers locaux
-                // Upload de la vidéo si un nouveau fichier est sélectionné
-                if (videoFile) {
-                    const videoFormData = new FormData();
-                    videoFormData.append('file', videoFile);
-                    videoFormData.append('path', 'videos');
-                    videoFormData.append('useUuid', 'false');
+            const response = await fetch('/api/upload/batch', {
+                method: 'POST',
+                body: formData,
+            });
 
-                    const videoResponse = await fetch('/api/upload', {
-                        method: 'POST',
-                        body: videoFormData,
+            if (!response.ok) {
+                throw new Error("Erreur lors de l'upload des vidéos");
+            }
+
+            const uploadResult = await response.json();
+
+            // Traiter chaque fichier
+            const newVideos: Video[] = [];
+
+            if (!uploadResult.fileUrls || !Array.isArray(uploadResult.fileUrls)) {
+                throw new Error('Aucun fichier uploadé avec succès');
+            }
+
+            for (let i = 0; i < uploadResult.fileUrls.length; i++) {
+                const url = uploadResult.fileUrls[i];
+                const file = selectedFiles[i];
+
+                if (!url || !file) continue;
+
+                const id = url.split('/').pop()?.split('.')[0] || `video-${Date.now()}`;
+                const format = await detectFormat(file);
+
+                let thumbnail = '';
+                thumbnail = await generateThumbnail(file);
+                if (thumbnail) {
+                    const thumbnailBlob = await fetch(thumbnail).then((r) => r.blob());
+                    const thumbnailFile = new File([thumbnailBlob], `thumbnail.jpg`, {
+                        type: 'image/jpeg',
                     });
 
-                    if (!videoResponse.ok) {
-                        throw new Error('Erreur lors du téléchargement de la vidéo');
-                    }
-
-                    const uploadData = await videoResponse.json();
-                    videoUrl = uploadData.fileUrl;
-                }
-
-                // Upload de la miniature si un nouveau fichier est sélectionné
-                if (thumbnailFile) {
                     const thumbnailFormData = new FormData();
                     thumbnailFormData.append('file', thumbnailFile);
                     thumbnailFormData.append('path', 'videos/thumbnails');
@@ -382,163 +464,69 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                         body: thumbnailFormData,
                     });
 
-                    if (!thumbnailResponse.ok) {
-                        throw new Error('Erreur lors du téléchargement de la miniature');
+                    if (thumbnailResponse.ok) {
+                        const thumbnailResult = await thumbnailResponse.json();
+                        thumbnail = thumbnailResult.fileUrl;
                     }
-
-                    const thumbnailData = await thumbnailResponse.json();
-                    thumbnailUrl = thumbnailData.fileUrl;
                 }
 
-                videoDataToSave = {
-                    ...formData,
-                    source: videoUrl,
-                    thumbnail: thumbnailUrl,
-                    format: formData.format || 'paysage',
+                const duration = await extractVideoDuration(file);
+
+                const videoItem: Video = {
+                    id,
+                    source: url,
+                    title: '',
+                    category: selectedCategory || '',
+                    format,
+                    order: videos.length + i,
+                    thumbnail,
+                    size: file.size,
                     provider: 'local',
-                    isExternal: false,
+                    duration,
                 };
+
+                newVideos.push(videoItem);
             }
 
-            if (editingVideo?.id) {
-                const videoRef = doc(db, 'videos', editingVideo.id);
-                await updateDoc(videoRef, {
-                    ...videoDataToSave,
-                    order: formData.order,
-                });
-                setStatusMessage({ type: 'success', message: 'Vidéo mise à jour avec succès' });
-            } else {
-                const newVideo = {
-                    ...videoDataToSave,
-                    order: videos.length,
-                };
-                await addDoc(collection(db, 'videos'), newVideo);
-                setStatusMessage({
-                    type: 'success',
-                    message: 'Nouvelle vidéo ajoutée avec succès',
-                });
+            // Sauvegarder en base
+            for (const video of newVideos) {
+                const cleanedVideo = removeUndefinedFields(video);
+                await addDoc(collection(db, 'videos'), cleanedVideo);
             }
-            resetForm();
-            fetchVideos();
-        } catch (error) {
-            console.error('Erreur lors de la sauvegarde de la vidéo:', error);
-            setStatusMessage({ type: 'error', message: 'Erreur lors de la sauvegarde' });
-        }
-    };
 
-    const resetForm = () => {
-        setShowForm(false);
-        setEditingVideo(null);
-        setFormData({
-            title: '',
-            category: '',
-            source: '',
-            thumbnail: '',
-            order: 0,
-        });
-        setVideoFile(null);
-        setThumbnailFile(null);
-        setPreviewThumbnail(null);
-        setStatusMessage(null);
-        setUploadCategory('');
-        setVideoData(null);
-        setUploadMode('file');
-    };
+            await fetchVideos();
+            setSelectedFiles([]);
+            setSelectedCategory('');
 
-    // Gérer le drag & drop des fichiers
-    const handleDragEnter = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(true);
-    };
-
-    const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-    };
-
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-    };
-
-    const handleDrop = async (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            await handleFileUpload(e.dataTransfer.files);
-        }
-    };
-
-    // Fonction pour extraire le nom du fichier du chemin
-    const extractFileName = (path: string): string => {
-        // Si le chemin commence par /videos/, on enlève ce préfixe
-        const cleanPath = path.replace(/^\/videos\//, '');
-        // On prend le dernier segment du chemin
-        return cleanPath.split('/').pop() || '';
-    };
-
-    // Fonction pour supprimer un fichier
-    const deleteFile = async (path: string) => {
-        try {
-            const fileName = extractFileName(path);
-            if (!fileName) return;
-
-            const response = await fetch(
-                `/api/delete?path=videos&name=${encodeURIComponent(fileName)}`,
-                {
-                    method: 'DELETE',
-                },
-            );
-
-            if (!response.ok) {
-                throw new Error('Erreur lors de la suppression du fichier');
-            }
-        } catch (error) {
-            console.error('Erreur lors de la suppression du fichier:', error);
-        }
-    };
-
-    // Supprimer toutes les vidéos
-    const handleDeleteAllVideos = async () => {
-        if (
-            !confirm(
-                `Êtes-vous sûr de vouloir supprimer toutes les vidéos (${videos.length} vidéos) ? Cette action est irréversible.`,
-            )
-        ) {
-            return;
-        }
-
-        try {
-            // Supprimer tous les fichiers vidéo
-            await Promise.all(videos.map((video) => deleteFile(video.source)));
-
-            // Supprimer tous les fichiers miniatures
-            await Promise.all(
-                videos.map((video) => video.thumbnail && deleteFile(video.thumbnail)),
-            );
-
-            // Ensuite supprimer les documents Firestore
-            await Promise.all(videos.map((video) => deleteDoc(doc(db, 'videos', video.id!))));
-
-            setVideos([]);
-
-            resetForm();
-
-            setStatusMessage({
+            onStatusChange?.({
                 type: 'success',
-                message: `Toutes les vidéos (${videos.length}) ont été supprimées avec succès`,
+                message: `${newVideos.length} vidéo(s) importée(s) avec succès`,
             });
+
+            router.refresh();
         } catch (error) {
-            console.error('Erreur lors de la suppression des vidéos:', error);
-            setStatusMessage({
+            console.error("Erreur lors de l'upload:", error);
+            onStatusChange?.({
                 type: 'error',
-                message: 'Erreur lors de la suppression des vidéos',
+                message: "Erreur lors de l'upload des vidéos",
             });
+        } finally {
+            setUploading(false);
+            setUploadProgress(100);
         }
+    };
+
+    // Détecter le format
+    const detectFormat = async (file: File): Promise<'portrait' | 'paysage'> => {
+        return new Promise((resolve) => {
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            video.onloadedmetadata = () => {
+                URL.revokeObjectURL(video.src);
+                resolve(video.videoWidth < video.videoHeight ? 'portrait' : 'paysage');
+            };
+            video.src = URL.createObjectURL(file);
+        });
     };
 
     // Extraire la durée d'une vidéo
@@ -556,7 +544,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         });
     };
 
-    // Générer une miniature à partir d'une vidéo
+    // Générer miniature vidéo
     const generateThumbnail = async (file: File): Promise<string> => {
         return new Promise((resolve) => {
             const video = document.createElement('video');
@@ -564,12 +552,10 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
             const ctx = canvas.getContext('2d');
 
             video.onloadeddata = () => {
-                // Chercher le milieu de la vidéo pour la miniature
                 video.currentTime = video.duration / 2;
             };
 
             video.onseeked = () => {
-                // Une fois positionné, capturer l'image
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -583,771 +569,677 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         });
     };
 
-    // Détecter automatiquement le format (portrait/paysage)
-    const detectFormat = async (file: File): Promise<'portrait' | 'paysage'> => {
-        return new Promise((resolve) => {
-            const video = document.createElement('video');
-            video.preload = 'metadata';
-
-            video.onloadedmetadata = () => {
-                URL.revokeObjectURL(video.src);
-                resolve(video.videoWidth < video.videoHeight ? 'portrait' : 'paysage');
-            };
-
-            video.src = URL.createObjectURL(file);
-        });
-    };
-
-    // Gérer l'upload des fichiers
-    const handleFileUpload = async (files: FileList) => {
-        // Filtrer les fichiers pour n'accepter que les vidéos
-        const videoFiles = Array.from(files).filter((file) => file.type.startsWith('video/'));
-
-        if (videoFiles.length === 0) {
-            setStatusMessage({
+    // Supprimer toutes les vidéos
+    const handleDeleteAllVideos = async () => {
+        if (videos.length === 0) {
+            onStatusChange?.({
                 type: 'error',
-                message: 'Veuillez sélectionner uniquement des fichiers vidéo',
+                message: 'Aucune vidéo à supprimer',
             });
             return;
         }
 
-        setUploading(true);
-        setStatusMessage(null);
-        setUploadProgress(0);
+        if (
+            window.confirm(
+                `ATTENTION: Vous êtes sur le point de supprimer toutes les vidéos (${videos.length}). Cette action est irréversible. Continuer?`,
+            )
+        ) {
+            try {
+                setUploading(true);
+                const totalVideosToDelete = videos.length;
 
-        try {
-            // Trouver le dernier ordre existant
-            const lastOrder = Math.max(...videos.map((v) => v.order), -1);
-            let currentOrder = lastOrder + 1;
+                // Supprimer les fichiers physiques
+                for (const video of videos) {
+                    try {
+                        const isExternalVideo =
+                            video.provider === 'youtube' ||
+                            video.provider === 'dailymotion' ||
+                            video.isYouTube ||
+                            (video.source &&
+                                (video.source.includes('youtube.com') ||
+                                    video.source.includes('youtu.be') ||
+                                    video.source.includes('dailymotion.com')));
 
-            for (let i = 0; i < videoFiles.length; i++) {
-                const file = videoFiles[i];
+                        if (video.source && !isExternalVideo) {
+                            const fileName = video.source.split('/').pop();
+                            if (fileName) {
+                                await fetch(
+                                    `/api/delete?path=videos&name=${encodeURIComponent(fileName)}`,
+                                    {
+                                        method: 'DELETE',
+                                    },
+                                );
+                            }
+                        }
 
-                // Extraire la durée de la vidéo
-                const duration = await extractVideoDuration(file);
+                        if (video.thumbnail && !video.thumbnail.startsWith('http')) {
+                            const thumbnailName = video.thumbnail.split('/').pop();
+                            if (thumbnailName) {
+                                await fetch(
+                                    `/api/delete?path=videos/thumbnails&name=${encodeURIComponent(thumbnailName)}`,
+                                    {
+                                        method: 'DELETE',
+                                    },
+                                );
+                            }
+                        }
 
-                // Détecter le format
-                const format = await detectFormat(file);
+                        // Supprimer de Firestore
+                        await deleteDoc(doc(db, 'videos', video.id));
+                    } catch (err) {
+                        console.error("Erreur lors de la suppression d'une vidéo:", err);
+                    }
+                }
 
-                // Créer un FormData pour l'upload
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('path', 'videos');
-                formData.append('useUuid', 'false');
+                setVideos([]);
 
-                // Faire une requête fetch à notre API locale pour sauvegarder le fichier
-                const response = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData,
+                onStatusChange?.({
+                    type: 'success',
+                    message: `Toutes les vidéos (${totalVideosToDelete}) ont été supprimées avec succès`,
                 });
 
-                if (!response.ok) {
-                    throw new Error('Erreur lors du téléchargement de la vidéo');
-                }
-
-                const data = await response.json();
-
-                // Créer une nouvelle vidéo avec l'ordre incrémenté
-                const newVideo = {
-                    title: '', // Laisser le titre vide
-                    source: data.fileUrl,
-                    thumbnail: '', // Laisser la miniature vide
-                    duration,
-                    order: currentOrder++,
-                    category: uploadCategory, // Utiliser la catégorie sélectionnée pour l'upload
-                    size: file.size, // Stocker la taille réelle du fichier
-                    format, // Ajouter le format détecté
-                };
-
-                await addDoc(collection(db, 'videos'), newVideo);
-
-                // Mettre à jour la progression
-                setUploadProgress(((i + 1) / videoFiles.length) * 100);
+                router.refresh();
+            } catch (error) {
+                console.error('Erreur lors de la suppression de toutes les vidéos:', error);
+                onStatusChange?.({
+                    type: 'error',
+                    message: 'Erreur lors de la suppression des vidéos',
+                });
+            } finally {
+                setUploading(false);
             }
-
-            setStatusMessage({
-                type: 'success',
-                message: `${videoFiles.length} vidéo(s) ajoutée(s) avec succès`,
-            });
-
-            // Rafraîchir la liste des vidéos
-            fetchVideos();
-        } catch (error) {
-            console.error('Erreur lors du téléchargement:', error);
-            setStatusMessage({
-                type: 'error',
-                message: 'Erreur lors du téléchargement des vidéos',
-            });
-        } finally {
-            setUploading(false);
-            setUploadProgress(0);
         }
     };
 
-    const handleEdit = (video: Video) => {
-        setEditingVideo(video);
-        setFormData(video);
-        setPreviewThumbnail(video.thumbnail);
-
-        // Déterminer le mode d'upload et les données vidéo
-        if (video.isExternal && video.provider) {
-            setUploadMode('external');
-            setVideoData({
-                source: video.source,
-                provider: video.provider,
-                videoId: video.videoId,
-                thumbnail: video.thumbnail,
-                title: video.title,
-                embedUrl: video.embedUrl,
-                watchUrl: video.watchUrl,
-                // Propriétés de rétrocompatibilité
-                isYouTube: video.provider === 'youtube',
-                youtubeId: video.provider === 'youtube' ? video.videoId : undefined,
-                isDailymotion: video.provider === 'dailymotion',
-                dailymotionId: video.provider === 'dailymotion' ? video.videoId : undefined,
-            });
-        } else {
-            setUploadMode('file');
-            setVideoData(null);
-        }
-
-        setShowForm(true);
-
-        // Faire défiler la page jusqu'au formulaire
-        setTimeout(() => {
-            const formElement = document.querySelector('form');
-            if (formElement) {
-                formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }, 100);
-    };
-
-    const handleDelete = async (id: string) => {
-        const video = videos.find((v) => v.id === id);
-        if (!video) return;
-
+    // Supprimer une vidéo
+    const handleDeleteVideo = async (videoId: string) => {
         if (window.confirm('Êtes-vous sûr de vouloir supprimer cette vidéo ?')) {
             try {
-                // Supprimer le fichier vidéo
-                await deleteFile(video.source);
+                const video = videos.find((v) => v.id === videoId);
+                if (!video) return;
 
-                // Supprimer la miniature si elle existe
-                if (video.thumbnail) {
-                    await deleteFile(video.thumbnail);
+                const isExternalVideo =
+                    video.provider === 'youtube' ||
+                    video.provider === 'dailymotion' ||
+                    video.isYouTube ||
+                    (video.source &&
+                        (video.source.includes('youtube.com') ||
+                            video.source.includes('youtu.be') ||
+                            video.source.includes('dailymotion.com')));
+
+                if (video.source && !isExternalVideo) {
+                    const fileName = video.source.split('/').pop();
+                    if (fileName) {
+                        await fetch(
+                            `/api/delete?path=videos&name=${encodeURIComponent(fileName)}`,
+                            {
+                                method: 'DELETE',
+                            },
+                        );
+                    }
                 }
 
-                // Supprimer le document Firestore
-                await deleteDoc(doc(db, 'videos', id));
-                setStatusMessage({ type: 'success', message: 'Vidéo supprimée avec succès' });
-
-                // Fermer le formulaire si la vidéo supprimée était en cours d'édition
-                if (editingVideo?.id === id) {
-                    resetForm();
+                if (video.thumbnail && !video.thumbnail.startsWith('http')) {
+                    const thumbnailName = video.thumbnail.split('/').pop();
+                    if (thumbnailName) {
+                        await fetch(
+                            `/api/delete?path=videos/thumbnails&name=${encodeURIComponent(thumbnailName)}`,
+                            {
+                                method: 'DELETE',
+                            },
+                        );
+                    }
                 }
 
-                fetchVideos();
+                await deleteDoc(doc(db, 'videos', videoId));
+                await fetchVideos();
+
+                onStatusChange?.({
+                    type: 'success',
+                    message: 'Vidéo supprimée avec succès',
+                });
+
+                router.refresh();
             } catch (error) {
-                console.error('Erreur lors de la suppression de la vidéo:', error);
-                setStatusMessage({ type: 'error', message: 'Erreur lors de la suppression' });
+                console.error('Erreur lors de la suppression:', error);
+                onStatusChange?.({
+                    type: 'error',
+                    message: 'Erreur lors de la suppression de la vidéo',
+                });
             }
         }
     };
 
-    // Gérer la fin du drag and drop
+    // Autres fonctions et render
+    const formatSize = (bytes: number): string => {
+        if (bytes < 1024) return bytes + ' octets';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' Ko';
+        if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' Mo';
+        return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' Go';
+    };
+
+    const formatDuration = (seconds: number): string => {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    };
+
+    // Configuration pour le drag and drop
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
+    );
+
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
 
         if (over && active.id !== over.id) {
-            const oldIndex = videos.findIndex((video) => video.id === active.id);
-            const newIndex = videos.findIndex((video) => video.id === over.id);
+            const sortedVideos = [...videos].sort((a, b) => (a.order || 0) - (b.order || 0));
+            const oldIndex = sortedVideos.findIndex((video) => video.id === active.id);
+            const newIndex = sortedVideos.findIndex((video) => video.id === over.id);
 
             if (oldIndex !== -1 && newIndex !== -1) {
-                const newVideos = arrayMove(videos, oldIndex, newIndex);
+                const newOrder = arrayMove(sortedVideos, oldIndex, newIndex);
+                const updatedVideos = newOrder.map((video, index) => ({
+                    ...video,
+                    order: index,
+                }));
+                setVideos(updatedVideos);
 
-                // Mettre à jour les ordres
-                newVideos.forEach((video, idx) => {
-                    video.order = idx;
-                });
-
-                setVideos(newVideos);
-
-                // Sauvegarder en base
                 try {
-                    await Promise.all(
-                        newVideos.map((video) =>
-                            updateDoc(doc(db, 'videos', video.id!), { order: video.order }),
-                        ),
-                    );
+                    for (const video of updatedVideos) {
+                        await updateDoc(doc(db, 'videos', video.id), { order: video.order });
+                    }
+                    onStatusChange?.({
+                        type: 'success',
+                        message: 'Ordre des vidéos mis à jour avec succès',
+                    });
                 } catch (error) {
                     console.error('Erreur lors de la réorganisation:', error);
-                    setStatusMessage({
+                    onStatusChange?.({
                         type: 'error',
                         message: 'Erreur lors de la réorganisation',
                     });
+                    await fetchVideos();
                 }
             }
         }
     };
 
-    const cancelEdit = () => {
-        resetForm();
+    const categories = Array.from(new Set(videos.map((video) => video.category))).filter(Boolean);
+
+    const initializeFormData = (video: Video): MediaFormData => ({
+        title: video.title || '',
+        category: video.category || '',
+        source: video.source,
+        format: video.format || 'paysage',
+        order: video.order || 0,
+        thumbnail: video.thumbnail || '',
+        isVideo: true,
+        provider: video.provider || 'local',
+        videoId: video.videoId || '',
+        embedUrl: video.embedUrl || '',
+        watchUrl: video.watchUrl || '',
+        isYouTube: video.isYouTube || false,
+        youtubeId: video.youtubeId || '',
+    });
+
+    const resetForm = () => {
+        setFormData({
+            title: '',
+            category: '',
+            source: '',
+            format: 'paysage',
+            order: 0,
+            thumbnail: '',
+            isVideo: true,
+            isYouTube: false,
+            provider: 'local',
+            videoId: '',
+            embedUrl: '',
+            watchUrl: '',
+            youtubeId: '',
+        });
+        setPreviewImage(null);
+        setEditingVideo(null);
+        setShowForm(false);
     };
 
-    // Fonction pour déterminer la classe de taille en fonction du format
-    const getItemSizeClass = (format: 'portrait' | 'paysage') => {
-        switch (format) {
-            case 'paysage':
-                return 'aspect-[16/9]';
-            case 'portrait':
-                return 'aspect-[3/4]';
-            default:
-                return 'aspect-[16/9]';
+    const convertFormDataToVideo = (formData: MediaFormData): Partial<Video> => ({
+        title: formData.title || '',
+        category: formData.category || '',
+        source: formData.source,
+        format: formData.format,
+        order: formData.order,
+        provider: formData.provider || 'local',
+        isYouTube: formData.isYouTube || false,
+        ...(formData.thumbnail && { thumbnail: formData.thumbnail }),
+        ...(formData.videoId && { videoId: formData.videoId }),
+        ...(formData.embedUrl && { embedUrl: formData.embedUrl }),
+        ...(formData.watchUrl && { watchUrl: formData.watchUrl }),
+        ...(formData.youtubeId && { youtubeId: formData.youtubeId }),
+    });
+
+    const handleFormSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setUploading(true);
+
+        try {
+            const videoData = convertFormDataToVideo(formData);
+
+            if (editingVideo) {
+                await updateDoc(
+                    doc(db, 'videos', editingVideo.id),
+                    removeUndefinedFields({
+                        ...editingVideo,
+                        ...videoData,
+                    }),
+                );
+                onStatusChange?.({ type: 'success', message: 'Vidéo mise à jour avec succès' });
+            } else {
+                await addDoc(
+                    collection(db, 'videos'),
+                    removeUndefinedFields({
+                        ...videoData,
+                        order: videos.length,
+                    }),
+                );
+                onStatusChange?.({ type: 'success', message: 'Vidéo ajoutée avec succès' });
+            }
+
+            await fetchVideos();
+            resetForm();
+        } catch (error) {
+            console.error('Erreur lors de la sauvegarde:', error);
+            onStatusChange?.({
+                type: 'error',
+                message: 'Erreur lors de la sauvegarde de la vidéo',
+            });
+        } finally {
+            setUploading(false);
         }
+    };
+
+    const handleEditWithNewForm = (video: Video) => {
+        setEditingVideo(video);
+        setFormData(initializeFormData(video));
+        setPreviewImage(video.source);
+        setShowForm(true);
+    };
+
+    const handleAddNewVideo = () => {
+        resetForm();
+        setFormData({ ...formData, order: videos.length });
+        setShowForm(true);
     };
 
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
-                <Spinner />
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
             </div>
         );
     }
 
     return (
-        <>
+        <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-6">Gestion de la galerie vidéos</h2>
+
             {/* Section Statistiques */}
             <div className="bg-white rounded-lg shadow p-6 mb-8">
-                <h2 className="text-xl font-semibold mb-4">Statistiques des Vidéos</h2>
+                <h3 className="text-xl font-semibold mb-4">Statistiques des Vidéos</h3>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="bg-blue-50 p-4 rounded-lg">
                         <p className="text-sm text-blue-600 font-medium">Nombre total de vidéos</p>
-                        <p className="text-3xl font-bold">{stats.totalVideos}</p>
+                        <p className="text-3xl font-bold">{stats.totalCount}</p>
                     </div>
                     <div className="bg-orange-50 p-4 rounded-lg">
                         <p className="text-sm text-orange-600 font-medium">Poids total estimé</p>
                         <p className="text-3xl font-bold">{formatSize(stats.totalSize)}</p>
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg">
-                        <p className="text-sm text-green-600 font-medium">Durée totale</p>
-                        <p className="text-3xl font-bold">{formatDuration(stats.totalDuration)}</p>
+                        <p className="text-sm text-green-600 font-medium">Vidéos gérées</p>
+                        <p className="text-3xl font-bold">{stats.videoCount}</p>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-lg">
                         <p className="text-sm text-purple-600 font-medium">
                             Temps de chargement moyen
                         </p>
                         <p className="text-3xl font-bold">
-                            {formatLoadTime(stats.averageLoadTime)}
+                            {stats.averageLoadTime < 1000
+                                ? Math.round(stats.averageLoadTime) + ' ms'
+                                : (stats.averageLoadTime / 1000).toFixed(1) + ' s'}
                         </p>
                         <p className="text-xs text-gray-500">
-                            Estimation basée sur une connexion moyenne en France (15 Mbps)
+                            Estimation basée sur une connexion moyenne (15 Mbps)
                         </p>
                     </div>
                 </div>
             </div>
-            <div className="bg-white rounded-lg shadow">
-                <div className="p-6 border-b border-gray-200">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-semibold">Gestion des Vidéos</h2>
-                        <div className="flex space-x-2">
-                            {videos.length > 0 && (
-                                <>
-                                    <button
-                                        onClick={() => handleDeleteAllVideos()}
-                                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="h-5 w-5 mr-2"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                            />
-                                        </svg>
-                                        Tout supprimer
-                                    </button>
-                                </>
-                            )}
+
+            {/* Formulaire d'ajout de nouvelle vidéo */}
+            {showForm && (
+                <MediaForm
+                    formData={formData}
+                    setFormData={setFormData}
+                    onSubmit={handleFormSubmit}
+                    onCancel={resetForm}
+                    categories={categories}
+                    uploading={uploading}
+                    previewImage={previewImage}
+                    setPreviewImage={setPreviewImage}
+                    editingMode={!!editingVideo}
+                />
+            )}
+
+            {/* Section d'import */}
+            <div className="mb-8">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium">Importer des vidéos</h3>
+                    <button
+                        onClick={handleAddNewVideo}
+                        className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors flex items-center space-x-2"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 4v16m8-8H4"
+                            />
+                        </svg>
+                        <span>Nouvelle vidéo</span>
+                    </button>
+                </div>
+
+                {/* Sélection de catégorie */}
+                <div className="mb-4">
+                    <label
+                        htmlFor="categorySelect"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                        Catégorie pour les nouvelles vidéos
+                    </label>
+                    <div className="flex space-x-2">
+                        <select
+                            id="categorySelect"
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                            <option value="">Sélectionnez une catégorie</option>
+                            {categories.map((category) => (
+                                <option key={category} value={category}>
+                                    {category}
+                                </option>
+                            ))}
+                        </select>
+                        <input
+                            type="text"
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            placeholder="Ou créer une nouvelle catégorie"
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors w-full ${
+                        isDragging
+                            ? 'border-indigo-500 bg-indigo-50'
+                            : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={triggerFileInput}
+                >
+                    <input
+                        type="file"
+                        multiple
+                        accept="video/*"
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={handleFileSelect}
+                    />
+
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-12 w-12 mx-auto text-gray-400 mb-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1}
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
+                    </svg>
+
+                    <p className="text-gray-600 mb-2">
+                        Glissez-déposez vos vidéos ici ou cliquez pour parcourir
+                    </p>
+                    <p className="text-gray-500 text-sm">
+                        Formats acceptés: MP4, WEBM, MOV, AVI pour les vidéos
+                    </p>
+                </button>
+
+                {selectedFiles.length > 0 && (
+                    <div className="mt-4">
+                        <div className="flex justify-between items-center mb-2">
+                            <p className="text-sm text-gray-600">
+                                {selectedFiles.length} fichier(s) sélectionné(s)
+                            </p>
                             <button
-                                onClick={() => setShowForm(true)}
-                                className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 flex items-center"
+                                onClick={() => setSelectedFiles([])}
+                                className="text-red-500 hover:text-red-700 text-sm"
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-5 w-5 mr-2"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 4v16m8-8H4"
-                                    />
-                                </svg>
-                                Nouvelle vidéo
+                                Réinitialiser
                             </button>
                         </div>
-                    </div>
 
-                    {statusMessage && (
-                        <div
-                            className={`p-4 mb-4 rounded-md ${
-                                statusMessage.type === 'success'
-                                    ? 'bg-green-50 text-green-700'
-                                    : 'bg-red-50 text-red-700'
-                            }`}
+                        <button
+                            onClick={handleUpload}
+                            disabled={uploading}
+                            className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                                uploading ? 'bg-indigo-400' : 'bg-black hover:bg-black/80'
+                            } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors`}
                         >
-                            {statusMessage.message}
-                        </div>
-                    )}
-
-                    {/* Sélection de catégorie pour l'upload */}
-                    <div className="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-200">
-                        <h4 className="text-sm font-medium text-blue-800 mb-3">
-                            Catégorie pour l&apos;upload en lot
-                        </h4>
-                        <div className="flex space-x-3">
-                            <div className="flex-1">
-                                <select
-                                    value={uploadCategory}
-                                    onChange={(e) => setUploadCategory(e.target.value)}
-                                    className="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
-                                >
-                                    <option value="">Aucune catégorie</option>
-                                    {categories.map((category) => (
-                                        <option key={category} value={category}>
-                                            {category}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="flex-1">
-                                <input
-                                    type="text"
-                                    value={uploadCategory}
-                                    onChange={(e) => setUploadCategory(e.target.value)}
-                                    placeholder="Ou créer une nouvelle catégorie"
-                                    className="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                />
-                            </div>
-                        </div>
-                        <p className="mt-2 text-xs text-blue-600">
-                            {uploadCategory
-                                ? `Toutes les vidéos uploadées seront assignées à la catégorie "${uploadCategory}"`
-                                : 'Sélectionnez ou créez une catégorie pour l&apos;assigner automatiquement à toutes les vidéos uploadées'}
-                        </p>
-                    </div>
-
-                    {/* Zone de drop pour les vidéos */}
-                    <div
-                        className={`border-2 border-dashed p-8 mb-8 rounded-lg text-center ${
-                            isDragging
-                                ? 'border-primary bg-primary bg-opacity-10'
-                                : 'border-gray-300'
-                        }`}
-                        onDragEnter={handleDragEnter}
-                        onDragLeave={handleDragLeave}
-                        onDragOver={handleDragOver}
-                        onDrop={handleDrop}
-                    >
-                        {uploading ? (
-                            <div className="space-y-4">
-                                <div className="flex justify-center">
-                                    <Spinner />
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                    <div
-                                        className="bg-primary h-2.5 rounded-full transition-all duration-300"
-                                        style={{ width: `${uploadProgress}%` }}
-                                    ></div>
-                                </div>
-                                <p className="text-sm text-gray-600">
-                                    Téléchargement en cours... {Math.round(uploadProgress)}%
-                                </p>
-                            </div>
-                        ) : (
-                            <>
-                                <svg
-                                    className="mx-auto h-12 w-12 text-gray-400"
-                                    stroke="currentColor"
-                                    fill="none"
-                                    viewBox="0 0 48 48"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    />
-                                </svg>
-                                <p className="mt-2 text-gray-600">
-                                    Glissez-déposez des vidéos ici ou{' '}
-                                    <button
-                                        type="button"
-                                        className="text-primary hover:text-primary-dark font-medium"
-                                        onClick={() =>
-                                            document.getElementById('fileInput')?.click()
-                                        }
+                            {uploading ? (
+                                <span className="flex items-center justify-center">
+                                    <svg
+                                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
                                     >
-                                        parcourez votre ordinateur
-                                    </button>
-                                </p>
-                                <p className="mt-1 text-xs text-gray-500">
-                                    Vidéos uniquement (MP4, WebM, etc.)
-                                </p>
-                                <input
-                                    id="fileInput"
-                                    type="file"
-                                    className="hidden"
-                                    accept="video/*"
-                                    multiple
-                                    onChange={(e) =>
-                                        e.target.files && handleFileUpload(e.target.files)
-                                    }
-                                />
-                            </>
-                        )}
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        ></circle>
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
+                                    </svg>
+                                    Upload en cours... {Math.round(uploadProgress)}%
+                                </span>
+                            ) : (
+                                'Importer les vidéos'
+                            )}
+                        </button>
                     </div>
+                )}
+            </div>
 
-                    {showForm && (
-                        <form onSubmit={handleSubmit} className="space-y-6 mb-8">
-                            <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
-                                {editingVideo
-                                    ? `Modifier: ${editingVideo.title || 'Vidéo sans titre'}`
-                                    : 'Ajouter une nouvelle vidéo'}
-                            </h3>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Titre (optionnel)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.title || ''}
-                                            onChange={(e) =>
-                                                setFormData({ ...formData, title: e.target.value })
-                                            }
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                            placeholder="Titre de la vidéo"
-                                        />
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Catégorie
-                                        </label>
-                                        <div className="flex space-x-2">
-                                            <select
-                                                value={formData.category || ''}
-                                                onChange={(e) =>
-                                                    setFormData({
-                                                        ...formData,
-                                                        category: e.target.value,
-                                                    })
-                                                }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                            >
-                                                <option value="">
-                                                    Sélectionner une catégorie existante
-                                                </option>
-                                                {categories.map((category) => (
-                                                    <option key={category} value={category}>
-                                                        {category}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <input
-                                                type="text"
-                                                value={formData.category || ''}
-                                                onChange={(e) =>
-                                                    setFormData({
-                                                        ...formData,
-                                                        category: e.target.value,
-                                                    })
-                                                }
-                                                placeholder="Ou créer une nouvelle catégorie"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                            />
-                                        </div>
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            La catégorie est utilisée pour former les filtres dans
-                                            la galerie
-                                        </p>
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Format
-                                        </label>
-                                        <select
-                                            value={formData.format || 'paysage'}
-                                            onChange={(e) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    format: e.target.value as
-                                                        | 'portrait'
-                                                        | 'paysage',
-                                                })
-                                            }
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                            required
-                                        >
-                                            <option value="paysage">Paysage</option>
-                                            <option value="portrait">Portrait</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    {/* Sélecteur de mode de vidéo */}
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Type de vidéo
-                                        </label>
-                                        <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg">
-                                            <button
-                                                type="button"
-                                                onClick={() => setUploadMode('file')}
-                                                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-                                                    uploadMode === 'file'
-                                                        ? 'bg-white text-gray-900 shadow'
-                                                        : 'text-gray-500 hover:text-gray-700'
-                                                }`}
-                                            >
-                                                Fichier local
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setUploadMode('external')}
-                                                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-                                                    uploadMode === 'external'
-                                                        ? 'bg-white text-gray-900 shadow'
-                                                        : 'text-gray-500 hover:text-gray-700'
-                                                }`}
-                                            >
-                                                YouTube / Dailymotion
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Upload de fichier local */}
-                                    {uploadMode === 'file' && (
-                                        <div className="mb-4">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Fichier vidéo
-                                            </label>
-                                            <div className="flex space-x-2">
-                                                <input
-                                                    type="text"
-                                                    value={formData.source || ''}
-                                                    onChange={(e) =>
-                                                        setFormData({
-                                                            ...formData,
-                                                            source: e.target.value,
-                                                        })
-                                                    }
-                                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                    placeholder="URL de la vidéo"
-                                                    required
-                                                    readOnly
-                                                />
-                                                <label className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 cursor-pointer flex items-center">
-                                                    <span>Parcourir</span>
-                                                    <input
-                                                        type="file"
-                                                        className="hidden"
-                                                        accept="video/*"
-                                                        onChange={handleVideoFileChange}
-                                                    />
-                                                </label>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Upload vidéo externe */}
-                                    {uploadMode === 'external' && (
-                                        <div className="mb-4">
-                                            <VideoUpload
-                                                value={videoData}
-                                                onChange={setVideoData}
-                                                label="Vidéo YouTube ou Dailymotion"
-                                                placeholder="URL YouTube ou Dailymotion"
-                                            />
-                                        </div>
-                                    )}
-
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Miniature (optionnel)
-                                        </label>
-                                        <div className="flex space-x-2">
-                                            <input
-                                                type="text"
-                                                value={formData.thumbnail || ''}
-                                                onChange={(e) =>
-                                                    setFormData({
-                                                        ...formData,
-                                                        thumbnail: e.target.value,
-                                                    })
-                                                }
-                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                placeholder="URL de la miniature"
-                                                readOnly
-                                            />
-                                            <label className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 cursor-pointer flex items-center">
-                                                <span>Parcourir</span>
-                                                <input
-                                                    type="file"
-                                                    className="hidden"
-                                                    accept="image/*"
-                                                    onChange={handleThumbnailFileChange}
-                                                />
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-4">
-                                        <h4 className="text-sm font-medium text-gray-700 mb-2">
-                                            Prévisualisation
-                                        </h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {/* Vidéo */}
-                                            <div
-                                                className={`relative bg-gray-100 rounded-lg overflow-hidden ${getItemSizeClass(formData.format || 'paysage')}`}
-                                            >
-                                                {formData.source ? (
-                                                    <video
-                                                        src={getMediaUrl(formData.source)}
-                                                        className="w-full h-full object-cover"
-                                                        controls
-                                                        preload="metadata"
-                                                    />
-                                                ) : (
-                                                    <div className="flex items-center justify-center h-full text-gray-400">
-                                                        Aucune vidéo sélectionnée
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Miniature */}
-                                            <div
-                                                className={`relative bg-gray-100 rounded-lg overflow-hidden group ${getItemSizeClass(formData.format || 'paysage')}`}
-                                            >
-                                                {previewThumbnail ? (
-                                                    <>
-                                                        <Image
-                                                            src={getMediaUrl(previewThumbnail)}
-                                                            alt="Prévisualisation"
-                                                            fill
-                                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                                        />
-                                                        {formData.category && (
-                                                            <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
-                                                                {formData.category}
-                                                            </div>
-                                                        )}
-                                                        {formData.title && (
-                                                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                                <h3 className="text-white text-lg font-medium">
-                                                                    {formData.title}
-                                                                </h3>
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <div className="flex items-center justify-center h-full text-gray-400">
-                                                        Aucune miniature sélectionnée
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex justify-end space-x-3">
-                                <button
-                                    type="button"
-                                    onClick={cancelEdit}
-                                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-                                >
-                                    Annuler
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors"
-                                >
-                                    {editingVideo ? 'Mettre à jour' : 'Ajouter'}
-                                </button>
-                            </div>
-                        </form>
-                    )}
-
-                    <div className="mt-8">
-                        <DndContext
-                            sensors={sensors}
-                            collisionDetection={closestCenter}
-                            onDragEnd={handleDragEnd}
+            {/* Tableau des vidéos avec drag and drop */}
+            <div>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium">Gestion des vidéos ({videos.length})</h3>
+                    {videos.length > 0 && (
+                        <button
+                            onClick={handleDeleteAllVideos}
+                            disabled={uploading}
+                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
                         >
-                            <div className="overflow-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                                                Ordre
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Vidéo
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Titre
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Catégorie
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Format
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Durée
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Actions
-                                            </th>
-                                        </tr>
-                                    </thead>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                            </svg>
+                            <span>Supprimer tout</span>
+                        </button>
+                    )}
+                </div>
+
+                <div className="border rounded-lg overflow-hidden">
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th scope="col" className="w-16 px-3 py-3 text-center">
+                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Ordre
+                                        </span>
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >
+                                        Aperçu
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >
+                                        Type
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >
+                                        Titre
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >
+                                        Format
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >
+                                        Durée
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >
+                                        Poids
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >
+                                        Catégorie
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {videos.length > 0 ? (
                                     <SortableContext
-                                        items={videos.map((video) => video.id!)}
+                                        items={videos.map((v) => v.id)}
                                         strategy={verticalListSortingStrategy}
                                     >
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {videos.map((video) => (
+                                        {[...videos]
+                                            .sort((a, b) => (a.order || 0) - (b.order || 0))
+                                            .map((video) => (
                                                 <SortableRow
                                                     key={video.id}
                                                     video={video}
-                                                    onEdit={handleEdit}
-                                                    onDelete={handleDelete}
+                                                    onEdit={handleEditWithNewForm}
+                                                    onDelete={handleDeleteVideo}
+                                                    formatSize={formatSize}
                                                     formatDuration={formatDuration}
+                                                    getMediaUrl={getMediaUrl}
                                                 />
                                             ))}
-                                        </tbody>
                                     </SortableContext>
-                                </table>
-                            </div>
-                        </DndContext>
-                    </div>
+                                ) : (
+                                    <tr>
+                                        <td colSpan={9} className="px-6 py-10 text-center">
+                                            <div className="flex flex-col items-center justify-center">
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    className="h-12 w-12 text-gray-400 mb-4"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={1}
+                                                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                                    />
+                                                </svg>
+                                                <p className="text-gray-500 text-lg font-medium">
+                                                    Aucune vidéo trouvée
+                                                </p>
+                                                <p className="text-gray-400 text-sm mt-1">
+                                                    Importez des vidéos en utilisant la section
+                                                    ci-dessus
+                                                </p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </DndContext>
                 </div>
             </div>
-        </>
+        </div>
     );
 }
