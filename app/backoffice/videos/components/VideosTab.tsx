@@ -320,6 +320,27 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         averageLoadTime: 0,
     });
 
+    // Fonction pour détecter si une vidéo est externe
+    const isExternalVideo = useCallback((video: Video): boolean => {
+        if (video.provider === 'youtube' || video.provider === 'dailymotion') {
+            return true;
+        }
+
+        if (video.isYouTube) {
+            return true;
+        }
+
+        if (video.source) {
+            return (
+                video.source.includes('youtube.com') ||
+                video.source.includes('youtu.be') ||
+                video.source.includes('dailymotion.com')
+            );
+        }
+
+        return false;
+    }, []);
+
     // Fonction pour calculer les statistiques
     const calculateStats = useCallback(() => {
         let totalSize = 0;
@@ -327,16 +348,9 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         let externalVideosCount = 0;
 
         videos.forEach((video) => {
-            const isExternalVideo =
-                video.provider === 'youtube' ||
-                video.provider === 'dailymotion' ||
-                video.isYouTube ||
-                (video.source &&
-                    (video.source.includes('youtube.com') ||
-                        video.source.includes('youtu.be') ||
-                        video.source.includes('dailymotion.com')));
+            const isExternal = isExternalVideo(video);
 
-            if (isExternalVideo) {
+            if (isExternal) {
                 externalVideosCount++;
                 // Les vidéos externes ne prennent pas de place sur le serveur
             } else {
@@ -362,7 +376,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         };
 
         setStats(newStats);
-    }, [videos]);
+    }, [videos, isExternalVideo]);
 
     // Charger les vidéos
     const fetchVideos = useCallback(async () => {
@@ -730,36 +744,59 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                 // Supprimer les fichiers physiques
                 for (const video of videos) {
                     try {
-                        const isExternalVideo =
-                            video.provider === 'youtube' ||
-                            video.provider === 'dailymotion' ||
-                            video.isYouTube ||
-                            (video.source &&
-                                (video.source.includes('youtube.com') ||
-                                    video.source.includes('youtu.be') ||
-                                    video.source.includes('dailymotion.com')));
+                        const isExternal = isExternalVideo(video);
 
-                        if (video.source && !isExternalVideo) {
+                        // Supprimer le fichier vidéo principal
+                        if (video.source && !isExternal) {
                             const fileName = video.source.split('/').pop();
                             if (fileName) {
-                                await fetch(
-                                    `/api/delete?path=videos&name=${encodeURIComponent(fileName)}`,
-                                    {
-                                        method: 'DELETE',
-                                    },
-                                );
+                                try {
+                                    const response = await fetch(
+                                        `/api/delete?path=videos&name=${encodeURIComponent(fileName)}`,
+                                        {
+                                            method: 'DELETE',
+                                        },
+                                    );
+                                    if (!response.ok) {
+                                        console.warn(
+                                            `Erreur lors de la suppression du fichier ${fileName}`,
+                                        );
+                                    }
+                                } catch (err) {
+                                    console.warn(
+                                        `Impossible de supprimer le fichier ${fileName}:`,
+                                        err,
+                                    );
+                                }
                             }
                         }
 
-                        if (video.thumbnail && !video.thumbnail.startsWith('http')) {
+                        // Supprimer la miniature si elle existe
+                        if (
+                            video.thumbnail &&
+                            !video.thumbnail.startsWith('http') &&
+                            !video.thumbnail.includes('thumbnail.jpg')
+                        ) {
                             const thumbnailName = video.thumbnail.split('/').pop();
                             if (thumbnailName) {
-                                await fetch(
-                                    `/api/delete?path=videos/thumbnails&name=${encodeURIComponent(thumbnailName)}`,
-                                    {
-                                        method: 'DELETE',
-                                    },
-                                );
+                                try {
+                                    const response = await fetch(
+                                        `/api/delete?path=videos/thumbnails&name=${encodeURIComponent(thumbnailName)}`,
+                                        {
+                                            method: 'DELETE',
+                                        },
+                                    );
+                                    if (!response.ok) {
+                                        console.warn(
+                                            `Erreur lors de la suppression de la miniature ${thumbnailName}`,
+                                        );
+                                    }
+                                } catch (err) {
+                                    console.warn(
+                                        `Impossible de supprimer la miniature ${thumbnailName}:`,
+                                        err,
+                                    );
+                                }
                             }
                         }
 
@@ -770,13 +807,15 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                     }
                 }
 
-                setVideos([]);
+                // Recharger les vidéos après suppression
+                await fetchVideos();
 
                 onStatusChange?.({
                     type: 'success',
                     message: `Toutes les vidéos (${totalVideosToDelete}) ont été supprimées avec succès`,
                 });
 
+                // Rafraîchir la page pour s'assurer que tous les composants se mettent à jour
                 router.refresh();
             } catch (error) {
                 console.error('Erreur lors de la suppression de toutes les vidéos:', error);
@@ -797,36 +836,56 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                 const video = videos.find((v) => v.id === videoId);
                 if (!video) return;
 
-                const isExternalVideo =
-                    video.provider === 'youtube' ||
-                    video.provider === 'dailymotion' ||
-                    video.isYouTube ||
-                    (video.source &&
-                        (video.source.includes('youtube.com') ||
-                            video.source.includes('youtu.be') ||
-                            video.source.includes('dailymotion.com')));
+                const isExternal = isExternalVideo(video);
 
-                if (video.source && !isExternalVideo) {
+                // Supprimer le fichier vidéo principal
+                if (video.source && !isExternal) {
                     const fileName = video.source.split('/').pop();
                     if (fileName) {
-                        await fetch(
-                            `/api/delete?path=videos&name=${encodeURIComponent(fileName)}`,
-                            {
-                                method: 'DELETE',
-                            },
-                        );
+                        try {
+                            const response = await fetch(
+                                `/api/delete?path=videos&name=${encodeURIComponent(fileName)}`,
+                                {
+                                    method: 'DELETE',
+                                },
+                            );
+                            if (!response.ok) {
+                                console.warn(
+                                    `Erreur lors de la suppression du fichier ${fileName}`,
+                                );
+                            }
+                        } catch (err) {
+                            console.warn(`Impossible de supprimer le fichier ${fileName}:`, err);
+                        }
                     }
                 }
 
-                if (video.thumbnail && !video.thumbnail.startsWith('http')) {
+                // Supprimer la miniature si elle existe
+                if (
+                    video.thumbnail &&
+                    !video.thumbnail.startsWith('http') &&
+                    !video.thumbnail.includes('thumbnail.jpg')
+                ) {
                     const thumbnailName = video.thumbnail.split('/').pop();
                     if (thumbnailName) {
-                        await fetch(
-                            `/api/delete?path=videos/thumbnails&name=${encodeURIComponent(thumbnailName)}`,
-                            {
-                                method: 'DELETE',
-                            },
-                        );
+                        try {
+                            const response = await fetch(
+                                `/api/delete?path=videos/thumbnails&name=${encodeURIComponent(thumbnailName)}`,
+                                {
+                                    method: 'DELETE',
+                                },
+                            );
+                            if (!response.ok) {
+                                console.warn(
+                                    `Erreur lors de la suppression de la miniature ${thumbnailName}`,
+                                );
+                            }
+                        } catch (err) {
+                            console.warn(
+                                `Impossible de supprimer la miniature ${thumbnailName}:`,
+                                err,
+                            );
+                        }
                     }
                 }
 
