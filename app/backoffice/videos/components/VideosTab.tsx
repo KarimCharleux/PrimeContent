@@ -387,10 +387,15 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
             const videosSnapshot = await getDocs(videosQuery);
 
             if (!videosSnapshot.empty) {
-                const fetchedVideos = videosSnapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data(),
-                })) as Video[];
+                const fetchedVideos = videosSnapshot.docs.map((doc) => {
+                    const data = doc.data();
+                    // Supprimer l'ancien ID des données pour éviter les conflits
+                    delete data.id;
+                    return {
+                        id: doc.id, // Toujours utiliser l'ID du document Firestore
+                        ...data,
+                    };
+                }) as Video[];
                 setVideos(fetchedVideos);
             } else {
                 setVideos([]);
@@ -509,7 +514,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
             const uploadResult = await response.json();
 
             // Traiter chaque fichier
-            const newVideos: Video[] = [];
+            const newVideos: Omit<Video, 'id'>[] = [];
 
             if (!uploadResult.fileUrls || !Array.isArray(uploadResult.fileUrls)) {
                 throw new Error('Aucun fichier uploadé avec succès');
@@ -521,9 +526,6 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
 
                 if (!url || !file) continue;
 
-                const id =
-                    url.split('/').pop()?.split('.')[0]?.replace(/\s+/g, '_') ||
-                    `video-${Date.now()}`;
                 const format = await detectFormat(file);
 
                 let thumbnail = '';
@@ -552,8 +554,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
 
                 const duration = await extractVideoDuration(file);
 
-                const videoItem: Video = {
-                    id,
+                const videoItem: Omit<Video, 'id'> = {
                     source: url,
                     title: '',
                     category: selectedCategory || '',
