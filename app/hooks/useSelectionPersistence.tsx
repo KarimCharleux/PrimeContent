@@ -43,16 +43,27 @@ export function useSelectionPersistence(eventId: string) {
     // Charge la sélection existante
     useEffect(() => {
         if (!userId || !eventId) return;
-        setLoading(true);
-        const ref = doc(db, 'evenements', eventId, 'selections', userId);
-        getDoc(ref).then((snap) => {
-            if (snap.exists()) {
-                setSelection(snap.data() as SelectionData);
-            } else {
+
+        const loadSelection = async () => {
+            setLoading(true);
+            try {
+                const ref = doc(db, 'evenements', eventId, 'selections', userId);
+                const snap = await getDoc(ref);
+
+                if (snap.exists()) {
+                    setSelection(snap.data() as SelectionData);
+                } else {
+                    setSelection({ userId, medias: [] });
+                }
+            } catch (error) {
+                console.error('Erreur lors du chargement de la sélection:', error);
                 setSelection({ userId, medias: [] });
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
-        });
+        };
+
+        loadSelection();
     }, [userId, eventId]);
 
     // Met à jour la sélection dans Firestore
@@ -70,7 +81,10 @@ export function useSelectionPersistence(eventId: string) {
             );
             const deviceInfo = {
                 userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
-                platform: typeof navigator !== 'undefined' ? navigator.platform : '',
+                platform:
+                    typeof navigator !== 'undefined'
+                        ? navigator.userAgentData?.platform || navigator.platform || ''
+                        : '',
                 language: typeof navigator !== 'undefined' ? navigator.language : '',
             };
             const data: any = {
@@ -89,6 +103,8 @@ export function useSelectionPersistence(eventId: string) {
                 setSelection((prev) => ({ ...data, createdAt: prev?.createdAt || data.createdAt }));
             } catch (err) {
                 console.error('Erreur lors de la sauvegarde de la sélection:', err);
+                // Re-throw l'erreur pour que le composant parent puisse la gérer
+                throw err;
             }
         },
         [userId, eventId, selection?.createdAt],

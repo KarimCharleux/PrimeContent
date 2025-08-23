@@ -34,7 +34,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // Règle pour les sous-collections
+    // Règle spécifique pour les sélections d'événements (accès public en écriture)
+    match /evenements/{eventId}/selections/{userId} {
+      allow read: if true;
+      // Permettre aux utilisateurs publics de créer/modifier leurs propres sélections
+      allow create, update: if true;
+      // Seuls les admins peuvent supprimer
+      allow delete: if isAdmin();
+    }
+    
+    // Règle pour les autres sous-collections
     match /{collection}/{document}/{subCollection}/{subDocument} {
       allow read: if true;
       allow write: if isAdmin();

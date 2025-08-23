@@ -421,7 +421,7 @@ export default function EventPage({ evenement }: EventPageProps) {
                         // Bouton de confirmation de sélection
                         return (
                             <PrimaryButton
-                                text={`Confirmer ma sélection (${selectedItems.size} média${selectedItems.size > 1 ? 's' : ''})`}
+                                text={`Confirmer ma sélection (${selectedItems.size})`}
                                 onClick={handleConfirmSelection}
                                 animateOnMount={true}
                                 delay={0.5}
@@ -437,7 +437,7 @@ export default function EventPage({ evenement }: EventPageProps) {
                                 text={
                                     isDownloadingZip
                                         ? `Téléchargement... ${downloadProgress}%`
-                                        : `Télécharger ma sélection (${selectedItems.size} média${selectedItems.size > 1 ? 's' : ''})`
+                                        : `Télécharger ma sélection (${selectedItems.size})`
                                 }
                                 onClick={handleDownloadSelectedMedia}
                                 animateOnMount={true}
@@ -460,7 +460,7 @@ export default function EventPage({ evenement }: EventPageProps) {
                     if (!selectionConfirmed) {
                         return (
                             <PrimaryButton
-                                text={`Confirmer ma sélection (${selectedItems.size} média${selectedItems.size > 1 ? 's' : ''})`}
+                                text={`Confirmer ma sélection (${selectedItems.size})`}
                                 onClick={handleConfirmSelection}
                                 animateOnMount={true}
                                 delay={0.5}
