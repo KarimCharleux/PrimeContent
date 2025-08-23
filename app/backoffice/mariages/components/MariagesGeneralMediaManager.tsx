@@ -466,9 +466,35 @@ export default function MariagesGeneralMediaManager({
             formData.append('path', 'mariages/general');
             formData.append('useUuid', 'true');
 
-            const response = await fetch('/api/upload/batch', {
-                method: 'POST',
-                body: formData,
+            // Utiliser XMLHttpRequest pour le suivi du progrès
+            const response = await new Promise<Response>((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+
+                xhr.upload.addEventListener('progress', (event) => {
+                    if (event.lengthComputable) {
+                        const progress = (event.loaded / event.total) * 100;
+                        setUploadProgress(Math.round(progress));
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        const mockResponse = new Response(xhr.responseText, {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                        });
+                        resolve(mockResponse);
+                    } else {
+                        reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    reject(new Error("Erreur réseau lors de l'upload"));
+                });
+
+                xhr.open('POST', '/api/upload/batch');
+                xhr.send(formData);
             });
 
             if (!response.ok) {

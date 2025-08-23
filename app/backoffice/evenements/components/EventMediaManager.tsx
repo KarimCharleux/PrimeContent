@@ -436,9 +436,35 @@ export default function EventMediaManager({
             formData.append('path', `evenements/${evenement.id}`);
             formData.append('useUuid', 'true');
 
-            const response = await fetch('/api/upload/batch', {
-                method: 'POST',
-                body: formData,
+            // Utiliser XMLHttpRequest pour le suivi du progrès
+            const response = await new Promise<Response>((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+
+                xhr.upload.addEventListener('progress', (event) => {
+                    if (event.lengthComputable) {
+                        const progress = (event.loaded / event.total) * 100;
+                        setUploadProgress(Math.round(progress));
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        const mockResponse = new Response(xhr.responseText, {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                        });
+                        resolve(mockResponse);
+                    } else {
+                        reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    reject(new Error("Erreur réseau lors de l'upload"));
+                });
+
+                xhr.open('POST', '/api/upload/batch');
+                xhr.send(formData);
             });
 
             if (!response.ok) {
@@ -745,10 +771,14 @@ export default function EventMediaManager({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label
+                                    htmlFor="media-title"
+                                    className="block text-sm font-medium text-gray-700 mb-1"
+                                >
                                     Titre (optionnel)
                                 </label>
                                 <input
+                                    id="media-title"
                                     type="text"
                                     value={editingMedia.title || ''}
                                     onChange={(e) =>
@@ -760,11 +790,15 @@ export default function EventMediaManager({
                             </div>
 
                             <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label
+                                    htmlFor="media-category-select"
+                                    className="block text-sm font-medium text-gray-700 mb-1"
+                                >
                                     Catégorie (optionnel)
                                 </label>
                                 <div className="flex space-x-2">
                                     <select
+                                        id="media-category-select"
                                         value={editingMedia.category || ''}
                                         onChange={(e) =>
                                             setEditingMedia({
@@ -782,6 +816,7 @@ export default function EventMediaManager({
                                         ))}
                                     </select>
                                     <input
+                                        id="media-category-input"
                                         type="text"
                                         value={editingMedia.category || ''}
                                         onChange={(e) =>
@@ -801,10 +836,14 @@ export default function EventMediaManager({
                             </div>
 
                             <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label
+                                    htmlFor="media-order"
+                                    className="block text-sm font-medium text-gray-700 mb-1"
+                                >
                                     Ordre d&apos;affichage
                                 </label>
                                 <input
+                                    id="media-order"
                                     type="number"
                                     value={editingMedia.order || 0}
                                     onChange={(e) =>
@@ -820,10 +859,14 @@ export default function EventMediaManager({
 
                         <div>
                             <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label
+                                    htmlFor="media-format"
+                                    className="block text-sm font-medium text-gray-700 mb-1"
+                                >
                                     Format
                                 </label>
                                 <select
+                                    id="media-format"
                                     value={editingMedia.format || 'paysage'}
                                     onChange={(e) =>
                                         setEditingMedia({
@@ -841,18 +884,25 @@ export default function EventMediaManager({
                             {/* Upload de miniature (pour les vidéos) */}
                             {editingMedia.isVideo && (
                                 <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label
+                                        htmlFor="media-thumbnail-url"
+                                        className="block text-sm font-medium text-gray-700 mb-1"
+                                    >
                                         Miniature personnalisée
                                     </label>
                                     <div className="flex space-x-2">
                                         <input
+                                            id="media-thumbnail-url"
                                             type="text"
                                             value={editingMedia.thumbnail || ''}
                                             className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                             placeholder="URL de la miniature"
                                             readOnly
                                         />
-                                        <label className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 cursor-pointer flex items-center">
+                                        <label
+                                            htmlFor="thumbnail-upload"
+                                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 cursor-pointer flex items-center"
+                                        >
                                             <span>Parcourir</span>
                                             <input
                                                 type="file"
@@ -1263,7 +1313,7 @@ export default function EventMediaManager({
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {images.length > 0 ? (
-                                images
+                                [...images]
                                     .sort((a, b) => (a.order || 0) - (b.order || 0))
                                     .map((image) => (
                                         <tr key={image.id}>
