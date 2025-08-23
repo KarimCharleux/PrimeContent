@@ -404,7 +404,18 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
             // Pour les changements sans animation, juste arrêter le loading
             setIsLoading(false);
         }
-    }, [activeFilter, customFilters, projects, activeVideoIndex, previousFilter]);
+    }, [
+        activeFilter,
+        customFilters,
+        projects,
+        activeVideoIndex,
+        previousFilter,
+        enablePagination,
+        enableRandomShuffle,
+        isMobile,
+        itemsPerPageDesktop,
+        itemsPerPageMobile,
+    ]);
 
     // Gestion de la lecture des vidéos
     useEffect(() => {
@@ -853,7 +864,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
 
                     {/* Dégradé en bas pour inciter à voir plus */}
                     {!isLoading && showGradientOverlay && filteredProjects.length > 0 && (
-                        <div className="absolute -bottom-2 left-0 right-0 h-[830px] bg-gradient-to-t from-[#060608] to-[#060608]/50 to-transparent pointer-events-none z-10" />
+                        <div className="absolute -bottom-2 left-0 right-0 h-[830px] bg-gradient-to-t from-[#060608] to-transparent pointer-events-none z-10" />
                     )}
                 </div>
             </div>

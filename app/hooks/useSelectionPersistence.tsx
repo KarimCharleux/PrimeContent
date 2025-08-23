@@ -81,10 +81,7 @@ export function useSelectionPersistence(eventId: string) {
             );
             const deviceInfo = {
                 userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
-                platform:
-                    typeof navigator !== 'undefined'
-                        ? navigator.userAgentData?.platform || navigator.platform || ''
-                        : '',
+                platform: typeof navigator !== 'undefined' ? navigator.platform : '',
                 language: typeof navigator !== 'undefined' ? navigator.language : '',
             };
             const data: any = {
