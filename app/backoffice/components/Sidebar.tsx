@@ -217,23 +217,6 @@ const CalendlyIcon = () => (
     </svg>
 );
 
-const SpeedIcon = () => (
-    <svg
-        className="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-    >
-        <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M13 10V3L4 14h7v7l9-11h-7z"
-        ></path>
-    </svg>
-);
-
 const ContactIcon = () => (
     <svg
         className="w-6 h-6"
@@ -355,6 +338,7 @@ export default function Sidebar() {
         { name: 'Clients', href: '/backoffice/clients', icon: ClientsIcon },
         { name: 'Contact', href: '/backoffice/contact', icon: ContactIcon },
         { name: 'Messages', href: '/backoffice/messages', icon: MessagesIcon },
+        { name: 'Analytics UTM', href: '/backoffice/analytics', icon: AnalyticsIcon },
         { name: 'Mentions légales', href: '/backoffice/mentions-legales', icon: LegalIcon },
         { name: 'Paramètres', href: '/backoffice/settings', icon: SettingsIcon },
     ];
@@ -363,11 +347,10 @@ export default function Sidebar() {
     const externalLinks = [
         { name: 'Google Analytics', href: 'https://analytics.google.com/', icon: AnalyticsIcon },
         {
-            name: 'Google Search Console',
+            name: 'Google Search',
             href: 'https://search.google.com/search-console',
             icon: SearchConsoleIcon,
         },
-        { name: 'PageSpeed Insights', href: 'https://pagespeed.web.dev/', icon: SpeedIcon },
         { name: 'Calendly', href: 'https://calendly.com/', icon: CalendlyIcon },
     ];
 
