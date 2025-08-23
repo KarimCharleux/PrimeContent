@@ -12,12 +12,31 @@ $transition: all 0.3s ease;
 .client-page {
     color: white;
     position: relative;
+    overflow: hidden;
 
     // Animation fade-in pour tous les éléments
     * {
         opacity: 1;
         transition: opacity 0.3s ease;
     }
+}
+
+// Image de fond dynamique pour toute la page
+.client-page-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.client-page-bg-image {
+    transition: opacity 0.8s ease-in-out;
+
+    // Animation subtile de zoom pour toute la page
+    animation: subtleZoom 20s ease-in-out infinite;
 }
 
 // Titre principal
@@ -58,7 +77,13 @@ $transition: all 0.3s ease;
 
 // Section galerie
 .client-gallery {
+    padding: 4rem 0;
     position: relative;
+    overflow: hidden;
+
+    @media (max-width: 768px) {
+        padding: 3rem 0;
+    }
 
     // Améliorer la lisibilité avec l'arrière-plan
     &::before {
@@ -228,12 +253,31 @@ $transition: all 0.3s ease;
     }
 }
 
-// Section galerie
-.client-gallery {
-    padding: 4rem 0;
+// Image de fond dynamique (ancienne - maintenant remplacée par client-page-background)
+.client-gallery-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    overflow: hidden;
+}
 
-    @media (max-width: 768px) {
-        padding: 3rem 0;
+.client-gallery-bg-image {
+    transition: opacity 0.8s ease-in-out;
+
+    // Animation subtile de zoom
+    animation: subtleZoom 20s ease-in-out infinite;
+}
+
+@keyframes subtleZoom {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
     }
 }
 

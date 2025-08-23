@@ -9,6 +9,8 @@ import { db } from '../backoffice/lib/firebase-client';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
 import PortfolioGrid, { Project, ClientData } from '../components/PortfolioGrid/PortfolioGrid';
+import ProtectedImage from '../components/ProtectedImage';
+import { getMediaUrl } from '../utils/mediaUrl';
 
 import './clients.scss';
 
@@ -54,6 +56,10 @@ function ClientPageContent() {
     const [clients, setClients] = useState<Client[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
+    const [backgroundImage, setBackgroundImage] = useState<string>('');
+    const [backgroundImageFading, setBackgroundImageFading] = useState(false);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
+    const lastFilterChangeRef = useRef<string>('');
 
     // Refs pour les animations
     const titleRef = useRef<HTMLHeadingElement>(null);
@@ -398,6 +404,65 @@ function ClientPageContent() {
 
     const customFilters = getAvailableFilters();
 
+    // Cache pour les images par filtre pour éviter le changement constant
+    const backgroundImageCache = useRef<{ [key: string]: string }>({});
+
+    // Fonction pour obtenir une image de fond aléatoire selon le filtre
+    const getRandomBackgroundImage = useCallback(
+        (filter: string, type: 'marques' | 'celebrites'): string => {
+            if (projects.length === 0) return '';
+
+            const cacheKey = `${type}-${filter}`;
+
+            // Si on a déjà une image en cache pour ce filtre, la retourner
+            if (backgroundImageCache.current[cacheKey]) {
+                return backgroundImageCache.current[cacheKey];
+            }
+
+            // Filtrer d'abord par type (marques/célébrités)
+            const typeFilteredProjects = projects.filter((project) =>
+                type === 'marques'
+                    ? project.clientType === 'marque'
+                    : project.clientType === 'celebrite',
+            );
+
+            let eligibleProjects: Project[] = [];
+
+            if (filter === 'Tout') {
+                // Prendre parmi tous les projets du type actuel
+                eligibleProjects = typeFilteredProjects;
+            } else {
+                // Prendre seulement les projets du client/marque spécifique
+                eligibleProjects = typeFilteredProjects.filter((project) => {
+                    const clientKey = project.clientName?.toLowerCase().replace(/\s+/g, '-');
+                    return clientKey === filter;
+                });
+
+                // Si pas de projets pour ce client/marque, fallback sur tous les projets du type
+                if (eligibleProjects.length === 0) {
+                    eligibleProjects = typeFilteredProjects;
+                }
+            }
+
+            // Filtrer pour ne garder que les images (pas les vidéos)
+            const imageProjects = eligibleProjects.filter(
+                (project) => !project.isVideo && project.source,
+            );
+
+            if (imageProjects.length === 0) return '';
+
+            // Sélectionner une image aléatoire
+            const randomIndex = Math.floor(Math.random() * imageProjects.length);
+            const selectedImage = imageProjects[randomIndex].source;
+
+            // Mettre en cache pour éviter les changements répétés
+            backgroundImageCache.current[cacheKey] = selectedImage;
+
+            return selectedImage;
+        },
+        [projects],
+    );
+
     // Calculer le filtre actif valide (évite les problèmes de timing)
     const validActiveFilter = useMemo(() => {
         if (!urlFilter || urlFilter === 'Tout') {
@@ -412,6 +477,61 @@ function ClientPageContent() {
         // Si invalide, retourner 'Tout'
         return 'Tout';
     }, [urlFilter, activeType, projects, isFilterValidForType]);
+
+    // Mettre à jour l'image de fond avec transition de fondu
+    useEffect(() => {
+        if (!loading && projects.length > 0) {
+            const filterKey = `${activeType}-${validActiveFilter}`;
+
+            // Éviter les appels répétés pour le même filtre
+            if (filterKey === lastFilterChangeRef.current && !isInitialLoad) {
+                return;
+            }
+
+            const newBackgroundImage = getRandomBackgroundImage(validActiveFilter, activeType);
+
+            // Si c'est la même image, ne pas faire de transition
+            if (newBackgroundImage === backgroundImage && !isInitialLoad) return;
+
+            // Mémoriser ce changement de filtre
+            lastFilterChangeRef.current = filterKey;
+
+            const updateImage = () => {
+                if (isInitialLoad) {
+                    // Premier chargement : pas de transition
+                    setBackgroundImage(newBackgroundImage);
+                    setIsInitialLoad(false);
+                } else {
+                    // Changements suivants : avec transition
+                    setBackgroundImageFading(true);
+
+                    // Changer l'image après le fade-out
+                    setTimeout(() => {
+                        setBackgroundImage(newBackgroundImage);
+                        // Terminer la transition de fondu pour démarrer le fade-in
+                        setTimeout(() => {
+                            setBackgroundImageFading(false);
+                        }, 100);
+                    }, 350);
+                }
+            };
+
+            if (isInitialLoad) {
+                // Délai pour le premier chargement pour éviter le défilement rapide
+                setTimeout(updateImage, 500);
+            } else {
+                updateImage();
+            }
+        }
+    }, [
+        loading,
+        projects,
+        validActiveFilter,
+        activeType,
+        getRandomBackgroundImage,
+        backgroundImage,
+        isInitialLoad,
+    ]);
 
     // Créer les données client pour les filtres avec images
     const createClientData = (): { [key: string]: ClientData } => {
@@ -456,7 +576,25 @@ function ClientPageContent() {
     return (
         <main className="client-page global-main-page">
             <Header />
-            <section className="client-hero">
+            {/* Image de fond dynamique floue pour toute la page */}
+            {backgroundImage && (
+                <div className="client-page-background">
+                    <ProtectedImage
+                        src={getMediaUrl(backgroundImage)}
+                        alt="Background"
+                        fill
+                        priority
+                        className="client-page-bg-image"
+                        style={{
+                            objectFit: 'cover',
+                            filter: 'blur(10px) brightness(0.2)',
+                            opacity: backgroundImageFading ? 0 : 0.6,
+                            transition: 'opacity 0.3s ease-in-out',
+                        }}
+                    />
+                </div>
+            )}
+            <section className="client-hero" style={{ position: 'relative', zIndex: 1 }}>
                 <div className="container mx-auto px-4 py-16">
                     <div className="text-center max-w-4xl mx-auto">
                         <h1 ref={titleRef} className="client-title">
@@ -492,7 +630,7 @@ function ClientPageContent() {
                 </div>
             </section>
 
-            <section className="client-gallery">
+            <section className="client-gallery" style={{ position: 'relative', zIndex: 1 }}>
                 <div className="container mx-auto px-4 pb-16">
                     {filteredProjects.length > 0 ? (
                         <PortfolioGrid
