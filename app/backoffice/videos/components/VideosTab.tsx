@@ -419,9 +419,35 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
             formData.append('path', 'videos');
             formData.append('useUuid', 'false');
 
-            const response = await fetch('/api/upload/batch', {
-                method: 'POST',
-                body: formData,
+            // Utiliser XMLHttpRequest pour le tracking du progrès
+            const response = await new Promise<Response>((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+
+                xhr.upload.addEventListener('progress', (event) => {
+                    if (event.lengthComputable) {
+                        const progress = (event.loaded / event.total) * 100;
+                        setUploadProgress(Math.round(progress));
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        const mockResponse = new Response(xhr.responseText, {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                        });
+                        resolve(mockResponse);
+                    } else {
+                        reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    reject(new Error("Erreur réseau lors de l'upload"));
+                });
+
+                xhr.open('POST', '/api/upload/batch');
+                xhr.send(formData);
             });
 
             if (!response.ok) {
@@ -518,14 +544,33 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
 
     // Détecter le format
     const detectFormat = async (file: File): Promise<'portrait' | 'paysage'> => {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const video = document.createElement('video');
             video.preload = 'metadata';
+            video.muted = true; // Nécessaire pour certains navigateurs
+
             video.onloadedmetadata = () => {
-                URL.revokeObjectURL(video.src);
-                resolve(video.videoWidth < video.videoHeight ? 'portrait' : 'paysage');
+                try {
+                    const format = video.videoWidth < video.videoHeight ? 'portrait' : 'paysage';
+                    URL.revokeObjectURL(video.src);
+                    resolve(format);
+                } catch (error) {
+                    URL.revokeObjectURL(video.src);
+                    reject(error);
+                }
             };
-            video.src = URL.createObjectURL(file);
+
+            video.onerror = () => {
+                URL.revokeObjectURL(video.src);
+                // Si erreur, on assume format paysage par défaut
+                resolve('paysage');
+            };
+
+            try {
+                video.src = URL.createObjectURL(file);
+            } catch (error) {
+                resolve('paysage');
+            }
         });
     };
 
@@ -534,13 +579,29 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         return new Promise((resolve) => {
             const video = document.createElement('video');
             video.preload = 'metadata';
+            video.muted = true;
 
             video.onloadedmetadata = () => {
-                URL.revokeObjectURL(video.src);
-                resolve(video.duration);
+                try {
+                    const duration = video.duration || 0;
+                    URL.revokeObjectURL(video.src);
+                    resolve(duration);
+                } catch (error) {
+                    URL.revokeObjectURL(video.src);
+                    resolve(0);
+                }
             };
 
-            video.src = URL.createObjectURL(file);
+            video.onerror = () => {
+                URL.revokeObjectURL(video.src);
+                resolve(0);
+            };
+
+            try {
+                video.src = URL.createObjectURL(file);
+            } catch (error) {
+                resolve(0);
+            }
         });
     };
 
@@ -551,21 +612,49 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
+            video.muted = true;
+            video.preload = 'metadata';
+
             video.onloadeddata = () => {
-                video.currentTime = video.duration / 2;
+                try {
+                    // Aller au milieu de la vidéo pour la miniature
+                    video.currentTime = Math.max(video.duration / 2, 1);
+                } catch (error) {
+                    resolve('');
+                }
             };
 
             video.onseeked = () => {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+                try {
+                    if (!ctx || video.videoWidth === 0 || video.videoHeight === 0) {
+                        URL.revokeObjectURL(video.src);
+                        resolve('');
+                        return;
+                    }
 
-                const thumbnail = canvas.toDataURL('image/jpeg', 0.7);
-                URL.revokeObjectURL(video.src);
-                resolve(thumbnail);
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    const thumbnail = canvas.toDataURL('image/jpeg', 0.7);
+                    URL.revokeObjectURL(video.src);
+                    resolve(thumbnail);
+                } catch (error) {
+                    URL.revokeObjectURL(video.src);
+                    resolve('');
+                }
             };
 
-            video.src = URL.createObjectURL(file);
+            video.onerror = () => {
+                URL.revokeObjectURL(video.src);
+                resolve('');
+            };
+
+            try {
+                video.src = URL.createObjectURL(file);
+            } catch (error) {
+                resolve('');
+            }
         });
     };
 
