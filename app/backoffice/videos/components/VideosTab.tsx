@@ -101,6 +101,8 @@ export interface VideoStats {
     totalCount: number;
     totalSize: number;
     videoCount: number;
+    localVideosCount: number;
+    externalVideosCount: number;
     averageLoadTime: number;
 }
 
@@ -167,12 +169,23 @@ function SortableRow({
             <td className="px-3 py-4 whitespace-nowrap">
                 <div className="w-20 h-12 relative rounded overflow-hidden">
                     <div className="absolute inset-0 flex items-center justify-center bg-black">
-                        {video.thumbnail ? (
+                        {video.thumbnail && !video.thumbnail.includes('thumbnail.jpg') ? (
                             <Image
                                 src={getMediaUrl(video.thumbnail)}
                                 alt={video.title || 'Miniature vidéo'}
                                 fill
                                 className="object-cover"
+                            />
+                        ) : video.provider === 'local' && video.source ? (
+                            <video
+                                src={getMediaUrl(video.source)}
+                                muted
+                                playsInline
+                                className="w-full h-full object-cover"
+                                onLoadedData={(e) => {
+                                    const videoElement = e.target as HTMLVideoElement;
+                                    videoElement.currentTime = 1; // Aller à 1 seconde pour éviter le noir
+                                }}
                             />
                         ) : (
                             <svg
@@ -302,24 +315,49 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         totalCount: 0,
         totalSize: 0,
         videoCount: 0,
+        localVideosCount: 0,
+        externalVideosCount: 0,
         averageLoadTime: 0,
     });
 
     // Fonction pour calculer les statistiques
     const calculateStats = useCallback(() => {
         let totalSize = 0;
+        let localVideosCount = 0;
+        let externalVideosCount = 0;
 
         videos.forEach((video) => {
-            totalSize += video.size || 5 * 1024 * 1024; // 5MB par défaut pour les vidéos externes
+            const isExternalVideo =
+                video.provider === 'youtube' ||
+                video.provider === 'dailymotion' ||
+                video.isYouTube ||
+                (video.source &&
+                    (video.source.includes('youtube.com') ||
+                        video.source.includes('youtu.be') ||
+                        video.source.includes('dailymotion.com')));
+
+            if (isExternalVideo) {
+                externalVideosCount++;
+                // Les vidéos externes ne prennent pas de place sur le serveur
+            } else {
+                localVideosCount++;
+                // Seulement compter la taille des vidéos locales
+                totalSize += video.size || 0;
+            }
         });
 
+        // Calculer le temps de chargement moyen basé seulement sur les vidéos locales
         const averageLoadTime =
-            videos.length > 0 ? (((totalSize * 8) / (15 * 1024 * 1024)) * 1000) / videos.length : 0;
+            localVideosCount > 0
+                ? (((totalSize * 8) / (15 * 1024 * 1024)) * 1000) / localVideosCount
+                : 0;
 
         const newStats: VideoStats = {
             totalCount: videos.length,
-            totalSize,
+            totalSize, // Taille réelle uniquement des vidéos locales
             videoCount: videos.length,
+            localVideosCount,
+            externalVideosCount,
             averageLoadTime,
         };
 
@@ -469,7 +507,9 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
 
                 if (!url || !file) continue;
 
-                const id = url.split('/').pop()?.split('.')[0] || `video-${Date.now()}`;
+                const id =
+                    url.split('/').pop()?.split('.')[0]?.replace(/\s+/g, '_') ||
+                    `video-${Date.now()}`;
                 const format = await detectFormat(file);
 
                 let thumbnail = '';
@@ -556,7 +596,11 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                     resolve(format);
                 } catch (error) {
                     URL.revokeObjectURL(video.src);
-                    reject(error);
+                    reject(
+                        error instanceof Error
+                            ? error
+                            : new Error('Erreur lors de la détection du format'),
+                    );
                 }
             };
 
@@ -569,6 +613,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
             try {
                 video.src = URL.createObjectURL(file);
             } catch (error) {
+                console.warn('Erreur lors de la création du blob URL:', error);
                 resolve('paysage');
             }
         });
@@ -587,6 +632,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                     URL.revokeObjectURL(video.src);
                     resolve(duration);
                 } catch (error) {
+                    console.warn("Erreur lors de l'extraction de la durée:", error);
                     URL.revokeObjectURL(video.src);
                     resolve(0);
                 }
@@ -600,6 +646,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
             try {
                 video.src = URL.createObjectURL(file);
             } catch (error) {
+                console.warn('Erreur lors de la création du blob URL pour la durée:', error);
                 resolve(0);
             }
         });
@@ -620,6 +667,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                     // Aller au milieu de la vidéo pour la miniature
                     video.currentTime = Math.max(video.duration / 2, 1);
                 } catch (error) {
+                    console.warn('Erreur lors du positionnement de la vidéo:', error);
                     resolve('');
                 }
             };
@@ -640,6 +688,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
                     URL.revokeObjectURL(video.src);
                     resolve(thumbnail);
                 } catch (error) {
+                    console.warn('Erreur lors de la génération de la miniature:', error);
                     URL.revokeObjectURL(video.src);
                     resolve('');
                 }
@@ -653,6 +702,7 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
             try {
                 video.src = URL.createObjectURL(file);
             } catch (error) {
+                console.warn('Erreur lors de la création du blob URL pour la miniature:', error);
                 resolve('');
             }
         });
@@ -960,12 +1010,22 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
         setFormData(initializeFormData(video));
         setPreviewImage(video.source);
         setShowForm(true);
+
+        // Remonter en haut de la page pour voir le formulaire
+        setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
     };
 
     const handleAddNewVideo = () => {
         resetForm();
         setFormData({ ...formData, order: videos.length });
         setShowForm(true);
+
+        // Remonter en haut de la page pour voir le formulaire
+        setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
     };
 
     if (loading) {
@@ -983,31 +1043,34 @@ export default function VideosTab({ onStatusChange }: VideosTabProps) {
             {/* Section Statistiques */}
             <div className="bg-white rounded-lg shadow p-6 mb-8">
                 <h3 className="text-xl font-semibold mb-4">Statistiques des Vidéos</h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                     <div className="bg-blue-50 p-4 rounded-lg">
-                        <p className="text-sm text-blue-600 font-medium">Nombre total de vidéos</p>
+                        <p className="text-sm text-blue-600 font-medium">Total vidéos</p>
                         <p className="text-3xl font-bold">{stats.totalCount}</p>
                     </div>
-                    <div className="bg-orange-50 p-4 rounded-lg">
-                        <p className="text-sm text-orange-600 font-medium">Poids total estimé</p>
-                        <p className="text-3xl font-bold">{formatSize(stats.totalSize)}</p>
-                    </div>
                     <div className="bg-green-50 p-4 rounded-lg">
-                        <p className="text-sm text-green-600 font-medium">Vidéos gérées</p>
-                        <p className="text-3xl font-bold">{stats.videoCount}</p>
+                        <p className="text-sm text-green-600 font-medium">Vidéos locales</p>
+                        <p className="text-3xl font-bold">{stats.localVideosCount}</p>
+                        <p className="text-xs text-gray-500">Hébergées sur le serveur</p>
+                    </div>
+                    <div className="bg-indigo-50 p-4 rounded-lg">
+                        <p className="text-sm text-indigo-600 font-medium">Vidéos externes</p>
+                        <p className="text-3xl font-bold">{stats.externalVideosCount}</p>
+                        <p className="text-xs text-gray-500">YouTube, Dailymotion</p>
+                    </div>
+                    <div className="bg-orange-50 p-4 rounded-lg">
+                        <p className="text-sm text-orange-600 font-medium">Espace utilisé</p>
+                        <p className="text-3xl font-bold">{formatSize(stats.totalSize)}</p>
+                        <p className="text-xs text-gray-500">Vidéos locales uniquement</p>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-lg">
-                        <p className="text-sm text-purple-600 font-medium">
-                            Temps de chargement moyen
-                        </p>
+                        <p className="text-sm text-purple-600 font-medium">Temps chargement</p>
                         <p className="text-3xl font-bold">
                             {stats.averageLoadTime < 1000
                                 ? Math.round(stats.averageLoadTime) + ' ms'
                                 : (stats.averageLoadTime / 1000).toFixed(1) + ' s'}
                         </p>
-                        <p className="text-xs text-gray-500">
-                            Estimation basée sur une connexion moyenne (15 Mbps)
-                        </p>
+                        <p className="text-xs text-gray-500">Vidéos locales - 15 Mbps</p>
                     </div>
                 </div>
             </div>

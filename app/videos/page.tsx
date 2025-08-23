@@ -54,7 +54,7 @@ export default function VideosPage() {
                     id: doc.id,
                     ...doc.data(),
                     isVideo: true,
-                    category: doc.data().category || 'Général',
+                    category: doc.data().category || '',
                 }));
 
                 // 2. Récupérer les vidéos des clients (célébrités)
