@@ -593,7 +593,7 @@
     }
 }
 
-// Responsive pour le loading
+// Responsive pour mobile
 @media (max-width: 768px) {
     .loadingContainer {
         min-height: 300px;
@@ -607,5 +607,19 @@
 
     .loadingText {
         font-size: 1rem;
+    }
+
+    // Bouton de sélection plus gros sur mobile
+    .selectionCheckbox {
+        width: 2.2rem;
+        height: 2.2rem;
+        border-width: 3px;
+        bottom: 0.5rem;
+        right: 0.5rem;
+
+        svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
     }
 }

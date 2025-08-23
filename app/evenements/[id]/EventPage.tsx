@@ -105,20 +105,6 @@ export default function EventPage({ evenement }: EventPageProps) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [evenement.type, selection]);
 
-    // Sauvegarde la sélection à chaque modification
-    useEffect(() => {
-        if (
-            evenement.type === 'selection' &&
-            userId &&
-            !selectionLoading &&
-            selection &&
-            JSON.stringify(Array.from(selectedItems)) !== JSON.stringify(selection.medias)
-        ) {
-            saveSelection(Array.from(selectedItems));
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedItems]);
-
     useEffect(() => {
         // Réinitialiser l'état lors du changement d'événement
         setIsLoading(true);
@@ -637,8 +623,8 @@ export default function EventPage({ evenement }: EventPageProps) {
                 {/* Message de confirmation après sélection */}
                 {confirmationMessage && (
                     <motion.div
-                        className="confirmation-message my-4 p-4 bg-green-50 border border-green-200 rounded-lg text-center"
-                        initial={{ opacity: 0, y: 20 }}
+                        className="fixed top-20 right-0 z-50 max-w-md mx-4 p-4 bg-green-50 border border-green-200 rounded-lg text-center shadow-lg"
+                        initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.5 }}
@@ -664,7 +650,9 @@ export default function EventPage({ evenement }: EventPageProps) {
                     </motion.div>
                 )}
 
-                <div className="w-full flex justify-center">{renderActionButton()}</div>
+                <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+                    {renderActionButton()}
+                </div>
             </motion.div>
 
             {isLoading ? (
