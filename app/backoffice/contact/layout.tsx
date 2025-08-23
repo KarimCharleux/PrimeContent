@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Gestion des Contacts | DaliFilms',
+    title: 'Gestion des Contacts | Backoffice',
     description: "Interface d'administration pour la gestion des contacts et messages",
 };
 

@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Tableau de Bord | DaliFilms',
+    title: 'Tableau de Bord | Backoffice',
     description: 'Tableau de bord administratif du site DaliFilms',
 };
 

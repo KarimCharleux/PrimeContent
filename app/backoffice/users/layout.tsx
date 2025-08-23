@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Gestion des Utilisateurs | DaliFilms',
+    title: 'Gestion des Utilisateurs | Backoffice',
     description: "Interface d'administration pour la gestion des utilisateurs",
 };
 

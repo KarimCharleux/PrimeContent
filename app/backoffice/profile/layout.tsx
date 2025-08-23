@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Profil Utilisateur | DaliFilms',
+    title: 'Profil Utilisateur | Backoffice',
     description: "Gestion du profil utilisateur dans l'administration DaliFilms",
 };
 
