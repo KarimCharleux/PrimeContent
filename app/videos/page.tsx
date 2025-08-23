@@ -1,6 +1,6 @@
 'use client';
 
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 
@@ -8,6 +8,7 @@ import { db } from '../backoffice/lib/firebase-client';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
 import PortfolioGrid from '../components/PortfolioGrid';
+import { getVideoProvider, extractVideoId } from '../utils/videoManager';
 
 // Importation des styles
 import './videos.scss';
@@ -42,20 +43,118 @@ export default function VideosPage() {
     const [videos, setVideos] = useState<any[]>([]);
 
     useEffect(() => {
-        const fetchVideos = async () => {
+        const fetchAllVideos = async () => {
             try {
+                // 1. Récupérer les vidéos du backoffice
                 const videosCollection = collection(db, 'videos');
                 const videosQuery = query(videosCollection, orderBy('order', 'asc'));
                 const videosSnapshot = await getDocs(videosQuery);
 
-                if (!videosSnapshot.empty) {
-                    const fetchedVideos = videosSnapshot.docs.map((doc) => ({
+                const backofficeVideos = videosSnapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    isVideo: true,
+                    category: doc.data().category || 'Général',
+                }));
+
+                // 2. Récupérer les vidéos des clients (célébrités)
+                const clientVideosCollection = collection(db, 'client-videos');
+                const clientVideosQuery = query(
+                    clientVideosCollection,
+                    where('clientType', '==', 'celebrity'),
+                );
+                const clientVideosSnapshot = await getDocs(clientVideosQuery);
+
+                const celebrityVideos = clientVideosSnapshot.docs.map((doc) => {
+                    const data = doc.data();
+
+                    // Support de rétrocompatibilité avec l'ancien format
+                    let provider = data.provider || 'youtube';
+                    let source = data.source || data.youtubeUrl || '';
+                    let videoId = data.videoId || data.youtubeId;
+
+                    // Si pas de provider défini, essayer de le détecter
+                    if (!data.provider && source) {
+                        provider = getVideoProvider(source);
+                        videoId = extractVideoId(source, provider);
+                    }
+
+                    return {
                         id: doc.id,
-                        ...doc.data(),
+                        title: data.title || data.clientName || 'Vidéo célébrité',
+                        category: 'Célébrités',
+                        source,
+                        provider,
+                        videoId,
+                        embedUrl: data.embedUrl,
+                        watchUrl: data.watchUrl,
+                        thumbnail: data.thumbnail,
+                        format: data.format || 'paysage',
                         isVideo: true,
-                    }));
-                    setVideos(fetchedVideos);
-                }
+                        clientType: 'celebrity',
+                        clientName: data.clientName,
+                        order: data.order || 0,
+                        // Propriétés de rétrocompatibilité
+                        youtubeUrl: data.youtubeUrl,
+                        youtubeId: data.youtubeId,
+                        isYouTube: provider === 'youtube',
+                    };
+                });
+
+                // 3. Récupérer les vidéos des marques
+                const brandVideosQuery = query(
+                    clientVideosCollection,
+                    where('clientType', '==', 'brand'),
+                );
+                const brandVideosSnapshot = await getDocs(brandVideosQuery);
+
+                const brandVideos = brandVideosSnapshot.docs.map((doc) => {
+                    const data = doc.data();
+
+                    // Support de rétrocompatibilité avec l'ancien format
+                    let provider = data.provider || 'youtube';
+                    let source = data.source || data.youtubeUrl || '';
+                    let videoId = data.videoId || data.youtubeId;
+
+                    // Si pas de provider défini, essayer de le détecter
+                    if (!data.provider && source) {
+                        provider = getVideoProvider(source);
+                        videoId = extractVideoId(source, provider);
+                    }
+
+                    return {
+                        id: doc.id,
+                        title: data.title || data.clientName || 'Vidéo marque',
+                        category: 'Marques',
+                        source,
+                        provider,
+                        videoId,
+                        embedUrl: data.embedUrl,
+                        watchUrl: data.watchUrl,
+                        thumbnail: data.thumbnail,
+                        format: data.format || 'paysage',
+                        isVideo: true,
+                        clientType: 'brand',
+                        clientName: data.clientName,
+                        order: data.order || 0,
+                        // Propriétés de rétrocompatibilité
+                        youtubeUrl: data.youtubeUrl,
+                        youtubeId: data.youtubeId,
+                        isYouTube: provider === 'youtube',
+                    };
+                });
+
+                // 4. Combiner toutes les vidéos
+                const allVideos = [...backofficeVideos, ...celebrityVideos, ...brandVideos];
+
+                console.log('Vidéos chargées:', {
+                    backoffice: backofficeVideos.length,
+                    celebrities: celebrityVideos.length,
+                    brands: brandVideos.length,
+                    total: allVideos.length,
+                });
+
+                setVideos(allVideos);
             } catch (error) {
                 console.error('Erreur lors de la récupération des vidéos:', error);
             } finally {
@@ -63,7 +162,7 @@ export default function VideosPage() {
             }
         };
 
-        fetchVideos();
+        fetchAllVideos();
     }, []);
 
     useEffect(() => {
@@ -144,7 +243,7 @@ export default function VideosPage() {
                                 enablePagination={true}
                                 itemsPerPageDesktop={24}
                                 itemsPerPageMobile={12}
-                                enableRandomShuffle={false}
+                                enableRandomShuffle={true}
                             />
                         </motion.div>
                     )}
