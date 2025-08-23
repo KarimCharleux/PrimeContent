@@ -3,7 +3,7 @@
 import { doc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 import { Spinner } from '../../components/Spinner';
 import { useAuth } from '../../hooks/useAuth';
@@ -25,6 +25,8 @@ export default function MediaPageClient(): JSX.Element {
         totalCount: 0,
         imageCount: 0,
         videoCount: 0,
+        videoCountInternal: 0,
+        videoCountExternal: 0,
         totalSize: 0,
         imagesSize: 0,
         videosSize: 0,
@@ -80,18 +82,21 @@ export default function MediaPageClient(): JSX.Element {
         fetchEvenement();
     }, [eventId, isMounted]);
 
-    const handleStatusChange = (status: { type: 'success' | 'error'; message: string } | null) => {
-        setStatusMessage(status);
-        if (status) {
-            setTimeout(() => setStatusMessage(null), 5000);
-        }
-    };
+    const handleStatusChange = useCallback(
+        (status: { type: 'success' | 'error'; message: string } | null) => {
+            setStatusMessage(status);
+            if (status) {
+                setTimeout(() => setStatusMessage(null), 5000);
+            }
+        },
+        [],
+    );
 
-    const handleMediaStatsChange = (stats: MediaStats) => {
+    const handleMediaStatsChange = useCallback((stats: MediaStats) => {
         setMediaStats(stats);
-    };
+    }, []);
 
-    const formatSize = (bytes: number): string => {
+    const formatSize = useCallback((bytes: number): string => {
         if (bytes < 1024) {
             return bytes + ' octets';
         } else if (bytes < 1024 * 1024) {
@@ -101,15 +106,15 @@ export default function MediaPageClient(): JSX.Element {
         } else {
             return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' Go';
         }
-    };
+    }, []);
 
-    const formatLoadTime = (milliseconds: number): string => {
+    const formatLoadTime = useCallback((milliseconds: number): string => {
         if (milliseconds < 1000) {
             return milliseconds.toFixed(0) + ' ms';
         } else {
             return (milliseconds / 1000).toFixed(1) + ' s';
         }
-    };
+    }, []);
 
     if (!isMounted) {
         return (
@@ -279,6 +284,8 @@ export default function MediaPageClient(): JSX.Element {
                         <p className="text-sm text-green-600 font-medium">Vidéos</p>
                         <p className="text-2xl font-bold text-green-900">{mediaStats.videoCount}</p>
                         <p className="text-xs text-green-700">
+                            {mediaStats.videoCountInternal} internes •{' '}
+                            {mediaStats.videoCountExternal} externes •{' '}
                             {formatSize(mediaStats.videosSize)}
                         </p>
                     </div>

@@ -65,8 +65,15 @@ export interface Evenement {
 export interface EventStats {
     totalEvents: number;
     totalImages: number;
+    totalVideos: number;
+    totalVideosInternal: number;
+    totalVideosExternal: number;
     totalProtected: number;
     totalVisible: number;
+    totalSize: number;
+    imagesSize: number;
+    videosSize: number;
+    averageLoadTime: number;
     byType: Record<EventType, number>;
 }
 

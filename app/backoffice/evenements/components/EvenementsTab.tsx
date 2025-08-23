@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { useEffect, useState, useCallback } from 'react';
 
+import { isExternalVideo } from '../../../utils/videoManager';
 import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
 import { Evenement, EventFilter, EventStats } from '../../models/eventTypes';
@@ -40,8 +41,15 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
     const [stats, setStats] = useState<EventStats>({
         totalEvents: 0,
         totalImages: 0,
+        totalVideos: 0,
+        totalVideosInternal: 0,
+        totalVideosExternal: 0,
         totalProtected: 0,
         totalVisible: 0,
+        totalSize: 0,
+        imagesSize: 0,
+        videosSize: 0,
+        averageLoadTime: 0,
         byType: {
             visionner: 0,
             selection: 0,
@@ -69,8 +77,15 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
         const stats: EventStats = {
             totalEvents: evenements.length,
             totalImages: 0,
+            totalVideos: 0,
+            totalVideosInternal: 0,
+            totalVideosExternal: 0,
             totalProtected: 0,
             totalVisible: 0,
+            totalSize: 0,
+            imagesSize: 0,
+            videosSize: 0,
+            averageLoadTime: 0,
             byType: {
                 visionner: 0,
                 selection: 0,
@@ -79,9 +94,42 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
             },
         };
 
+        let totalMediaCount = 0;
+
         evenements.forEach((event) => {
-            // Compter les images
-            stats.totalImages += event.images.length;
+            // Traiter tous les médias de l'événement
+            if (event.images && event.images.length > 0) {
+                event.images.forEach((media) => {
+                    totalMediaCount++;
+
+                    if (media.isVideo) {
+                        stats.totalVideos++;
+                        const isExternal = isExternalVideo(media.source || '');
+
+                        if (isExternal) {
+                            stats.totalVideosExternal++;
+                            // Les vidéos externes ne comptent pas dans la taille
+                        } else {
+                            stats.totalVideosInternal++;
+                            // Pour les vidéos locales, compter la taille
+                            if (media.size && media.size > 0) {
+                                stats.videosSize += media.size;
+                            } else {
+                                // Estimation seulement pour les vidéos locales sans taille connue
+                                stats.videosSize += 5 * 1024 * 1024; // 5MB estimation
+                            }
+                        }
+                    } else {
+                        stats.totalImages++;
+                        // Pour les images, utiliser la taille réelle ou une estimation
+                        if (media.size && media.size > 0) {
+                            stats.imagesSize += media.size;
+                        } else {
+                            stats.imagesSize += 500 * 1024; // 500KB estimation
+                        }
+                    }
+                });
+            }
 
             // Compter les événements protégés
             if (event.protectionMotDePasse?.actif) {
@@ -96,6 +144,13 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
             // Compter par type
             stats.byType[event.type]++;
         });
+
+        // Calculer la taille totale et le temps de chargement moyen
+        stats.totalSize = stats.imagesSize + stats.videosSize;
+        stats.averageLoadTime =
+            totalMediaCount > 0
+                ? (((stats.totalSize * 8) / (15 * 1024 * 1024)) * 1000) / totalMediaCount
+                : 0;
 
         setStats(stats);
     }, [evenements]);
@@ -270,7 +325,7 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
 
         if (
             window.confirm(
-                'Êtes-vous sûr de vouloir supprimer cet événement ? Tous les médias associés seront également supprimés.',
+                'Êtes-vous sûr de vouloir supprimer cet événement ? Tous les médias et sélections associés seront également supprimés.',
             )
         ) {
             try {
@@ -348,12 +403,36 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
                     }
                 }
 
-                // 3. Supprimer le document de Firestore
+                // 3. Supprimer toutes les sélections de l'événement
+                try {
+                    const selectionsRef = collection(db, 'evenements', id, 'selections');
+                    const selectionsSnapshot = await getDocs(selectionsRef);
+
+                    if (!selectionsSnapshot.empty) {
+                        console.log(
+                            `Suppression de ${selectionsSnapshot.size} sélection(s) pour l'événement ${id}`,
+                        );
+
+                        for (const selectionDoc of selectionsSnapshot.docs) {
+                            await deleteDoc(selectionDoc.ref);
+                        }
+
+                        console.log('Toutes les sélections ont été supprimées');
+                    }
+                } catch (err) {
+                    console.warn(
+                        `Erreur lors de la suppression des sélections pour l'événement ${id}:`,
+                        err,
+                    );
+                    // Continue même si la suppression des sélections échoue
+                }
+
+                // 4. Supprimer le document principal de l'événement
                 await deleteDoc(doc(db, 'evenements', id));
 
                 setStatusMessage({
                     type: 'success',
-                    message: 'Événement et tous ses médias supprimés avec succès',
+                    message: 'Événement, médias et sélections supprimés avec succès',
                 });
 
                 // Fermer le formulaire si l'événement supprimé était en cours d'édition
@@ -396,6 +475,27 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
         }));
     };
 
+    // Fonctions utilitaires pour l'affichage
+    const formatSize = (bytes: number): string => {
+        if (bytes < 1024) {
+            return bytes + ' octets';
+        } else if (bytes < 1024 * 1024) {
+            return (bytes / 1024).toFixed(2) + ' Ko';
+        } else if (bytes < 1024 * 1024 * 1024) {
+            return (bytes / (1024 * 1024)).toFixed(2) + ' Mo';
+        } else {
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' Go';
+        }
+    };
+
+    const formatLoadTime = (milliseconds: number): string => {
+        if (milliseconds < 1000) {
+            return milliseconds.toFixed(0) + ' ms';
+        } else {
+            return (milliseconds / 1000).toFixed(1) + ' s';
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -408,51 +508,40 @@ export default function EvenementsTab({ onStatusChange }: EvenementsTabProps) {
         <>
             {/* Section Statistiques */}
             <div className="bg-white rounded-lg shadow p-6 mb-8">
-                <h2 className="text-xl font-semibold mb-4">Statistiques des Événements</h2>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <h2 className="text-xl font-semibold mb-4">Statistiques Globales des Médias</h2>
+
+                {/* Statistiques des médias de tous les événements */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <div className="bg-blue-50 p-4 rounded-lg">
-                        <p className="text-sm text-blue-600 font-medium">
-                            Nombre total d&apos;événements
+                        <p className="text-sm text-blue-600 font-medium">Total médias</p>
+                        <p className="text-2xl font-bold text-blue-900">
+                            {stats.totalImages + stats.totalVideos}
                         </p>
-                        <p className="text-3xl font-bold">{stats.totalEvents}</p>
+                        <p className="text-xs text-blue-700">
+                            {stats.totalImages} images • {stats.totalVideos} vidéos
+                        </p>
                     </div>
-                    <div className="bg-orange-50 p-4 rounded-lg">
-                        <p className="text-sm text-orange-600 font-medium">
-                            Nombre total d&apos;images
-                        </p>
-                        <p className="text-3xl font-bold">{stats.totalImages}</p>
+                    <div className="bg-yellow-50 p-4 rounded-lg">
+                        <p className="text-sm text-yellow-600 font-medium">Images</p>
+                        <p className="text-2xl font-bold text-yellow-900">{stats.totalImages}</p>
+                        <p className="text-xs text-yellow-700">{formatSize(stats.imagesSize)}</p>
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg">
-                        <p className="text-sm text-green-600 font-medium">Événements visibles</p>
-                        <p className="text-3xl font-bold">
-                            {stats.totalVisible} / {stats.totalEvents}
+                        <p className="text-sm text-green-600 font-medium">Vidéos</p>
+                        <p className="text-2xl font-bold text-green-900">{stats.totalVideos}</p>
+                        <p className="text-xs text-green-700">
+                            {stats.totalVideosInternal} internes • {stats.totalVideosExternal}{' '}
+                            externes • {formatSize(stats.videosSize)}
                         </p>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-lg">
-                        <p className="text-sm text-purple-600 font-medium">Événements protégés</p>
-                        <p className="text-3xl font-bold">
-                            {stats.totalProtected} / {stats.totalEvents}
+                        <p className="text-sm text-purple-600 font-medium">Taille totale</p>
+                        <p className="text-2xl font-bold text-purple-900">
+                            {formatSize(stats.totalSize)}
                         </p>
-                    </div>
-                </div>
-
-                {/* Types d'événements */}
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className="bg-indigo-50 p-4 rounded-lg">
-                        <p className="text-sm text-indigo-600 font-medium">Visionnage</p>
-                        <p className="text-3xl font-bold">{stats.byType.visionner}</p>
-                    </div>
-                    <div className="bg-pink-50 p-4 rounded-lg">
-                        <p className="text-sm text-pink-600 font-medium">Sélection</p>
-                        <p className="text-3xl font-bold">{stats.byType.selection}</p>
-                    </div>
-                    <div className="bg-amber-50 p-4 rounded-lg">
-                        <p className="text-sm text-amber-600 font-medium">Déjà Payé</p>
-                        <p className="text-3xl font-bold">{stats.byType.paye}</p>
-                    </div>
-                    <div className="bg-teal-50 p-4 rounded-lg">
-                        <p className="text-sm text-teal-600 font-medium">Non Payé</p>
-                        <p className="text-3xl font-bold">{stats.byType.non_paye}</p>
+                        <p className="text-xs text-purple-700">
+                            Temps: {formatLoadTime(stats.averageLoadTime)}
+                        </p>
                     </div>
                 </div>
             </div>

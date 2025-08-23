@@ -60,6 +60,8 @@ export interface MediaStats {
     totalCount: number;
     totalSize: number;
     videoCount: number;
+    videoCountInternal: number;
+    videoCountExternal: number;
     imageCount: number;
     averageLoadTime: number;
     imagesSize: number;
@@ -277,6 +279,8 @@ export default function EventsMediaManager({
         totalCount: 0,
         totalSize: 0,
         videoCount: 0,
+        videoCountInternal: 0,
+        videoCountExternal: 0,
         imageCount: 0,
         averageLoadTime: 0,
         imagesSize: 0,
@@ -287,6 +291,8 @@ export default function EventsMediaManager({
     const calculateStats = useCallback(() => {
         let totalImages = 0;
         let totalVideos = 0;
+        let totalVideosInternal = 0;
+        let totalVideosExternal = 0;
         let imagesSize = 0;
         let videosSize = 0;
         let totalSize = 0;
@@ -294,10 +300,29 @@ export default function EventsMediaManager({
         medias.forEach((media) => {
             if (media.isVideo) {
                 totalVideos++;
-                videosSize += media.size || 5 * 1024 * 1024;
+                const isExternal = isExternalVideo(media.source || '');
+
+                if (isExternal) {
+                    totalVideosExternal++;
+                    // Les vidéos externes ne comptent pas dans la taille
+                } else {
+                    totalVideosInternal++;
+                    // Pour les vidéos locales, compter la taille
+                    if (media.size && media.size > 0) {
+                        videosSize += media.size;
+                    } else {
+                        // Estimation seulement pour les vidéos locales sans taille connue
+                        videosSize += 5 * 1024 * 1024; // 5MB estimation
+                    }
+                }
             } else {
                 totalImages++;
-                imagesSize += media.size || 500 * 1024;
+                // Pour les images, utiliser la taille réelle ou une estimation
+                if (media.size && media.size > 0) {
+                    imagesSize += media.size;
+                } else {
+                    imagesSize += 500 * 1024; // 500KB estimation
+                }
             }
         });
 
@@ -309,6 +334,8 @@ export default function EventsMediaManager({
             totalCount: medias.length,
             totalSize,
             videoCount: totalVideos,
+            videoCountInternal: totalVideosInternal,
+            videoCountExternal: totalVideosExternal,
             imageCount: totalImages,
             averageLoadTime,
             imagesSize,
@@ -322,6 +349,10 @@ export default function EventsMediaManager({
     useEffect(() => {
         setMedias(evenement.images || []);
     }, [evenement]);
+
+    useEffect(() => {
+        calculateStats();
+    }, [calculateStats]);
 
     // Gestion des fichiers
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
