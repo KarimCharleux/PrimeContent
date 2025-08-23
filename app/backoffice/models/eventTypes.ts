@@ -53,6 +53,7 @@ export interface Evenement {
     prixParPhoto?: number;
     tarifDegressif?: TarifDegressif[];
     protectionMotDePasse?: ProtectionMotDePasse;
+    demanderInfosUtilisateur?: boolean; // Pour les événements de type "selection" - demande email/Instagram avant accès
     telechargerActif?: boolean; // Pour les événements de type "selection" - active le téléchargement après confirmation
     visible: boolean;
     images: EventMediaItem[];

@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 
 import { db } from '../../backoffice/lib/firebase-client';
 import { Evenement } from '../../backoffice/models/eventTypes';
+import { useSelectionPersistence } from '../../hooks/useSelectionPersistence';
 
 import EventPage from './EventPage';
 
@@ -21,6 +22,13 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [password, setPassword] = useState('');
     const [passwordError, setPasswordError] = useState<string | null>(null);
+    const [showUserInfoModal, setShowUserInfoModal] = useState(false);
+    const [userEmail, setUserEmail] = useState('');
+    const [userInstagram, setUserInstagram] = useState('');
+    const [userInfoError, setUserInfoError] = useState<string | null>(null);
+
+    // Hook pour la persistance des sélections (utilisé pour sauvegarder email/Instagram)
+    const { saveSelection } = useSelectionPersistence(eventId);
 
     useEffect(() => {
         const fetchEvenement = async () => {
@@ -41,6 +49,12 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
                     // Vérifier si l'événement est protégé par mot de passe
                     if (eventData.protectionMotDePasse?.actif) {
                         setShowPasswordModal(true);
+                    } else if (
+                        eventData.type === 'selection' &&
+                        eventData.demanderInfosUtilisateur
+                    ) {
+                        // Si pas de protection par mot de passe mais demande d'infos utilisateur pour les sélections
+                        setShowUserInfoModal(true);
                     }
                 } else {
                     setError('Événement non trouvé');
@@ -64,8 +78,42 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
         if (password === evenement.protectionMotDePasse.motDePasse) {
             setShowPasswordModal(false);
             setPasswordError(null);
+
+            // Après validation du mot de passe, vérifier s'il faut demander les infos utilisateur
+            if (evenement.type === 'selection' && evenement.demanderInfosUtilisateur) {
+                setShowUserInfoModal(true);
+            }
         } else {
             setPasswordError('Mot de passe incorrect');
+        }
+    };
+
+    const handleUserInfoSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // Validation de l'email (obligatoire)
+        if (!userEmail.trim()) {
+            setUserInfoError("L'adresse email est obligatoire");
+            return;
+        }
+
+        // Validation basique du format email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(userEmail)) {
+            setUserInfoError('Veuillez saisir une adresse email valide');
+            return;
+        }
+
+        try {
+            // Sauvegarder les informations utilisateur
+            await saveSelection([], userEmail, userInstagram);
+
+            // Fermer la modal
+            setShowUserInfoModal(false);
+            setUserInfoError(null);
+        } catch (error) {
+            console.error('Erreur lors de la sauvegarde des informations utilisateur:', error);
+            setUserInfoError('Une erreur est survenue lors de la sauvegarde de vos informations');
         }
     };
 
@@ -119,6 +167,49 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
 
                             <button type="submit" className="password-submit">
                                 Accéder aux photos
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            ) : showUserInfoModal ? (
+                <div className="password-modal-container">
+                    <div className="password-modal">
+                        <h2 className="modal-title">Vos informations</h2>
+                        <p className="modal-description">
+                            Pour accéder à cet événement, veuillez saisir vos informations
+                            ci-dessous.
+                        </p>
+
+                        <form onSubmit={handleUserInfoSubmit} className="password-form">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <div className="flex items-center">Adresse email *</div>
+                            </label>
+                            <input
+                                type="email"
+                                value={userEmail}
+                                onChange={(e) => setUserEmail(e.target.value)}
+                                placeholder="exemple@email.com"
+                                className="password-input"
+                                required
+                            />
+
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <div className="flex items-center">Instagram (optionnel)</div>
+                            </label>
+                            <input
+                                type="text"
+                                value={userInstagram}
+                                onChange={(e) => setUserInstagram(e.target.value)}
+                                placeholder="@instagram"
+                                className="password-input"
+                            />
+
+                            {userInfoError && <div className="password-error">{userInfoError}</div>}
+
+                            <button type="submit" className="password-submit">
+                                <div className="flex items-center justify-center">
+                                    Accéder aux photos
+                                </div>
                             </button>
                         </form>
                     </div>

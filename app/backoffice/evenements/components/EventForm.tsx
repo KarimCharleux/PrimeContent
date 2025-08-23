@@ -107,6 +107,7 @@ export default function EventForm({
                 ...prev,
                 prixParPhoto: undefined,
                 tarifDegressif: undefined,
+                demanderInfosUtilisateur: undefined,
                 telechargerActif: undefined,
             }));
         }
@@ -432,6 +433,48 @@ export default function EventForm({
                         {/* Options spécifiques pour le type "Sélection" */}
                         {formData.type === 'selection' && (
                             <>
+                                {/* Toggle pour demander les informations utilisateur */}
+                                <div className="mt-6 p-4 border border-pink-200 rounded-lg bg-white">
+                                    <h5 className="text-sm font-medium text-gray-900 mb-3">
+                                        Informations utilisateur
+                                    </h5>
+
+                                    <div className="flex items-center">
+                                        <div className="relative inline-block w-auto mr-2 align-middle select-none">
+                                            <input
+                                                type="checkbox"
+                                                id="toggle-demander-infos"
+                                                checked={formData.demanderInfosUtilisateur || false}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        demanderInfosUtilisateur: e.target.checked,
+                                                    })
+                                                }
+                                                className="toggle-checkbox"
+                                            />
+                                            <label
+                                                htmlFor="toggle-demander-infos"
+                                                className={`toggle-label toggle-pink`}
+                                            ></label>
+                                        </div>
+                                        <label
+                                            htmlFor="toggle-demander-infos"
+                                            className="text-sm text-gray-700 ml-2"
+                                        >
+                                            {formData.demanderInfosUtilisateur
+                                                ? "Demande d'informations activée"
+                                                : "Demande d'informations désactivée"}
+                                        </label>
+                                    </div>
+
+                                    <p className="mt-2 text-xs text-gray-500">
+                                        {formData.demanderInfosUtilisateur
+                                            ? "Les utilisateurs devront saisir leur email (obligatoire) et Instagram (optionnel) avant d'accéder à l'événement."
+                                            : "Les utilisateurs pourront accéder directement à l'événement sans saisir leurs informations."}
+                                    </p>
+                                </div>
+
                                 {/* Toggle pour activer le téléchargement */}
                                 <div className="mt-6 p-4 border border-pink-200 rounded-lg bg-white">
                                     <h5 className="text-sm font-medium text-gray-900 mb-3">
