@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 import gsap from '../../lib/gsap-config';
 import { getMediaUrl } from '../../utils/mediaUrl';
@@ -106,6 +106,8 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
     const [dailymotionThumbnails, setDailymotionThumbnails] = useState<{ [key: string]: string }>(
         {},
     );
+    // Ref pour tracker les vidéos en cours de récupération (éviter les doublons)
+    const fetchingVideosRef = useRef<Set<string>>(new Set());
     // État pour le chargement initial
     const [isLoading, setIsLoading] = useState(true);
 
@@ -168,30 +170,52 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
     };
 
     // Fonction pour récupérer la miniature Dailymotion à la volée
-    const fetchDailymotionThumbnail = async (videoId: string, videoUrl: string) => {
-        try {
-            const response = await fetch(
-                `/api/video-metadata?url=${encodeURIComponent(videoUrl)}&provider=dailymotion`,
-            );
-
-            if (!response.ok) {
-                throw new Error('Erreur API');
+    const fetchDailymotionThumbnail = useCallback(
+        async (videoId: string, videoUrl: string) => {
+            // Vérifier si on a déjà essayé ce videoId et échoué ou si on est en train de le récupérer
+            if (
+                dailymotionThumbnails[videoId] === 'error' ||
+                fetchingVideosRef.current.has(videoId)
+            ) {
+                return null;
             }
 
-            const data = await response.json();
+            // Marquer comme en cours de récupération
+            fetchingVideosRef.current.add(videoId);
 
-            if (data.success && data.metadata.thumbnail) {
+            try {
+                const response = await fetch(
+                    `/api/video-metadata?url=${encodeURIComponent(videoUrl)}&provider=dailymotion`,
+                );
+
+                if (!response.ok) {
+                    throw new Error('Erreur API');
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.metadata.thumbnail) {
+                    setDailymotionThumbnails((prev) => ({
+                        ...prev,
+                        [videoId]: data.metadata.thumbnail,
+                    }));
+                    return data.metadata.thumbnail;
+                }
+            } catch (error) {
+                console.error('Erreur récupération miniature Dailymotion:', error);
+                // Marquer comme erreur pour éviter de re-essayer
                 setDailymotionThumbnails((prev) => ({
                     ...prev,
-                    [videoId]: data.metadata.thumbnail,
+                    [videoId]: 'error',
                 }));
-                return data.metadata.thumbnail;
+            } finally {
+                // Retirer de la liste des récupérations en cours
+                fetchingVideosRef.current.delete(videoId);
             }
-        } catch (error) {
-            console.error('Erreur récupération miniature Dailymotion:', error);
-        }
-        return null;
-    };
+            return null;
+        },
+        [dailymotionThumbnails],
+    );
 
     // Fonction pour gérer la sélection d'un projet
     const toggleSelection = (source: string, e?: React.MouseEvent) => {
@@ -431,24 +455,8 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
         });
     }, [activeVideoIndex]);
 
-    // Récupérer automatiquement les miniatures Dailymotion manquantes
-    useEffect(() => {
-        const dailymotionProjectsWithoutThumbnail = projects.filter(
-            (project) =>
-                project.provider === 'dailymotion' &&
-                project.videoId &&
-                !project.thumbnail &&
-                !dailymotionThumbnails[project.videoId],
-        );
-
-        if (dailymotionProjectsWithoutThumbnail.length > 0) {
-            dailymotionProjectsWithoutThumbnail.forEach((project) => {
-                if (project.videoId) {
-                    fetchDailymotionThumbnail(project.videoId, project.source);
-                }
-            });
-        }
-    }, [projects, dailymotionThumbnails]);
+    // Suppression du useEffect automatique qui causait des boucles
+    // Les miniatures sont maintenant récupérées à la demande dans getProjectThumbnail
 
     // Générer les catégories ou utiliser les filtres personnalisés
     const categories = customFilters
@@ -490,50 +498,58 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
     };
 
     // Fonction pour récupérer la bonne miniature (vidéo externe ou fichier)
-    const getProjectThumbnail = (project: Project): string => {
-        // ✅ PRIORITÉ 1 : Si on a une miniature sauvegardée, l'utiliser
-        if (project.thumbnail) {
-            return getMediaUrl(project.thumbnail);
-        }
-
-        // ✅ SOLUTION : Utiliser miniature Dailymotion récupérée à la volée
-        if (project.provider === 'dailymotion' && project.videoId && !project.thumbnail) {
-            // Vérifier si on a déjà récupéré la miniature
-            const cachedThumbnail = dailymotionThumbnails[project.videoId];
-            if (cachedThumbnail) {
-                return cachedThumbnail;
+    const getProjectThumbnail = useCallback(
+        (project: Project): string => {
+            // ✅ PRIORITÉ 1 : Si on a une miniature sauvegardée, l'utiliser
+            if (project.thumbnail) {
+                return getMediaUrl(project.thumbnail);
             }
 
-            // Lancer la récupération à la volée (asynchrone)
-            fetchDailymotionThumbnail(project.videoId, project.source);
+            // ✅ SOLUTION : Utiliser miniature Dailymotion récupérée à la volée
+            if (project.provider === 'dailymotion' && project.videoId && !project.thumbnail) {
+                // Vérifier si on a déjà récupéré la miniature
+                const cachedThumbnail = dailymotionThumbnails[project.videoId];
+                if (cachedThumbnail && cachedThumbnail !== 'error') {
+                    return cachedThumbnail;
+                }
 
-            // En attendant, utiliser placeholder pour éviter les 404
-            return '/placeholder-photo.png';
-        }
+                // Si pas d'erreur précédente et pas en cours de récupération, lancer la récupération à la volée (asynchrone)
+                if (
+                    cachedThumbnail !== 'error' &&
+                    !fetchingVideosRef.current.has(project.videoId)
+                ) {
+                    fetchDailymotionThumbnail(project.videoId, project.source);
+                }
 
-        // ✅ PRIORITÉ 2 : Pour YouTube SEULEMENT (fonctionne bien)
-        if (project.provider === 'youtube' && project.videoId) {
-            const thumbnailUrl = getVideoThumbnail(project.videoId, 'youtube');
-            if (thumbnailUrl) return thumbnailUrl;
-        }
+                // En attendant, utiliser la miniature basique de Dailymotion
+                return `https://www.dailymotion.com/thumbnail/video/${project.videoId}`;
+            }
 
-        // Rétrocompatibilité : Si c'est YouTube et qu'on a un youtubeId
-        if (project.isYouTube && project.youtubeId) {
-            const thumbnailUrl = getVideoThumbnail(project.youtubeId, 'youtube');
-            if (thumbnailUrl) return thumbnailUrl;
-        }
+            // ✅ PRIORITÉ 2 : Pour YouTube SEULEMENT (fonctionne bien)
+            if (project.provider === 'youtube' && project.videoId) {
+                const thumbnailUrl = getVideoThumbnail(project.videoId, 'youtube');
+                if (thumbnailUrl) return thumbnailUrl;
+            }
 
-        // ✅ POUR DAILYMOTION : NE PAS générer de miniature (évite les 404)
-        // Utiliser directement la source ou placeholder
+            // Rétrocompatibilité : Si c'est YouTube et qu'on a un youtubeId
+            if (project.isYouTube && project.youtubeId) {
+                const thumbnailUrl = getVideoThumbnail(project.youtubeId, 'youtube');
+                if (thumbnailUrl) return thumbnailUrl;
+            }
 
-        // Si on a une source valide, l'utiliser
-        if (project.source) {
-            return getMediaUrl(project.source);
-        }
+            // ✅ POUR DAILYMOTION : NE PAS générer de miniature (évite les 404)
+            // Utiliser directement la source ou placeholder
 
-        // En dernier recours, retourner l'image placeholder
-        return '/placeholder-photo.png';
-    };
+            // Si on a une source valide, l'utiliser
+            if (project.source) {
+                return getMediaUrl(project.source);
+            }
+
+            // En dernier recours, utiliser une image data URL transparente
+            return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OTk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9ImNlbnRyYWwiPkF1Y3VuZSBpbWFnZTwvdGV4dD48L3N2Zz4=';
+        },
+        [dailymotionThumbnails, fetchDailymotionThumbnail],
+    );
 
     // Pour la compatibilité, utiliser displayedProjects comme filteredProjects
     const filteredProjects = displayedProjects;
