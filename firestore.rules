@@ -25,6 +25,16 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     
+    // Règle spécifique pour les messages de contact (écriture publique)
+    match /contacts/{contactId} {
+      // Lecture pour les admins seulement
+      allow read: if isAdmin();
+      // Écriture publique pour permettre l'envoi de messages
+      allow create: if true;
+      // Seuls les admins peuvent modifier ou supprimer
+      allow update, delete: if isAdmin();
+    }
+    
     // Règle générale pour toutes les autres collections
     match /{collection}/{document} {
       // Lecture publique pour toutes les collections

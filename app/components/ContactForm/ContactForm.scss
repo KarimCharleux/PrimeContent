@@ -497,3 +497,39 @@
     margin-left: 10px;
     transition: transform 0.3s ease;
 }
+
+// Amélioration des styles pour mobile
+@media (max-width: 768px) {
+    .submit-button {
+        // Améliorer la zone de toucher sur mobile
+        min-height: 48px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+
+        // Éviter le zoom sur double tap
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+    }
+
+    .form-input,
+    .form-textarea {
+        // Éviter le zoom automatique sur les inputs sur iOS
+        font-size: 16px;
+    }
+}
+
+// Animation du spinner
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}

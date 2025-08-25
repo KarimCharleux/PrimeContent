@@ -1,5 +1,5 @@
 'use client';
-import { collection, addDoc, Timestamp, doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 
@@ -81,51 +81,52 @@ export default function ContactForm() {
         fetchContactInfo();
     }, []);
 
-    // Fonctions de validation
+    // Fonctions de validation simplifiées
+    const validateName = (name: string, value: string): string | undefined => {
+        if (!value.trim()) return `Le ${name} est requis`;
+        if (value.trim().length < 2) return `Le ${name} doit contenir au moins 2 caractères`;
+        return undefined;
+    };
+
+    const validateEmail = (value: string): string | undefined => {
+        if (!value.trim()) return "L'email est requis";
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) return 'Veuillez entrer un email valide';
+        return undefined;
+    };
+
+    const validatePhone = (value: string): string | undefined => {
+        if (!value.trim()) return undefined; // Téléphone optionnel
+        const numbersOnly = value.replace(/\D/g, '');
+        if (numbersOnly.length !== 10) return 'Le numéro doit contenir 10 chiffres';
+        if (!numbersOnly.startsWith('0')) return 'Le numéro doit commencer par 0';
+        return undefined;
+    };
+
+    const validateMessage = (value: string): string | undefined => {
+        if (!value.trim()) return 'Le message est requis';
+        if (value.trim().length < 10) return 'Le message doit contenir au moins 10 caractères';
+        return undefined;
+    };
+
     const validateField = (name: string, value: string): string | undefined => {
         switch (name) {
             case 'nom':
-            case 'prenom':
-                if (!value.trim()) {
-                    return `Le ${name} est requis`;
-                }
-                if (value.trim().length < 2) {
-                    return `Le ${name} doit contenir au moins 2 caractères`;
-                }
-                break;
-
-            case 'email':
-                if (!value.trim()) {
-                    return "L'email est requis";
-                }
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(value)) {
-                    return 'Veuillez entrer un email valide';
-                }
-                break;
-
-            case 'telephone':
-                if (value.trim()) {
-                    const numbersOnly = value.replace(/\D/g, '');
-                    if (numbersOnly.length !== 10) {
-                        return 'Le numéro doit contenir 10 chiffres';
-                    }
-                    if (!numbersOnly.startsWith('0')) {
-                        return 'Le numéro doit commencer par 0';
-                    }
-                }
-                break;
-
-            case 'message':
-                if (!value.trim()) {
-                    return 'Le message est requis';
-                }
-                if (value.trim().length < 10) {
-                    return 'Le message doit contenir au moins 10 caractères';
-                }
-                break;
+            case 'prenom': {
+                return validateName(name, value);
+            }
+            case 'email': {
+                return validateEmail(value);
+            }
+            case 'telephone': {
+                return validatePhone(value);
+            }
+            case 'message': {
+                return validateMessage(value);
+            }
+            default:
+                return undefined;
         }
-        return undefined;
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -208,15 +209,22 @@ export default function ContactForm() {
                 message: 'Envoi en cours...',
             });
 
-            // Ajout du message à la collection "contacts" dans Firestore
-            await addDoc(collection(db, 'contacts'), {
-                ...formData,
-                status: 'nouveau',
-                createdAt: Timestamp.now(),
-                updatedAt: Timestamp.now(),
+            // Envoi du message via l'API dédiée
+            const response = await fetch('/api/contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
             });
 
-            // Réinitialiser le formulaire après soumission
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || "Erreur lors de l'envoi");
+            }
+
+            // Réinitialiser le formulaire après soumission réussie
             setFormData({
                 nom: '',
                 prenom: '',
@@ -232,15 +240,28 @@ export default function ContactForm() {
                 isSubmitting: false,
                 isSuccess: true,
                 isError: false,
-                message: 'Votre message a été envoyé avec succès. Nous vous contacterons bientôt.',
+                message:
+                    result.message ||
+                    'Votre message a été envoyé avec succès. Nous vous contacterons bientôt.',
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error("Erreur lors de l'envoi du message:", error);
+
+            // Gestion d'erreur améliorée pour mobile
+            let errorMessage = "Une erreur est survenue lors de l'envoi du message.";
+
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                errorMessage =
+                    'Problème de connexion. Vérifiez votre connexion internet et réessayez.';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
             setFormStatus({
                 isSubmitting: false,
                 isSuccess: false,
                 isError: true,
-                message: "Une erreur est survenue lors de l'envoi du message. Veuillez réessayer.",
+                message: errorMessage,
             });
         }
     };
@@ -408,7 +429,7 @@ export default function ContactForm() {
                                             </g>
                                         </svg>
                                     </span>
-                                    Prendre rendez-vous
+                                    {'Prendre rendez-vous'}
                                 </a>
                             </motion.div>
                         )}
@@ -743,21 +764,62 @@ export default function ContactForm() {
                                 type="submit"
                                 className="submit-button"
                                 disabled={formStatus.isSubmitting}
+                                onTouchStart={(e) => {
+                                    // Améliorer la réactivité sur mobile
+                                    e.currentTarget.style.transform = 'translateY(1px)';
+                                }}
+                                onTouchEnd={(e) => {
+                                    e.currentTarget.style.transform = '';
+                                }}
+                                onClick={(e) => {
+                                    // Empêcher les doubles clics accidentels
+                                    if (formStatus.isSubmitting) {
+                                        e.preventDefault();
+                                    }
+                                }}
                             >
-                                {formStatus.isSubmitting ? 'Envoi en cours...' : 'Envoyer'}
-                                <svg
-                                    className="arrow-icon ml-2 w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M14 5l7 7m0 0l-7 7m7-7H3"
-                                    />
-                                </svg>
+                                {formStatus.isSubmitting ? (
+                                    <>
+                                        <svg
+                                            className="animate-spin h-4 w-4 mr-2"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            ></path>
+                                        </svg>
+                                        Envoi en cours...
+                                    </>
+                                ) : (
+                                    <>
+                                        Envoyer
+                                        <svg
+                                            className="arrow-icon ml-2 w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M14 5l7 7m0 0l-7 7m7-7H3"
+                                            />
+                                        </svg>
+                                    </>
+                                )}
                             </button>
                         </motion.form>
                     </motion.div>
