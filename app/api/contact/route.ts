@@ -1,3 +1,4 @@
+import { Timestamp } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { adminFirestore } from '../../backoffice/lib/firebase';
@@ -80,8 +81,8 @@ export async function POST(request: NextRequest) {
             telephone: formData.telephone?.trim() || '',
             message: formData.message.trim(),
             status: 'nouveau',
-            createdAt: adminFirestore.Timestamp?.now() || new Date(),
-            updatedAt: adminFirestore.Timestamp?.now() || new Date(),
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
             userAgent: request.headers.get('user-agent') || '',
             ipAddress:
                 request.headers.get('x-forwarded-for') ||
