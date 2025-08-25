@@ -5,6 +5,10 @@ import {
     serverTimestamp,
     DocumentReference,
     DocumentData,
+    collection,
+    query,
+    where,
+    getDocs,
 } from 'firebase/firestore';
 import { useEffect, useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -66,6 +70,66 @@ export function useSelectionPersistence(eventId: string) {
         loadSelection();
     }, [userId, eventId]);
 
+    // Recherche une sélection existante par email
+    const findSelectionByEmail = useCallback(
+        async (email: string): Promise<SelectionData | null> => {
+            if (!eventId || !email.trim()) {
+                return null;
+            }
+
+            try {
+                const selectionsRef = collection(db, 'evenements', eventId, 'selections');
+                const q = query(selectionsRef, where('email', '==', email.toLowerCase().trim()));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    // Retourner la première sélection trouvée (il ne devrait y en avoir qu'une par email)
+                    const doc = querySnapshot.docs[0];
+                    const data = doc.data() as SelectionData;
+                    return {
+                        ...data,
+                        userId: doc.id, // L'ID du document est le userId
+                    };
+                }
+
+                return null;
+            } catch (error) {
+                console.error('Erreur lors de la recherche de sélection par email:', error);
+                return null;
+            }
+        },
+        [eventId],
+    );
+
+    // Charge une sélection existante par son userId
+    const loadSelectionByUserId = useCallback(
+        async (targetUserId: string): Promise<void> => {
+            if (!eventId || !targetUserId) return;
+
+            try {
+                setLoading(true);
+                const ref = doc(db, 'evenements', eventId, 'selections', targetUserId);
+                const snap = await getDoc(ref);
+
+                if (snap.exists()) {
+                    const selectionData = snap.data() as SelectionData;
+
+                    // Mettre à jour le userId local pour correspondre à la sélection trouvée
+                    localStorage.setItem('selection_userId', targetUserId);
+                    setUserId(targetUserId);
+                    setSelection(selectionData);
+                } else {
+                    console.warn('Sélection non trouvée pour userId:', targetUserId);
+                }
+            } catch (error) {
+                console.error('Erreur lors du chargement de la sélection par userId:', error);
+            } finally {
+                setLoading(false);
+            }
+        },
+        [eventId],
+    );
+
     // Met à jour la sélection dans Firestore
     const saveSelection = useCallback(
         async (medias: string[], email?: string, instagram?: string) => {
@@ -81,7 +145,8 @@ export function useSelectionPersistence(eventId: string) {
             );
             const deviceInfo = {
                 userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
-                platform: typeof navigator !== 'undefined' ? navigator.platform : '',
+                // Note: navigator.platform est déprécié, utilisation de userAgent à la place
+                platform: typeof navigator !== 'undefined' ? navigator.userAgent : '',
                 language: typeof navigator !== 'undefined' ? navigator.language : '',
             };
             const data: any = {
@@ -112,5 +177,7 @@ export function useSelectionPersistence(eventId: string) {
         selection,
         loading,
         saveSelection,
+        findSelectionByEmail,
+        loadSelectionByUserId,
     };
 }

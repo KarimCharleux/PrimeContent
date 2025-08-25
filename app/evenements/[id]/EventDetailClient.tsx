@@ -26,9 +26,17 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
     const [userEmail, setUserEmail] = useState('');
     const [userInstagram, setUserInstagram] = useState('');
     const [userInfoError, setUserInfoError] = useState<string | null>(null);
+    const [foundSelection, setFoundSelection] = useState<any>(null);
+    const [searchingSelection, setSearchingSelection] = useState(false);
+    const [showFoundSelectionOption, setShowFoundSelectionOption] = useState(false);
+    const [waitingToSearch, setWaitingToSearch] = useState(false);
+
+    // Validation de l'email en temps réel
+    const isEmailValid = userEmail.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail);
 
     // Hook pour la persistance des sélections (utilisé pour sauvegarder email/Instagram)
-    const { saveSelection } = useSelectionPersistence(eventId);
+    const { saveSelection, findSelectionByEmail, loadSelectionByUserId } =
+        useSelectionPersistence(eventId);
 
     useEffect(() => {
         const fetchEvenement = async () => {
@@ -70,6 +78,74 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
         fetchEvenement();
     }, [eventId]);
 
+    // Recherche automatique d'une sélection existante lors de la saisie de l'email
+    useEffect(() => {
+        let timeoutId: NodeJS.Timeout;
+
+        const searchExistingSelection = async () => {
+            if (!userEmail.trim() || userEmail.length < 5) {
+                setFoundSelection(null);
+                setShowFoundSelectionOption(false);
+                setWaitingToSearch(false);
+                return;
+            }
+
+            // Validation basique du format email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(userEmail)) {
+                setFoundSelection(null);
+                setShowFoundSelectionOption(false);
+                setWaitingToSearch(false);
+                return;
+            }
+
+            setSearchingSelection(true);
+            setWaitingToSearch(false); // On n'attend plus, on cherche !
+            console.log('🔍 Début de la recherche pour:', userEmail);
+            try {
+                const existingSelection = await findSelectionByEmail(userEmail);
+                if (existingSelection) {
+                    console.log('✅ Sélection trouvée:', existingSelection);
+                    setFoundSelection(existingSelection);
+                    setShowFoundSelectionOption(true);
+                    setUserInstagram(existingSelection.instagram || '');
+                } else {
+                    console.log('❌ Aucune sélection trouvée');
+                    setFoundSelection(null);
+                    setShowFoundSelectionOption(false);
+                }
+            } catch (error) {
+                console.error('Erreur lors de la recherche de sélection:', error);
+            } finally {
+                setSearchingSelection(false);
+                console.log('🔍 Fin de la recherche');
+            }
+        };
+
+        // Si l'email est valide, on indique qu'on va bientôt chercher
+        if (
+            userEmail.trim() &&
+            userEmail.length >= 5 &&
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail)
+        ) {
+            setWaitingToSearch(true);
+            console.log('⏳ En attente avant recherche pour:', userEmail);
+        } else {
+            setWaitingToSearch(false);
+        }
+
+        // Débounce pour éviter trop de requêtes
+        timeoutId = setTimeout(searchExistingSelection, 800);
+
+        return () => {
+            clearTimeout(timeoutId);
+            // Si le timeout est annulé, on n'attend plus
+            if (timeoutId) {
+                setWaitingToSearch(false);
+            }
+        };
+    }, [userEmail, findSelectionByEmail]);
+
     const handlePasswordSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -86,6 +162,31 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
         } else {
             setPasswordError('Mot de passe incorrect');
         }
+    };
+
+    // Fonction pour récupérer la sélection existante
+    const handleLoadExistingSelection = async () => {
+        if (!foundSelection) return;
+
+        try {
+            setUserInfoError(null);
+            await loadSelectionByUserId(foundSelection.userId);
+
+            // Fermer la modal après avoir chargé la sélection
+            setShowUserInfoModal(false);
+            setShowFoundSelectionOption(false);
+        } catch (error) {
+            console.error('Erreur lors du chargement de la sélection existante:', error);
+            setUserInfoError('Erreur lors du chargement de votre sélection existante');
+        }
+    };
+
+    // Fonction pour continuer avec une nouvelle sélection
+    const handleContinueWithNewSelection = () => {
+        setShowFoundSelectionOption(false);
+        setFoundSelection(null);
+        setWaitingToSearch(false);
+        setSearchingSelection(false);
     };
 
     const handleUserInfoSubmit = async (e: React.FormEvent) => {
@@ -105,8 +206,8 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
         }
 
         try {
-            // Sauvegarder les informations utilisateur
-            await saveSelection([], userEmail, userInstagram);
+            // Sauvegarder les informations utilisateur (email en minuscules pour cohérence)
+            await saveSelection([], userEmail.toLowerCase().trim(), userInstagram);
 
             // Fermer la modal
             setShowUserInfoModal(false);
@@ -143,9 +244,10 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
         );
     }
 
-    return (
-        <>
-            {showPasswordModal ? (
+    // Fonction pour rendre le contenu approprié
+    const renderContent = () => {
+        if (showPasswordModal) {
+            return (
                 <div className="password-modal-container">
                     <div className="password-modal">
                         <h2 className="modal-title">Événement protégé</h2>
@@ -171,7 +273,11 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
                         </form>
                     </div>
                 </div>
-            ) : showUserInfoModal ? (
+            );
+        }
+
+        if (showUserInfoModal) {
+            return (
                 <div className="password-modal-container">
                     <div className="password-modal">
                         <h2 className="modal-title">Vos informations</h2>
@@ -181,10 +287,26 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
                         </p>
 
                         <form onSubmit={handleUserInfoSubmit} className="password-form">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                <div className="flex items-center">Adresse email *</div>
+                            <label
+                                htmlFor="user-email"
+                                className="block text-sm font-medium text-gray-700 mb-2"
+                            >
+                                <div className="flex items-center">
+                                    Adresse email *
+                                    {waitingToSearch && (
+                                        <div className="ml-2 text-xs text-orange-600">
+                                            Chargement...
+                                        </div>
+                                    )}
+                                    {searchingSelection && (
+                                        <div className="ml-2 text-xs text-blue-600">
+                                            Recherche en cours...
+                                        </div>
+                                    )}
+                                </div>
                             </label>
                             <input
+                                id="user-email"
                                 type="email"
                                 value={userEmail}
                                 onChange={(e) => setUserEmail(e.target.value)}
@@ -193,10 +315,45 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
                                 required
                             />
 
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            {/* Affichage de la sélection trouvée */}
+                            {showFoundSelectionOption && foundSelection && (
+                                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div className="text-sm text-blue-800 mb-2">
+                                        <strong>Sélection existante trouvée !</strong>
+                                    </div>
+                                    <div className="text-xs text-blue-700 mb-3">
+                                        Vous avez déjà {foundSelection.medias?.length || 0} média(s)
+                                        sélectionné(s) pour cet événement.
+                                        {foundSelection.instagram &&
+                                            ` • Instagram: ${foundSelection.instagram}`}
+                                    </div>
+                                    <div className="flex space-x-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleLoadExistingSelection}
+                                            className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                                        >
+                                            Récupérer ma sélection
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleContinueWithNewSelection}
+                                            className="flex-1 px-3 py-2 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
+                                        >
+                                            Nouvelle sélection
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            <label
+                                htmlFor="user-instagram"
+                                className="block text-sm font-medium text-gray-700 mb-2"
+                            >
                                 <div className="flex items-center">Instagram (optionnel)</div>
                             </label>
                             <input
+                                id="user-instagram"
                                 type="text"
                                 value={userInstagram}
                                 onChange={(e) => setUserInstagram(e.target.value)}
@@ -206,17 +363,89 @@ export default function EventDetailClient({ eventId }: EventDetailClientProps) {
 
                             {userInfoError && <div className="password-error">{userInfoError}</div>}
 
-                            <button type="submit" className="password-submit">
+                            {/* Debug: États actuels */}
+                            {console.log('🔄 États bouton:', {
+                                userEmail: userEmail.trim(),
+                                isEmailValid,
+                                waitingToSearch,
+                                searchingSelection,
+                                showFoundSelectionOption,
+                                disabled:
+                                    !isEmailValid ||
+                                    waitingToSearch ||
+                                    searchingSelection ||
+                                    showFoundSelectionOption,
+                            })}
+
+                            <button
+                                type="submit"
+                                className={`password-submit ${!isEmailValid || waitingToSearch || searchingSelection || showFoundSelectionOption ? 'disabled-button' : ''}`}
+                                disabled={
+                                    !isEmailValid ||
+                                    waitingToSearch ||
+                                    searchingSelection ||
+                                    showFoundSelectionOption
+                                }
+                                style={{
+                                    backgroundColor:
+                                        !isEmailValid ||
+                                        waitingToSearch ||
+                                        searchingSelection ||
+                                        showFoundSelectionOption
+                                            ? '#ccc'
+                                            : '#000',
+                                    color:
+                                        !isEmailValid ||
+                                        waitingToSearch ||
+                                        searchingSelection ||
+                                        showFoundSelectionOption
+                                            ? '#666'
+                                            : 'white',
+                                    cursor:
+                                        !isEmailValid ||
+                                        waitingToSearch ||
+                                        searchingSelection ||
+                                        showFoundSelectionOption
+                                            ? 'not-allowed'
+                                            : 'pointer',
+                                    opacity:
+                                        !isEmailValid ||
+                                        waitingToSearch ||
+                                        searchingSelection ||
+                                        showFoundSelectionOption
+                                            ? 0.7
+                                            : 1,
+                                }}
+                            >
                                 <div className="flex items-center justify-center">
-                                    Accéder aux photos
+                                    {(() => {
+                                        if (!userEmail.trim()) {
+                                            return 'Saisissez votre email';
+                                        }
+                                        if (!isEmailValid) {
+                                            return 'Email invalide';
+                                        }
+                                        if (waitingToSearch) {
+                                            return 'Préparation recherche...';
+                                        }
+                                        if (searchingSelection) {
+                                            return 'Recherche en cours...';
+                                        }
+                                        if (showFoundSelectionOption) {
+                                            return 'Choisissez une option ci-dessus';
+                                        }
+                                        return 'Accéder aux photos';
+                                    })()}
                                 </div>
                             </button>
                         </form>
                     </div>
                 </div>
-            ) : (
-                <EventPage evenement={evenement} key={`event-${evenement.id}`} />
-            )}
-        </>
-    );
+            );
+        }
+
+        return <EventPage evenement={evenement} key={`event-${evenement.id}`} />;
+    };
+
+    return <>{renderContent()}</>;
 }

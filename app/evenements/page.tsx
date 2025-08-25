@@ -178,7 +178,7 @@ export default function EvenementsPage() {
                 </div>
             </section>
 
-            <Footer hideCTA={true} />
+            <Footer hideCTA={false} />
         </main>
     );
 }
