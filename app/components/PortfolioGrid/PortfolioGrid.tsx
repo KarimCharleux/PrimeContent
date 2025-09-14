@@ -61,7 +61,7 @@ interface PortfolioGridProps {
     // Nouvelles options pour l'affichage avec images (page client)
     filterWithImages?: boolean;
     clientData?: { [key: string]: ClientData };
-    activeClientType?: 'marques' | 'celebrites';
+    activeClientType?: 'marques' | 'talents';
     // Options pour la pagination
     enablePagination?: boolean;
     itemsPerPageDesktop?: number;

@@ -323,3 +323,71 @@ $header-height: 80px;
         }
     }
 }
+
+// Toggle moderne (copié depuis clients.scss)
+.client-toggle {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+    margin-top: 4rem;
+}
+
+.toggle-container {
+    position: relative;
+    display: flex;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    padding: 4px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-btn {
+    position: relative;
+    z-index: 2;
+    padding: 12px 24px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 46px;
+    min-width: 120px;
+
+    &.active {
+        color: #000;
+    }
+
+    &:hover:not(.active) {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    @media (max-width: 480px) {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+        min-width: 100px;
+    }
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    height: calc(100% - 8px);
+    background: linear-gradient(45deg, #fff, #f0f0f0);
+    border-radius: 42px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+
+    &.right {
+        transform: translateX(100%);
+    }
+
+    &.left {
+        transform: translateX(0);
+    }
+}

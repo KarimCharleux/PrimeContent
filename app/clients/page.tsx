@@ -49,8 +49,8 @@ function ClientPageContent() {
     const urlFilter = searchParams?.get('filter') || '';
 
     // États
-    const [activeType, setActiveType] = useState<'marques' | 'celebrites'>(
-        urlType as 'marques' | 'celebrites',
+    const [activeType, setActiveType] = useState<'marques' | 'talents'>(
+        urlType as 'marques' | 'talents',
     );
     const [brands, setBrands] = useState<Brand[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
@@ -221,13 +221,13 @@ function ClientPageContent() {
                 const clientProjects: Project[] = [];
                 for (const client of sortedClients) {
                     const clientName = client.name.toLowerCase().replace(/\s+/g, '-');
-                    const mediaFiles = await loadClientMedia('celebrites', clientName);
+                    const mediaFiles = await loadClientMedia('talents', clientName);
 
                     // Convertir chaque média en projet
                     mediaFiles.forEach((media, index) => {
                         clientProjects.push({
                             title: client.name,
-                            category: 'Célébrité',
+                            category: 'Talent',
                             source: `${media.path}/${media.name}`,
                             isVideo: media.type === 'video',
                             format: media.type === 'video' ? 'paysage' : 'portrait',
@@ -243,7 +243,7 @@ function ClientPageContent() {
                         videos.forEach((video) => {
                             clientProjects.push({
                                 title: `${client.name} - ${video.title}`,
-                                category: 'Célébrité',
+                                category: 'Talent',
                                 source: video.source,
                                 isVideo: true,
                                 format: video.format || 'paysage', // ✅ Utiliser le format de la base de données
@@ -300,7 +300,7 @@ function ClientPageContent() {
 
     // Vérifier si un filtre existe pour un type donné
     const isFilterValidForType = useCallback(
-        (filter: string, type: 'marques' | 'celebrites'): boolean => {
+        (filter: string, type: 'marques' | 'talents'): boolean => {
             if (!filter) return false;
 
             const currentProjects = projects.filter((project) =>
@@ -347,7 +347,7 @@ function ClientPageContent() {
     }, [loading, projects, urlFilter, activeType, isFilterValidForType, router]);
 
     // Gérer le changement de type avec URL
-    const handleTypeChange = (type: 'marques' | 'celebrites') => {
+    const handleTypeChange = (type: 'marques' | 'talents') => {
         setActiveType(type);
 
         // Mettre à jour l'URL
@@ -409,7 +409,7 @@ function ClientPageContent() {
 
     // Fonction pour obtenir une image de fond aléatoire selon le filtre
     const getRandomBackgroundImage = useCallback(
-        (filter: string, type: 'marques' | 'celebrites'): string => {
+        (filter: string, type: 'marques' | 'talents'): string => {
             if (projects.length === 0) return '';
 
             const cacheKey = `${type}-${filter}`;
@@ -602,7 +602,7 @@ function ClientPageContent() {
                         </h1>
                         <p ref={descriptionRef} className="client-description">
                             Découvrez les créations réalisées pour les marques prestigieuses et
-                            célébrités qui nous ont fait confiance pour leurs projets de contenu
+                            talents qui nous ont fait confiance pour leurs projets de contenu
                             visuel.
                         </p>
 
@@ -616,13 +616,13 @@ function ClientPageContent() {
                                     Marques
                                 </button>
                                 <button
-                                    className={`toggle-btn ${activeType === 'celebrites' ? 'active' : ''}`}
-                                    onClick={() => handleTypeChange('celebrites')}
+                                    className={`toggle-btn ${activeType === 'talents' ? 'active' : ''}`}
+                                    onClick={() => handleTypeChange('talents')}
                                 >
-                                    Célébrités
+                                    Talents
                                 </button>
                                 <div
-                                    className={`toggle-slider ${activeType === 'celebrites' ? 'right' : 'left'}`}
+                                    className={`toggle-slider ${activeType === 'talents' ? 'right' : 'left'}`}
                                 ></div>
                             </div>
                         </div>
@@ -676,7 +676,7 @@ function ClientPageContent() {
                                 </h3>
                                 <p className="text-gray-500">
                                     Aucun média n&apos;a encore été ajouté pour les{' '}
-                                    {activeType === 'marques' ? 'marques' : 'célébrités'}.
+                                    {activeType === 'marques' ? 'marques' : 'talents'}.
                                 </p>
                             </div>
                         </div>

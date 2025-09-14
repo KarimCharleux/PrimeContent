@@ -112,6 +112,9 @@ export default function Page() {
     const [loading, setLoading] = useState(true);
     const [reviews, setReviews] = useState<Review[]>([]);
 
+    // État pour gérer le switch entre marques et talents
+    const [showBrands, setShowBrands] = useState(true);
+
     // Calculer la division des marques en deux groupes
     const halfBrandsCount = Math.ceil(brands.length / 2);
     const firstHalfBrands = brands.slice(0, halfBrandsCount);
@@ -678,182 +681,10 @@ export default function Page() {
                 </div>
             </section>
 
-            {/* Section Ils nous ont fait confiance */}
-            <section className="py-16 bg-gradient-to-b from-gray-900 to-black trust-section">
-                <div className="mx-auto px-7">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
-                            ILS NOUS ONT FAIT CONFIANCE
-                        </h2>
-                    </div>
-
-                    {loading ? (
-                        <div className="flex justify-center items-center py-16">
-                            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col 2xl:flex-row 2xl:items-center 2xl:justify-center gap-4 2xl:gap-6">
-                            {/* Première moitié des marques à gauche - visible uniquement sur desktop */}
-                            {firstHalfBrands.length > 0 && (
-                                <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
-                                    {firstHalfBrands.map((brand, index) => (
-                                        <div
-                                            key={brand.id || brand.name}
-                                            className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`}
-                                            ref={(el) => addBrandRef(el, index)}
-                                        >
-                                            <BrandLogo
-                                                name={brand.name}
-                                                imageSrc={brand.imageSrc}
-                                            />
-                                        </div>
-                                    ))}
-                                    {/* Ajouter des cellules vides si nécessaire pour maintenir la grille */}
-                                    {firstHalfBrands.length % 2 !== 0 && (
-                                        <div className="aspect-square"></div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Première moitié des marques en haut - visible uniquement sur mobile */}
-                            {firstHalfBrands.length > 0 && (
-                                <div className="flex flex-wrap justify-center gap-4 2xl:hidden max-sm:grid max-sm:grid-cols-4 max-sm:gap-2">
-                                    {firstHalfBrands.map((brand, index) => (
-                                        <div
-                                            key={brand.id || brand.name}
-                                            className={`aspect-square w-1/7 max-lg:w-[15%] max-md:w-1/5 max-sm:w-full ${!shouldStartAnimations ? 'opacity-0' : ''}`}
-                                            ref={(el) => addMobileBrandRef(el, index)}
-                                        >
-                                            <BrandLogo
-                                                name={brand.name}
-                                                imageSrc={brand.imageSrc}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* Profils des clients au centre sur desktop */}
-                            <div className="hidden 2xl:flex flex-col items-center w-full 2xl:max-w-4xl">
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 w-full mb-4 md:mb-6">
-                                    {clients.slice(0, 4).map((client, index) => (
-                                        <div
-                                            key={client.id || `${client.name}-${index}`}
-                                            ref={(el) => addClientRef(el, index)}
-                                            className={`h-[250px] md:h-[300px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
-                                        >
-                                            <ClientProfile
-                                                name={client.name}
-                                                domain={client.domain}
-                                                imageSrc={client.imageSrc}
-                                                imageBackground={client.imageBackground}
-                                                className="h-full"
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="grid grid-cols-4 gap-4 md:gap-6">
-                                    {clients.slice(4).map((client, index) => (
-                                        <div
-                                            key={client.id || `${client.name}-${index + 4}`}
-                                            ref={(el) => addClientRef(el, index + 4)}
-                                            className={`h-[250px] md:h-[300px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
-                                        >
-                                            <ClientProfile
-                                                name={client.name}
-                                                domain={client.domain}
-                                                imageSrc={client.imageSrc}
-                                                imageBackground={client.imageBackground}
-                                                className="h-full"
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Profils des clients au centre sur mobile */}
-                            <div className="flex flex-wrap justify-center gap-4 2xl:hidden max-sm:grid max-sm:grid-cols-4 max-sm:gap-4">
-                                {clients.map((client, index) => (
-                                    <div
-                                        key={client.id || `${client.name}-${index}`}
-                                        className={`h-[180px] md:h-[300px] max-sm:h-auto max-sm:w-full ${!shouldStartAnimations ? 'opacity-0' : ''}`}
-                                        ref={(el) => addClientRef(el, index + clients.length)}
-                                    >
-                                        <ClientProfile
-                                            name={client.name}
-                                            domain={client.domain}
-                                            imageSrc={client.imageSrc}
-                                            imageBackground={client.imageBackground}
-                                            className="h-full max-sm:h-auto"
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Deuxième moitié des marques à droite - visible uniquement sur desktop */}
-                            {secondHalfBrands.length > 0 && (
-                                <div className="hidden 2xl:grid grid-cols-2 gap-6 w-[350px]">
-                                    {secondHalfBrands.map((brand, index) => (
-                                        <div
-                                            key={brand.id || brand.name}
-                                            className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`}
-                                            ref={(el) =>
-                                                addBrandRef(el, index + firstHalfBrands.length)
-                                            }
-                                        >
-                                            <BrandLogo
-                                                name={brand.name}
-                                                imageSrc={brand.imageSrc}
-                                            />
-                                        </div>
-                                    ))}
-                                    {/* Ajouter des cellules vides si nécessaire pour maintenir la grille */}
-                                    {secondHalfBrands.length % 2 !== 0 && (
-                                        <div className="aspect-square"></div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Deuxième moitié des marques en bas - visible uniquement sur mobile */}
-                            {secondHalfBrands.length > 0 && (
-                                <div className="flex flex-wrap justify-center gap-4 2xl:hidden max-sm:grid max-sm:grid-cols-4 max-sm:gap-2">
-                                    {secondHalfBrands.map((brand, index) => (
-                                        <div
-                                            key={brand.id || brand.name}
-                                            className={`aspect-square w-1/7 max-lg:w-[15%] max-md:w-1/5 max-sm:w-full ${!shouldStartAnimations ? 'opacity-0' : ''}`}
-                                            ref={(el) =>
-                                                addMobileBrandRef(
-                                                    el,
-                                                    index + firstHalfBrands.length,
-                                                )
-                                            }
-                                        >
-                                            <BrandLogo
-                                                name={brand.name}
-                                                imageSrc={brand.imageSrc}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    <div className="mt-16 mx-auto w-fit">
-                        <PrimaryButton
-                            text="Explorez plus"
-                            href="/clients"
-                            animateOnMount={true}
-                            delay={0.5}
-                        />
-                    </div>
-                </div>
-            </section>
-
             {keyFigures.length > 0 && (
                 <>
                     {/* Section PRIMECONTENT EN CHIFFRES */}
-                    <section className="py-16 max-sm:py-8 bg-black stats-section">
+                    <section className="py-16 max-sm:py-8 bg-gradient-to-b from-gray-900 to-black stats-section">
                         <div className="mx-auto px-4">
                             <div className="text-center mb-16 max-sm:mb-8">
                                 <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
@@ -929,8 +760,161 @@ export default function Page() {
                 </>
             )}
 
+            {/* Section Ils nous ont fait confiance */}
+            <section className="py-16 bg-gradient-to-b from-black to-gray-900 trust-section">
+                <div className="mx-auto px-7">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
+                            ILS NOUS ONT FAIT CONFIANCE
+                        </h2>
+
+                        {/* Switch entre Marques et Talents */}
+                        <div className="client-toggle">
+                            <div className="toggle-container">
+                                <button
+                                    className={`toggle-btn ${showBrands ? 'active' : ''}`}
+                                    onClick={() => setShowBrands(true)}
+                                >
+                                    Marques
+                                </button>
+                                <button
+                                    className={`toggle-btn ${!showBrands ? 'active' : ''}`}
+                                    onClick={() => setShowBrands(false)}
+                                >
+                                    Talents
+                                </button>
+                                <div
+                                    className={`toggle-slider ${!showBrands ? 'right' : 'left'}`}
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {loading ? (
+                        <div className="flex justify-center items-center py-16">
+                            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Affichage des marques */}
+                            {showBrands ? (
+                                <div className="w-full">
+                                    {/* Logos des marques avec grille optimisée */}
+                                    <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 md:gap-6 w-full max-w-6xl mx-auto">
+                                        {brands.map((brand, index) => (
+                                            <div
+                                                key={brand.id || brand.name}
+                                                className={`aspect-square ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                                ref={(el) => addBrandRef(el, index)}
+                                            >
+                                                <BrandLogo
+                                                    name={brand.name}
+                                                    imageSrc={brand.imageSrc}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                /* Affichage des talents (clients) */
+                                <div className="w-full">
+                                    {/* Profils des talents au centre sur desktop */}
+                                    <div className="hidden 2xl:flex flex-col items-center w-full 2xl:max-w-6xl mx-auto">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 w-full mb-4 md:mb-6">
+                                            {clients.slice(0, 4).map((client, index) => (
+                                                <div
+                                                    key={client.id || `${client.name}-${index}`}
+                                                    ref={(el) => addClientRef(el, index)}
+                                                    className={`h-[250px] md:h-[300px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                                >
+                                                    <ClientProfile
+                                                        name={client.name}
+                                                        domain={client.domain}
+                                                        imageSrc={client.imageSrc}
+                                                        imageBackground={client.imageBackground}
+                                                        className="h-full"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-4 md:gap-6">
+                                            {clients.slice(4).map((client, index) => (
+                                                <div
+                                                    key={client.id || `${client.name}-${index + 4}`}
+                                                    ref={(el) => addClientRef(el, index + 4)}
+                                                    className={`h-[250px] md:h-[300px] ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                                >
+                                                    <ClientProfile
+                                                        name={client.name}
+                                                        domain={client.domain}
+                                                        imageSrc={client.imageSrc}
+                                                        imageBackground={client.imageBackground}
+                                                        className="h-full"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Profils des talents au centre sur mobile */}
+                                    <div className="flex flex-wrap justify-center gap-4 2xl:hidden max-sm:grid max-sm:grid-cols-4 max-sm:gap-4">
+                                        {clients.map((client, index) => (
+                                            <div
+                                                key={client.id || `${client.name}-${index}`}
+                                                className={`h-[180px] md:h-[300px] max-sm:h-auto max-sm:w-full ${!shouldStartAnimations ? 'opacity-0' : ''}`}
+                                                ref={(el) =>
+                                                    addClientRef(el, index + clients.length)
+                                                }
+                                            >
+                                                <ClientProfile
+                                                    name={client.name}
+                                                    domain={client.domain}
+                                                    imageSrc={client.imageSrc}
+                                                    imageBackground={client.imageBackground}
+                                                    className="h-full max-sm:h-auto"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    <div className="mt-16 mx-auto w-fit">
+                        <PrimaryButton
+                            text="Explorez plus"
+                            href="/clients"
+                            animateOnMount={true}
+                            delay={0.5}
+                        />
+                    </div>
+                </div>
+            </section>
+
+            {/* Section NOS DERNIÈRES RÉALISATIONS */}
+            <section className="py-16 bg-gradient-to-b from-black to-gray-900 latest-projects-section">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
+                            NOS DERNIÈRES RÉALISATIONS
+                        </h2>
+                    </div>
+                    {loading ? (
+                        <div className="flex justify-center items-center py-16">
+                            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
+                        </div>
+                    ) : (
+                        <PortfolioGrid
+                            projects={projects.filter((p) => p.isLatest)}
+                            showFilter={false}
+                        />
+                    )}
+                </div>
+            </section>
+
             {/* Section NOS RÉALISATIONS */}
-            <section className="py-16 max-sm:py-8 bg-gradient-to-b from-black via-gray-900 to-black">
+            <section className="py-16 max-sm:py-8 bg-gradient-to-b from-gray-900 via-black to-gray-900">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="text-center mb-16 max-sm:mb-8">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
@@ -957,27 +941,6 @@ export default function Page() {
                                 />
                             </div>
                         </>
-                    )}
-                </div>
-            </section>
-
-            {/* Section NOS DERNIÈRES RÉALISATIONS */}
-            <section className="py-16 bg-black latest-projects-section">
-                <div className="max-w-7xl mx-auto px-4">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
-                            NOS DERNIÈRES RÉALISATIONS
-                        </h2>
-                    </div>
-                    {loading ? (
-                        <div className="flex justify-center items-center py-16">
-                            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
-                        </div>
-                    ) : (
-                        <PortfolioGrid
-                            projects={projects.filter((p) => p.isLatest)}
-                            showFilter={false}
-                        />
                     )}
                 </div>
             </section>
