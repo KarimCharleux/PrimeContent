@@ -82,7 +82,7 @@ export default function VideosPage() {
                     return {
                         id: doc.id,
                         title: data.title || data.clientName || 'Vidéo célébrité',
-                        category: 'Célébrités',
+                        category: 'Talents',
                         source,
                         provider,
                         videoId,

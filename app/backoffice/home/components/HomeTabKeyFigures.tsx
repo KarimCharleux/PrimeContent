@@ -566,7 +566,7 @@ export default function HomeTabKeyFigures() {
                                         <button
                                             type="submit"
                                             disabled={isSubmitting}
-                                            className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors disabled:opacity-50"
+                                            className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors disabled:opacity-50 mt-6"
                                         >
                                             {isSubmitting ? (
                                                 <Spinner small white />

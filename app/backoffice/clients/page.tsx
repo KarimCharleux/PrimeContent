@@ -12,9 +12,9 @@ export default function ClientsPage() {
             <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
                 <div className="px-4 py-6 sm:px-0">
                     <div className="border-b border-gray-200 mb-6">
-                        <div className="flex justify-between items-center">
+                        <div className="flex justify-between items-center mb-6">
                             <h1 className="text-2xl font-bold text-gray-900">
-                                Gestion des Clients & Marques
+                                Gestion des Marques & Talents
                             </h1>
                             <div className="flex space-x-3">
                                 <button
@@ -37,7 +37,7 @@ export default function ClientsPage() {
                                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                     } transition-colors`}
                                 >
-                                    Célébrités
+                                    Talents
                                 </button>
                             </div>
                         </div>

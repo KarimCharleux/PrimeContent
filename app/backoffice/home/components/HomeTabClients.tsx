@@ -1028,7 +1028,7 @@ export default function HomeTabClients() {
                                 <button
                                     type="submit"
                                     disabled={savingBrand}
-                                    className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors disabled:opacity-50"
+                                    className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors disabled:opacity-50 mt-6"
                                 >
                                     {savingBrand ? (
                                         <Spinner small white />
@@ -1296,7 +1296,7 @@ export default function HomeTabClients() {
                                 <button
                                     type="submit"
                                     disabled={savingClient}
-                                    className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors disabled:opacity-50"
+                                    className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors disabled:opacity-50 mt-6"
                                 >
                                     {savingClient ? (
                                         <Spinner small white />

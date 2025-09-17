@@ -378,7 +378,7 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
 
     // Fonction pour gérer la navigation vers la gestion des médias
     const handleManageMedia = (type: 'brand' | 'client', item: Brand | Client) => {
-        const clientType = type === 'brand' ? 'marques' : 'celebrites';
+        const clientType = type === 'brand' ? 'marques' : 'talents';
         const itemName = item.name.toLowerCase().replace(/\s+/g, '-');
         router.push(`/backoffice/clients/media?type=${clientType}&name=${itemName}&id=${item.id}`);
     };
@@ -478,7 +478,7 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
 
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('path', 'client/celebrites');
+            formData.append('path', 'client/talents');
 
             const response = await fetch('/api/upload', {
                 method: 'POST',
@@ -531,7 +531,7 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
 
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('path', 'client/celebrites');
+            formData.append('path', 'client/talents');
 
             const response = await fetch('/api/upload', {
                 method: 'POST',
@@ -976,7 +976,7 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                                     <button
                                         type="submit"
                                         disabled={savingBrand}
-                                        className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors disabled:opacity-50"
+                                        className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors disabled:opacity-50 mt-6"
                                     >
                                         {savingBrand ? (
                                             <Spinner small white />
@@ -1256,7 +1256,7 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                                     <button
                                         type="submit"
                                         disabled={savingClient}
-                                        className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors disabled:opacity-50"
+                                        className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors disabled:opacity-50 mt-6"
                                     >
                                         {savingClient ? (
                                             <Spinner small white />
@@ -1273,7 +1273,7 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                         <div className="mt-8">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-lg font-medium text-gray-900">
-                                    Célébrités existantes ({clients.length})
+                                    Talents existantes ({clients.length})
                                 </h3>
                                 <button
                                     onClick={() => {
