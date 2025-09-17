@@ -18,7 +18,16 @@ import {
     useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
+import {
+    collection,
+    getDocs,
+    doc,
+    updateDoc,
+    addDoc,
+    deleteDoc,
+    query,
+    where,
+} from 'firebase/firestore';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from 'react';
@@ -317,6 +326,43 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
         },
     });
 
+    // Fonction pour charger les vidéos Firebase d'un client
+    const loadClientVideos = useCallback(
+        async (clientType: 'brand' | 'celebrity', clientId: string): Promise<any[]> => {
+            try {
+                const videosCollection = collection(db, 'client-videos');
+                const q = query(
+                    videosCollection,
+                    where('clientType', '==', clientType),
+                    where('clientId', '==', clientId),
+                );
+                const videosSnapshot = await getDocs(q);
+
+                const videos: any[] = [];
+                videosSnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    videos.push({
+                        id: doc.id,
+                        title: data.title,
+                        source: data.source || data.youtubeUrl || '',
+                        provider: data.provider || 'youtube',
+                        videoId: data.videoId || data.youtubeId,
+                        order: data.order || 0,
+                    });
+                });
+
+                return videos;
+            } catch (error) {
+                console.error(
+                    `Erreur lors du chargement des vidéos Firebase pour ${clientId}:`,
+                    error,
+                );
+                return [];
+            }
+        },
+        [],
+    );
+
     // Fonction pour calculer les statistiques globales des médias
     const calculateStats = useCallback(async () => {
         try {
@@ -355,7 +401,10 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                         );
 
                         if (response.ok) {
-                            const files = await response.json();
+                            const data = await response.json();
+
+                            // Utiliser 'media' en priorité, puis 'images' pour compatibilité
+                            const files = data.media || data.images || [];
 
                             files.forEach((file: any) => {
                                 totalMediaCount++;
@@ -364,9 +413,19 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                                     newStats.totalVideos++;
                                     newStats.byBrandType.videos++;
 
-                                    const isExternal = isExternalVideo(file.name || '');
+                                    // Vérifier si c'est une vidéo externe (YouTube, Dailymotion)
+                                    // Chercher dans plusieurs champs possibles pour l'URL
+                                    const videoSource = file.source || file.url || file.name || '';
+                                    const isExternal =
+                                        isExternalVideo(videoSource) ||
+                                        videoSource.includes('youtube.com') ||
+                                        videoSource.includes('youtu.be') ||
+                                        videoSource.includes('dailymotion.com') ||
+                                        videoSource.includes('dai.ly');
+
                                     if (isExternal) {
                                         newStats.totalVideosExternal++;
+                                        // Les vidéos externes ne comptent pas dans la taille
                                     } else {
                                         newStats.totalVideosInternal++;
                                         if (file.size && file.size > 0) {
@@ -393,11 +452,22 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                                 }
                             });
                         }
+
+                        // Charger aussi les vidéos Firebase pour cette marque
+                        if (brand.id) {
+                            const firebaseVideos = await loadClientVideos('brand', brand.id);
+                            firebaseVideos.forEach((video) => {
+                                totalMediaCount++;
+                                newStats.totalVideos++;
+                                newStats.byBrandType.videos++;
+
+                                // Toutes les vidéos Firebase sont externes par définition
+                                newStats.totalVideosExternal++;
+                                // Les vidéos externes ne comptent pas dans la taille
+                            });
+                        }
                     } catch (error) {
-                        console.warn(
-                            `Erreur lors du calcul des stats pour la marque ${brand.name}:`,
-                            error,
-                        );
+                        // Erreur silencieuse pour les marques sans médias
                     }
                 }
             }
@@ -412,7 +482,10 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                         );
 
                         if (response.ok) {
-                            const files = await response.json();
+                            const data = await response.json();
+
+                            // Utiliser 'media' en priorité, puis 'images' pour compatibilité
+                            const files = data.media || data.images || [];
 
                             files.forEach((file: any) => {
                                 totalMediaCount++;
@@ -421,9 +494,19 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                                     newStats.totalVideos++;
                                     newStats.byClientType.videos++;
 
-                                    const isExternal = isExternalVideo(file.name || '');
+                                    // Vérifier si c'est une vidéo externe (YouTube, Dailymotion)
+                                    // Chercher dans plusieurs champs possibles pour l'URL
+                                    const videoSource = file.source || file.url || file.name || '';
+                                    const isExternal =
+                                        isExternalVideo(videoSource) ||
+                                        videoSource.includes('youtube.com') ||
+                                        videoSource.includes('youtu.be') ||
+                                        videoSource.includes('dailymotion.com') ||
+                                        videoSource.includes('dai.ly');
+
                                     if (isExternal) {
                                         newStats.totalVideosExternal++;
+                                        // Les vidéos externes ne comptent pas dans la taille
                                     } else {
                                         newStats.totalVideosInternal++;
                                         if (file.size && file.size > 0) {
@@ -450,11 +533,22 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                                 }
                             });
                         }
+
+                        // Charger aussi les vidéos Firebase pour ce talent
+                        if (client.id) {
+                            const firebaseVideos = await loadClientVideos('celebrity', client.id);
+                            firebaseVideos.forEach((video) => {
+                                totalMediaCount++;
+                                newStats.totalVideos++;
+                                newStats.byClientType.videos++;
+
+                                // Toutes les vidéos Firebase sont externes par définition
+                                newStats.totalVideosExternal++;
+                                // Les vidéos externes ne comptent pas dans la taille
+                            });
+                        }
                     } catch (error) {
-                        console.warn(
-                            `Erreur lors du calcul des stats pour le talent ${client.name}:`,
-                            error,
-                        );
+                        // Erreur silencieuse pour les talents sans médias
                     }
                 }
             }
@@ -470,7 +564,7 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
         } catch (error) {
             console.error('Erreur lors du calcul des statistiques:', error);
         }
-    }, [brands, clients]);
+    }, [brands, clients, loadClientVideos]);
 
     // Configuration pour le drag and drop
     const sensors = useSensors(
