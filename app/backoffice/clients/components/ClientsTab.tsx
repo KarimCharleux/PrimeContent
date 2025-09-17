@@ -21,12 +21,14 @@ import { CSS } from '@dnd-kit/utilities';
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { getMediaUrl } from '../../../utils/mediaUrl';
+import { isExternalVideo } from '../../../utils/videoManager';
 import { Spinner } from '../../components/Spinner';
 import { db } from '../../lib/firebase-client';
+import { ClientStats } from '../../models/types';
 
 interface Brand {
     id?: string;
@@ -291,6 +293,185 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
         message: string;
     } | null>(null);
 
+    // État pour les statistiques
+    const [stats, setStats] = useState<ClientStats>({
+        totalBrands: 0,
+        totalClients: 0,
+        totalImages: 0,
+        totalVideos: 0,
+        totalVideosInternal: 0,
+        totalVideosExternal: 0,
+        totalSize: 0,
+        imagesSize: 0,
+        videosSize: 0,
+        averageLoadTime: 0,
+        byBrandType: {
+            images: 0,
+            videos: 0,
+            size: 0,
+        },
+        byClientType: {
+            images: 0,
+            videos: 0,
+            size: 0,
+        },
+    });
+
+    // Fonction pour calculer les statistiques globales des médias
+    const calculateStats = useCallback(async () => {
+        try {
+            const newStats: ClientStats = {
+                totalBrands: brands.length,
+                totalClients: clients.length,
+                totalImages: 0,
+                totalVideos: 0,
+                totalVideosInternal: 0,
+                totalVideosExternal: 0,
+                totalSize: 0,
+                imagesSize: 0,
+                videosSize: 0,
+                averageLoadTime: 0,
+                byBrandType: {
+                    images: 0,
+                    videos: 0,
+                    size: 0,
+                },
+                byClientType: {
+                    images: 0,
+                    videos: 0,
+                    size: 0,
+                },
+            };
+
+            let totalMediaCount = 0;
+
+            // Calculer les stats pour les marques
+            for (const brand of brands) {
+                if (brand.name) {
+                    try {
+                        const clientName = brand.name.toLowerCase().replace(/\s+/g, '-');
+                        const response = await fetch(
+                            `/api/gallery-images?path=client/marques/${clientName}&_t=${Date.now()}`,
+                        );
+
+                        if (response.ok) {
+                            const files = await response.json();
+
+                            files.forEach((file: any) => {
+                                totalMediaCount++;
+
+                                if (file.type === 'video') {
+                                    newStats.totalVideos++;
+                                    newStats.byBrandType.videos++;
+
+                                    const isExternal = isExternalVideo(file.name || '');
+                                    if (isExternal) {
+                                        newStats.totalVideosExternal++;
+                                    } else {
+                                        newStats.totalVideosInternal++;
+                                        if (file.size && file.size > 0) {
+                                            newStats.videosSize += file.size;
+                                            newStats.byBrandType.size += file.size;
+                                        } else {
+                                            // Estimation pour les vidéos sans taille
+                                            newStats.videosSize += 5 * 1024 * 1024; // 5MB
+                                            newStats.byBrandType.size += 5 * 1024 * 1024;
+                                        }
+                                    }
+                                } else {
+                                    newStats.totalImages++;
+                                    newStats.byBrandType.images++;
+
+                                    if (file.size && file.size > 0) {
+                                        newStats.imagesSize += file.size;
+                                        newStats.byBrandType.size += file.size;
+                                    } else {
+                                        // Estimation pour les images sans taille
+                                        newStats.imagesSize += 500 * 1024; // 500KB
+                                        newStats.byBrandType.size += 500 * 1024;
+                                    }
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.warn(
+                            `Erreur lors du calcul des stats pour la marque ${brand.name}:`,
+                            error,
+                        );
+                    }
+                }
+            }
+
+            // Calculer les stats pour les talents
+            for (const client of clients) {
+                if (client.name) {
+                    try {
+                        const clientName = client.name.toLowerCase().replace(/\s+/g, '-');
+                        const response = await fetch(
+                            `/api/gallery-images?path=client/talents/${clientName}&_t=${Date.now()}`,
+                        );
+
+                        if (response.ok) {
+                            const files = await response.json();
+
+                            files.forEach((file: any) => {
+                                totalMediaCount++;
+
+                                if (file.type === 'video') {
+                                    newStats.totalVideos++;
+                                    newStats.byClientType.videos++;
+
+                                    const isExternal = isExternalVideo(file.name || '');
+                                    if (isExternal) {
+                                        newStats.totalVideosExternal++;
+                                    } else {
+                                        newStats.totalVideosInternal++;
+                                        if (file.size && file.size > 0) {
+                                            newStats.videosSize += file.size;
+                                            newStats.byClientType.size += file.size;
+                                        } else {
+                                            // Estimation pour les vidéos sans taille
+                                            newStats.videosSize += 5 * 1024 * 1024; // 5MB
+                                            newStats.byClientType.size += 5 * 1024 * 1024;
+                                        }
+                                    }
+                                } else {
+                                    newStats.totalImages++;
+                                    newStats.byClientType.images++;
+
+                                    if (file.size && file.size > 0) {
+                                        newStats.imagesSize += file.size;
+                                        newStats.byClientType.size += file.size;
+                                    } else {
+                                        // Estimation pour les images sans taille
+                                        newStats.imagesSize += 500 * 1024; // 500KB
+                                        newStats.byClientType.size += 500 * 1024;
+                                    }
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.warn(
+                            `Erreur lors du calcul des stats pour le talent ${client.name}:`,
+                            error,
+                        );
+                    }
+                }
+            }
+
+            // Calculer la taille totale et le temps de chargement moyen
+            newStats.totalSize = newStats.imagesSize + newStats.videosSize;
+            newStats.averageLoadTime =
+                totalMediaCount > 0
+                    ? (((newStats.totalSize * 8) / (15 * 1024 * 1024)) * 1000) / totalMediaCount
+                    : 0;
+
+            setStats(newStats);
+        } catch (error) {
+            console.error('Erreur lors du calcul des statistiques:', error);
+        }
+    }, [brands, clients]);
+
     // Configuration pour le drag and drop
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -375,6 +556,13 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
 
         fetchData();
     }, []);
+
+    // Calculer les statistiques quand les données changent
+    useEffect(() => {
+        if (brands.length > 0 || clients.length > 0) {
+            calculateStats();
+        }
+    }, [brands, clients, calculateStats]);
 
     // Fonction pour gérer la navigation vers la gestion des médias
     const handleManageMedia = (type: 'brand' | 'client', item: Brand | Client) => {
@@ -855,6 +1043,27 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
         }
     };
 
+    // Fonctions utilitaires pour l'affichage
+    const formatSize = (bytes: number): string => {
+        if (bytes < 1024) {
+            return bytes + ' octets';
+        } else if (bytes < 1024 * 1024) {
+            return (bytes / 1024).toFixed(2) + ' Ko';
+        } else if (bytes < 1024 * 1024 * 1024) {
+            return (bytes / (1024 * 1024)).toFixed(2) + ' Mo';
+        } else {
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' Go';
+        }
+    };
+
+    const formatLoadTime = (milliseconds: number): string => {
+        if (milliseconds < 1000) {
+            return milliseconds.toFixed(0) + ' ms';
+        } else {
+            return (milliseconds / 1000).toFixed(1) + ' s';
+        }
+    };
+
     return (
         <div className="bg-white rounded-lg shadow">
             <div className="p-6">
@@ -869,6 +1078,104 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                         {statusMessage.message}
                     </div>
                 )}
+
+                {/* Section Statistiques Globales */}
+                <div className="bg-white rounded-lg shadow p-6 mb-8">
+                    <h2 className="text-xl font-semibold mb-4">Statistiques Globales des Médias</h2>
+
+                    {/* Statistiques des médias de tous les marques et talents */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                            <p className="text-sm text-blue-600 font-medium">Total médias</p>
+                            <p className="text-2xl font-bold text-blue-900">
+                                {stats.totalImages + stats.totalVideos}
+                            </p>
+                            <p className="text-xs text-blue-700">
+                                {stats.totalImages} images • {stats.totalVideos} vidéos
+                            </p>
+                        </div>
+                        <div className="bg-yellow-50 p-4 rounded-lg">
+                            <p className="text-sm text-yellow-600 font-medium">Images</p>
+                            <p className="text-2xl font-bold text-yellow-900">
+                                {stats.totalImages}
+                            </p>
+                            <p className="text-xs text-yellow-700">
+                                {formatSize(stats.imagesSize)}
+                            </p>
+                        </div>
+                        <div className="bg-green-50 p-4 rounded-lg">
+                            <p className="text-sm text-green-600 font-medium">Vidéos</p>
+                            <p className="text-2xl font-bold text-green-900">{stats.totalVideos}</p>
+                            <p className="text-xs text-green-700">
+                                {stats.totalVideosInternal} internes • {stats.totalVideosExternal}{' '}
+                                externes • {formatSize(stats.videosSize)}
+                            </p>
+                        </div>
+                        <div className="bg-purple-50 p-4 rounded-lg">
+                            <p className="text-sm text-purple-600 font-medium">Taille totale</p>
+                            <p className="text-2xl font-bold text-purple-900">
+                                {formatSize(stats.totalSize)}
+                            </p>
+                            <p className="text-xs text-purple-700">
+                                Temps: {formatLoadTime(stats.averageLoadTime)}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Statistiques par type */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                            <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center">
+                                Marques ({stats.totalBrands})
+                            </h3>
+                            <div className="space-y-2">
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-gray-600">Images:</span>
+                                    <span className="text-sm font-medium">
+                                        {stats.byBrandType.images}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-gray-600">Vidéos:</span>
+                                    <span className="text-sm font-medium">
+                                        {stats.byBrandType.videos}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-gray-600">Taille:</span>
+                                    <span className="text-sm font-medium">
+                                        {formatSize(stats.byBrandType.size)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                            <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center">
+                                Talents ({stats.totalClients})
+                            </h3>
+                            <div className="space-y-2">
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-gray-600">Images:</span>
+                                    <span className="text-sm font-medium">
+                                        {stats.byClientType.images}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-gray-600">Vidéos:</span>
+                                    <span className="text-sm font-medium">
+                                        {stats.byClientType.videos}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-gray-600">Taille:</span>
+                                    <span className="text-sm font-medium">
+                                        {formatSize(stats.byClientType.size)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Section Marques */}
                 {activeTab === 'brands' && (
@@ -1273,7 +1580,7 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                         <div className="mt-8">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-lg font-medium text-gray-900">
-                                    Talents existantes ({clients.length})
+                                    Talents existants ({clients.length})
                                 </h3>
                                 <button
                                     onClick={() => {
@@ -1299,7 +1606,7 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                                             d="M12 4v16m8-8H4"
                                         />
                                     </svg>
-                                    <span>Nouvelle célébrité</span>
+                                    <span>Nouveau talent</span>
                                 </button>
                             </div>
 
@@ -1325,10 +1632,10 @@ export default function ClientsTab({ activeTab }: ClientsTabProps) {
                                         </svg>
                                     </div>
                                     <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                        Aucune célébrité
+                                        Aucun talent
                                     </h3>
                                     <p className="text-gray-500 mb-4">
-                                        Commencez par ajouter votre première célébrité
+                                        Commencez par ajouter votre premier talent
                                     </p>
                                 </div>
                             ) : (

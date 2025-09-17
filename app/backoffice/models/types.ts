@@ -118,6 +118,30 @@ export type Wedding = {
     updatedAt: Date | string;
 };
 
+// Types pour les statistiques des clients (marques et talents)
+export type ClientStats = {
+    totalBrands: number;
+    totalClients: number;
+    totalImages: number;
+    totalVideos: number;
+    totalVideosInternal: number;
+    totalVideosExternal: number;
+    totalSize: number;
+    imagesSize: number;
+    videosSize: number;
+    averageLoadTime: number;
+    byBrandType: {
+        images: number;
+        videos: number;
+        size: number;
+    };
+    byClientType: {
+        images: number;
+        videos: number;
+        size: number;
+    };
+};
+
 // Types pour l'administration
 export type User = {
     id?: string;
