@@ -881,9 +881,24 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
                         </div>
                     )}
 
-                    {/* Dégradé en bas pour inciter à voir plus */}
+                    {/* Dégradé en bas pour inciter à voir plus - Fondu renforcé */}
                     {!isLoading && showGradientOverlay && filteredProjects.length > 0 && (
-                        <div className="absolute -bottom-2 left-0 right-0 h-[830px] bg-gradient-to-t from-[#060608] to-transparent pointer-events-none z-10" />
+                        <div
+                            className="absolute -bottom-2 left-0 right-0 h-[1000px] pointer-events-none z-10"
+                            style={{
+                                background: `linear-gradient(to top, 
+                                    rgba(0, 0, 0, 1) 0%,
+                                    rgba(6, 6, 8, 0.95) 15%,
+                                    rgba(6, 6, 8, 0.85) 30%,
+                                    rgba(6, 6, 8, 0.7) 45%,
+                                    rgba(6, 6, 8, 0.5) 60%,
+                                    rgba(6, 6, 8, 0.3) 75%,
+                                    rgba(6, 6, 8, 0.15) 85%,
+                                    rgba(6, 6, 8, 0.05) 95%,
+                                    transparent 100%
+                                )`,
+                            }}
+                        />
                     )}
                 </div>
             </div>

@@ -649,7 +649,7 @@ export default function Page() {
             </section>
 
             {/* Section Expertises */}
-            <section className="py-12 md:py-16 bg-gradient-to-b from-[#010305] to-gray-900 expertise-section">
+            <section className="py-12 md:py-16 bg-gradient-to-b from-[#010305] to-slate-900 expertise-section">
                 <div className="mx-auto px-4">
                     <div className="text-center mb-8 md:mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
@@ -684,7 +684,7 @@ export default function Page() {
             {keyFigures.length > 0 && (
                 <>
                     {/* Section PRIMECONTENT EN CHIFFRES */}
-                    <section className="py-16 max-sm:py-8 bg-gradient-to-b from-gray-900 to-black stats-section">
+                    <section className="py-16 max-sm:py-8 bg-gradient-to-b from-slate-900 to-gray-950 stats-section">
                         <div className="mx-auto px-4">
                             <div className="text-center mb-16 max-sm:mb-8">
                                 <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
@@ -761,7 +761,7 @@ export default function Page() {
             )}
 
             {/* Section Ils nous ont fait confiance */}
-            <section className="py-16 bg-gradient-to-b from-black to-gray-900 trust-section">
+            <section className="py-16 bg-gradient-to-b from-gray-950 to-black trust-section">
                 <div className="mx-auto px-7">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
@@ -914,7 +914,7 @@ export default function Page() {
             </section>
 
             {/* Section NOS RÉALISATIONS */}
-            <section className="py-16 max-sm:py-8 bg-gradient-to-b from-gray-900 via-black to-gray-900">
+            <section className="py-16 max-sm:py-8 bg-gradient-to-b from-gray-900 via-black to-black">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="text-center mb-16 max-sm:mb-8">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 underline-title">
