@@ -41,6 +41,8 @@ export default function VideosPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
     const [videos, setVideos] = useState<any[]>([]);
+    const [hasBackofficeVideos, setHasBackofficeVideos] = useState(false);
+    const [activeFilter, setActiveFilter] = useState<string>('Marques');
 
     useEffect(() => {
         const fetchAllVideos = async () => {
@@ -155,6 +157,12 @@ export default function VideosPage() {
                 });
 
                 setVideos(allVideos);
+                setHasBackofficeVideos(backofficeVideos.length > 0);
+                if (backofficeVideos.length > 0) {
+                    setActiveFilter('Tout');
+                } else {
+                    setActiveFilter('Marques');
+                }
             } catch (error) {
                 console.error('Erreur lors de la récupération des vidéos:', error);
             } finally {
@@ -198,6 +206,15 @@ export default function VideosPage() {
         return () => clearInterval(interval);
     }, []);
 
+    const getSliderClass = (filter: string, hasBackoffice: boolean): string => {
+        if (hasBackoffice) {
+            if (filter === 'Tout') return 'pos-0';
+            if (filter === 'Marques') return 'pos-1';
+            return 'pos-2';
+        }
+        return filter === 'Marques' ? 'left' : 'right';
+    };
+
     return (
         <main className="global-main-page">
             <Header />
@@ -226,6 +243,39 @@ export default function VideosPage() {
                         Réalisation / écriture, Tournage, Montage / VFX, Étalonnage
                     </motion.p>
 
+                    {/* Toggle Marques / Talents */}
+                    {!isLoading && (
+                        <div className="videos-toggle">
+                            <div
+                                className={`toggle-container ${hasBackofficeVideos ? 'three-btns' : 'two-btns'}`}
+                            >
+                                {hasBackofficeVideos && (
+                                    <button
+                                        className={`toggle-btn ${activeFilter === 'Tout' ? 'active' : ''}`}
+                                        onClick={() => setActiveFilter('Tout')}
+                                    >
+                                        Tout
+                                    </button>
+                                )}
+                                <button
+                                    className={`toggle-btn ${activeFilter === 'Marques' ? 'active' : ''}`}
+                                    onClick={() => setActiveFilter('Marques')}
+                                >
+                                    Marques
+                                </button>
+                                <button
+                                    className={`toggle-btn ${activeFilter === 'Talents' ? 'active' : ''}`}
+                                    onClick={() => setActiveFilter('Talents')}
+                                >
+                                    Talents
+                                </button>
+                                <div
+                                    className={`toggle-slider ${getSliderClass(activeFilter, hasBackofficeVideos)}`}
+                                ></div>
+                            </div>
+                        </div>
+                    )}
+
                     {isLoading ? (
                         <div className="loading-container">
                             <div className="loading-spinner"></div>
@@ -239,11 +289,12 @@ export default function VideosPage() {
                         >
                             <PortfolioGrid
                                 projects={videos}
-                                showFilter={true}
+                                showFilter={false}
                                 enablePagination={true}
                                 itemsPerPageDesktop={24}
                                 itemsPerPageMobile={12}
-                                enableRandomShuffle={true}
+                                activeFilter={activeFilter}
+                                onFilterChange={setActiveFilter}
                             />
                         </motion.div>
                     )}
