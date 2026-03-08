@@ -1,13 +1,13 @@
 'use client';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
 
 import Footer from '../components/Footer';
 import Header from '../components/Header';
 import PortfolioGrid from '../components/PortfolioGrid';
-import { useMariagesData, MariageTestimonial } from '../hooks/useMariagesData';
+import { useMariagesData } from '../hooks/useMariagesData';
 import './mariages.scss';
 import { getMediaUrl } from '../utils/mediaUrl';
 
@@ -36,9 +36,8 @@ const staggerContainer = {
     },
 };
 
-// Composant séparé qui utilise useSearchParams
+// Composant séparé qui utilise useRouter
 function MariagesContent() {
-    const searchParams = useSearchParams();
     const router = useRouter();
 
     // Charger les données depuis Firebase
@@ -48,68 +47,6 @@ function MariagesContent() {
     const [shouldStartAnimations, setShouldStartAnimations] = useState(false);
     // État pour le chargement
     const [isLoading, setIsLoading] = useState(true);
-
-    // États pour la modale de mot de passe
-    const [pendingCouple, setPendingCouple] = useState<string | null>(null);
-    const [pendingPassword, setPendingPassword] = useState<string>('');
-    const [showPasswordModal, setShowPasswordModal] = useState(false);
-    const [passwordInput, setPasswordInput] = useState('');
-    const [passwordError, setPasswordError] = useState<string | null>(null);
-
-    // Gestion du filtre actif depuis les query params
-    const [activeFilter, setActiveFilter] = useState('Tout');
-
-    // Mettre à jour le filtre depuis les query params
-    useEffect(() => {
-        const filter = searchParams?.get('couple');
-        if (filter) {
-            // Décoder le nom du couple depuis l'URL
-            const decodedFilter = decodeURIComponent(filter).replace(/-/g, ' ');
-            setActiveFilter(decodedFilter);
-        } else {
-            setActiveFilter('Tout');
-        }
-    }, [searchParams]);
-
-    // Fonction pour gérer le changement de filtre et mettre à jour l'URL
-    const handleFilterChange = (filter: string) => {
-        setActiveFilter(filter);
-
-        if (filter === 'Tout') {
-            // Supprimer le query param si on sélectionne "Tout"
-            router.push('/mariages', { scroll: false });
-        } else {
-            // Encoder le nom du couple pour l'URL
-            const encodedFilter = encodeURIComponent(filter.replace(/\s+/g, '-'));
-            router.push(`/mariages?couple=${encodedFilter}`, { scroll: false });
-        }
-    };
-
-    // Clic sur un couple : modale si protégé, filtre direct sinon
-    const handleCoupleClick = (testimonial: MariageTestimonial) => {
-        if (testimonial.password) {
-            setPendingCouple(testimonial.coupleName);
-            setPendingPassword(testimonial.password);
-            setShowPasswordModal(true);
-        } else {
-            handleFilterChange(testimonial.coupleName);
-        }
-    };
-
-    const handlePasswordSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (passwordInput === pendingPassword) {
-            setShowPasswordModal(false);
-            setPasswordError(null);
-            setPasswordInput('');
-            if (pendingCouple) {
-                handleFilterChange(pendingCouple);
-                setPendingCouple(null);
-            }
-        } else {
-            setPasswordError('Mot de passe incorrect. Veuillez réessayer.');
-        }
-    };
 
     // Vérifier si le SplashScreen est terminé ou si on vient d'une autre page
     useEffect(() => {
@@ -201,9 +138,6 @@ function MariagesContent() {
                         >
                             <PortfolioGrid
                                 projects={portfolioData}
-                                showFilter={true}
-                                activeFilter={activeFilter}
-                                onFilterChange={handleFilterChange}
                                 enablePagination={true}
                                 itemsPerPageDesktop={24}
                                 itemsPerPageMobile={12}
@@ -227,7 +161,7 @@ function MariagesContent() {
                             className="testimonial-card"
                             variants={fadeInUp}
                             custom={index}
-                            onClick={() => handleCoupleClick(testimonial)}
+                            onClick={() => router.push('/mariages/' + testimonial.id)}
                             style={{ cursor: 'pointer' }}
                         >
                             <div className="couple-images">
@@ -260,32 +194,6 @@ function MariagesContent() {
                     ))}
                 </motion.div>
             </section>
-            {/* Modale de mot de passe pour les couples protégés */}
-            {showPasswordModal && pendingPassword && (
-                <div className="password-modal-container">
-                    <div className="password-modal">
-                        <h2 className="modal-title">Mariage protégé</h2>
-                        <p className="modal-description">
-                            Ce mariage est protégé par un mot de passe. Veuillez saisir le mot de
-                            passe pour accéder aux photos.
-                        </p>
-                        <form onSubmit={handlePasswordSubmit} className="password-form">
-                            <input
-                                type="password"
-                                value={passwordInput}
-                                onChange={(e) => setPasswordInput(e.target.value)}
-                                placeholder="Mot de passe"
-                                className="password-input"
-                                autoFocus
-                            />
-                            {passwordError && <div className="password-error">{passwordError}</div>}
-                            <button type="submit" className="password-submit">
-                                Accéder aux photos
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            )}
 
             <Footer />
         </main>
