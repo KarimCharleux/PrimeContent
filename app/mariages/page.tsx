@@ -158,11 +158,10 @@ function MariagesContent() {
                     {testimonialsData.map((testimonial, index) => (
                         <motion.div
                             key={testimonial.id}
-                            className="testimonial-card"
+                            className="testimonial-card cursor-pointer"
                             variants={fadeInUp}
                             custom={index}
                             onClick={() => router.push('/mariages/' + testimonial.id)}
-                            style={{ cursor: 'pointer' }}
                         >
                             <div className="couple-images">
                                 <Image
