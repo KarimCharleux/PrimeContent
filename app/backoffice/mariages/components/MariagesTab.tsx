@@ -247,7 +247,7 @@ export default function MariagesTab() {
         reset(couple);
         setPreviewPerson1Image(couple.person1Image);
         setPreviewPerson2Image(couple.person2Image);
-        setShowPassword(false);
+        setMdpGenere(null);
         setStatusMessage(null);
     };
 
