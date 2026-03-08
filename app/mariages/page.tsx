@@ -6,8 +6,9 @@ import { useState, useEffect, Suspense } from 'react';
 
 import Footer from '../components/Footer';
 import Header from '../components/Header';
+import PasswordProtection from '../components/PasswordProtection';
 import PortfolioGrid from '../components/PortfolioGrid';
-import { useMariagesData } from '../hooks/useMariagesData';
+import { useMariagesData, MariageTestimonial } from '../hooks/useMariagesData';
 import './mariages.scss';
 import { getMediaUrl } from '../utils/mediaUrl';
 
@@ -49,6 +50,11 @@ function MariagesContent() {
     // État pour le chargement
     const [isLoading, setIsLoading] = useState(true);
 
+    // États pour la modale de mot de passe
+    const [pendingCouple, setPendingCouple] = useState<string | null>(null);
+    const [pendingPassword, setPendingPassword] = useState<string>('');
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+
     // Gestion du filtre actif depuis les query params
     const [activeFilter, setActiveFilter] = useState('Tout');
 
@@ -75,6 +81,25 @@ function MariagesContent() {
             // Encoder le nom du couple pour l'URL
             const encodedFilter = encodeURIComponent(filter.replace(/\s+/g, '-'));
             router.push(`/mariages?couple=${encodedFilter}`, { scroll: false });
+        }
+    };
+
+    // Clic sur un couple : modale si protégé, filtre direct sinon
+    const handleCoupleClick = (testimonial: MariageTestimonial) => {
+        if (testimonial.password) {
+            setPendingCouple(testimonial.coupleName);
+            setPendingPassword(testimonial.password);
+            setShowPasswordModal(true);
+        } else {
+            handleFilterChange(testimonial.coupleName);
+        }
+    };
+
+    const handlePasswordVerified = () => {
+        setShowPasswordModal(false);
+        if (pendingCouple) {
+            handleFilterChange(pendingCouple);
+            setPendingCouple(null);
         }
     };
 
@@ -194,7 +219,7 @@ function MariagesContent() {
                             className="testimonial-card"
                             variants={fadeInUp}
                             custom={index}
-                            onClick={() => handleFilterChange(testimonial.coupleName)}
+                            onClick={() => handleCoupleClick(testimonial)}
                             style={{ cursor: 'pointer' }}
                         >
                             <div className="couple-images">
@@ -227,6 +252,19 @@ function MariagesContent() {
                     ))}
                 </motion.div>
             </section>
+            {/* Modale de mot de passe pour les couples protégés */}
+            {showPasswordModal && pendingPassword && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+                    <div className="w-full max-w-md">
+                        <PasswordProtection
+                            correctPassword={pendingPassword}
+                            onPasswordVerified={handlePasswordVerified}
+                            eventTitle={pendingCouple || 'ce mariage'}
+                        />
+                    </div>
+                </div>
+            )}
+
             <Footer />
         </main>
     );

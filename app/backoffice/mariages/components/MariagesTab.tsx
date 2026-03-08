@@ -59,9 +59,16 @@ function SortableCoupleCard({
         >
             <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium text-gray-900">
-                        {couple.person1Name} & {couple.person2Name}
-                    </h4>
+                    <div>
+                        <h4 className="font-medium text-gray-900">
+                            {couple.person1Name} & {couple.person2Name}
+                        </h4>
+                        {couple.password && (
+                            <span className="inline-block mt-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                                🔒 Protégé
+                            </span>
+                        )}
+                    </div>
                     <button
                         {...attributes}
                         {...listeners}
@@ -179,6 +186,7 @@ export default function MariagesTab() {
     const [editing, setEditing] = useState<Couple | null>(null);
     const [previewPerson1Image, setPreviewPerson1Image] = useState<string | null>(null);
     const [previewPerson2Image, setPreviewPerson2Image] = useState<string | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
 
     // État pour les messages de statut
     const [statusMessage, setStatusMessage] = useState<{
@@ -357,6 +365,7 @@ export default function MariagesTab() {
                     person2Image: data.person2Image,
                     coupleDisplayName: `${data.person1Name} & ${data.person2Name}`,
                     order: editing.order || 0,
+                    password: data.password || '',
                     updatedAt: new Date(),
                 });
 
@@ -386,6 +395,7 @@ export default function MariagesTab() {
                     person2Image: data.person2Image,
                     coupleDisplayName: `${data.person1Name} & ${data.person2Name}`,
                     order: maxOrder,
+                    password: data.password || '',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 });
@@ -405,7 +415,13 @@ export default function MariagesTab() {
                 });
             }
 
-            reset({ person1Name: '', person2Name: '', person1Image: '', person2Image: '' });
+            reset({
+                person1Name: '',
+                person2Name: '',
+                person1Image: '',
+                person2Image: '',
+                password: '',
+            });
             setEditing(null);
             setPreviewPerson1Image(null);
             setPreviewPerson2Image(null);
@@ -469,7 +485,13 @@ export default function MariagesTab() {
     // Annuler l'édition
     const cancelEdit = () => {
         setEditing(null);
-        reset({ person1Name: '', person2Name: '', person1Image: '', person2Image: '' });
+        reset({
+            person1Name: '',
+            person2Name: '',
+            person1Image: '',
+            person2Image: '',
+            password: '',
+        });
         setPreviewPerson1Image(null);
         setPreviewPerson2Image(null);
     };
@@ -692,6 +714,40 @@ export default function MariagesTab() {
                                         )}
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Mot de passe optionnel */}
+                        <div className="mt-6 pt-6 border-t border-gray-200">
+                            <h4 className="text-md font-medium text-gray-800 mb-4">
+                                Protection par mot de passe{' '}
+                                <span className="text-sm font-normal text-gray-500">
+                                    (optionnel)
+                                </span>
+                            </h4>
+                            <div className="max-w-sm">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Mot de passe
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        {...register('password')}
+                                        placeholder="Laisser vide = accès libre"
+                                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((v) => !v)}
+                                        className="absolute inset-y-0 right-0 px-3 text-gray-400 hover:text-gray-600"
+                                    >
+                                        {showPassword ? '🙈' : '👁️'}
+                                    </button>
+                                </div>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Si renseigné, le couple devra saisir ce mot de passe pour
+                                    accéder à ses photos privées.
+                                </p>
                             </div>
                         </div>
 

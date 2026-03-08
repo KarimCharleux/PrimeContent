@@ -99,6 +99,7 @@ export type Couple = {
     person2Image: string;
     coupleDisplayName?: string; // Calculé automatiquement à partir des prénoms
     order?: number;
+    password?: string; // Mot de passe optionnel pour protéger l'accès aux photos
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };

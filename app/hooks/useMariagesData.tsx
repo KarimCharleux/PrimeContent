@@ -14,6 +14,7 @@ interface Couple {
     person2Image: string;
     coupleDisplayName: string;
     order: number;
+    password?: string;
 }
 
 interface CoupleMedia {
@@ -62,6 +63,7 @@ export interface MariageTestimonial {
         person1: string;
         person2: string;
     };
+    password?: string;
 }
 
 export const useMariagesData = () => {
@@ -246,6 +248,7 @@ export const useMariagesData = () => {
                             person1: couple.person1Image,
                             person2: couple.person2Image,
                         },
+                        password: couple.password,
                     }));
                     setTestimonialsData(testimonials);
                 } else {
