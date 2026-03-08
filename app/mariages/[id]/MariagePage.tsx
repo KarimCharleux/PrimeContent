@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 
 import { db } from '../../backoffice/lib/firebase-client';
-import PortfolioGrid from '../../components/PortfolioGrid/PortfolioGrid';
+import PortfolioGrid, { type Project } from '../../components/PortfolioGrid';
 import PrimaryButton from '../../components/PrimaryButton';
 import { getMediaUrl } from '../../utils/mediaUrl';
 
@@ -44,17 +44,7 @@ interface CoupleVideo {
     format?: 'portrait' | 'paysage';
 }
 
-interface MediaProject {
-    title: string;
-    category: string;
-    source: string;
-    isVideo?: boolean;
-    format?: 'paysage' | 'portrait';
-    provider?: 'youtube' | 'dailymotion' | 'local';
-    videoId?: string;
-    embedUrl?: string;
-    watchUrl?: string;
-    thumbnail?: string;
+interface MariageProject extends Project {
     _downloadUrl?: string;
 }
 
@@ -79,7 +69,7 @@ const detectFormat = (filename: string): 'paysage' | 'portrait' => {
 
 export default function MariagePage({ couple }: MariagePageProps) {
     const [isLoading, setIsLoading] = useState(true);
-    const [projects, setProjects] = useState<MediaProject[]>([]);
+    const [projects, setProjects] = useState<MariageProject[]>([]);
     const [loadingProgress, setLoadingProgress] = useState(0);
     const [loadedCount, setLoadedCount] = useState(0);
     const [totalCount, setTotalCount] = useState(0);
@@ -91,7 +81,7 @@ export default function MariagePage({ couple }: MariagePageProps) {
 
     useEffect(() => {
         if (initialLoadDone.current) return;
-        setTimeout(() => setShouldStartAnimations(true), 100);
+        const timer = setTimeout(() => setShouldStartAnimations(true), 100);
 
         const fetchAndLoad = async () => {
             try {
@@ -113,9 +103,9 @@ export default function MariagePage({ couple }: MariagePageProps) {
 
                 const photos = coupleMedias.filter((m) => m.type === 'photo');
                 const localVideos = coupleMedias.filter((m) => m.type === 'video');
-                setTotalCount(coupleMedias.length + coupleVideos.length);
+                setTotalCount(photos.length);
 
-                const loaded: MediaProject[] = [];
+                const loaded: MariageProject[] = [];
                 let count = 0;
 
                 // Précharger les photos pour afficher la progression
@@ -186,7 +176,9 @@ export default function MariagePage({ couple }: MariagePageProps) {
         };
 
         fetchAndLoad();
-    }, [couple]);
+
+        return () => clearTimeout(timer);
+    }, [couple.id]);
 
     // Même logique que EventPage.buildDownloadUrl
     const buildDownloadUrl = (url: string): string => {
