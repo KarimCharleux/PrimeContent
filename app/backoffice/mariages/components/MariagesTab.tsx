@@ -65,8 +65,21 @@ function SortableCoupleCard({
                             {couple.person1Name} & {couple.person2Name}
                         </h4>
                         {couple.password && (
-                            <span className="inline-block mt-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                                🔒 Protégé
+                            <span className="inline-flex items-center gap-1 mt-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                                <svg
+                                    className="h-3 w-3"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                    />
+                                </svg>
+                                Protégé
                             </span>
                         )}
                     </div>
@@ -76,7 +89,19 @@ function SortableCoupleCard({
                         className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing text-lg"
                         title="Glisser pour réorganiser"
                     >
-                        ☰
+                        <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4 8h16M4 16h16"
+                            />
+                        </svg>
                     </button>
                 </div>
 
@@ -124,7 +149,22 @@ function SortableCoupleCard({
                         onClick={() => onSelect(couple)}
                         className="flex-1 px-3 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors text-sm font-medium"
                     >
-                        ✏️ Modifier
+                        <span className="inline-flex items-center gap-1.5">
+                            <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
+                            </svg>
+                            Modifier
+                        </span>
                     </button>
                     <button
                         type="button"
@@ -532,7 +572,41 @@ export default function MariagesTab() {
                             onClick={() => setShowPassword((v) => !v)}
                             className="absolute inset-y-0 right-0 px-3 text-gray-400 hover:text-gray-600"
                         >
-                            {showPassword ? '🙈' : '👁️'}
+                            {showPassword ? (
+                                <svg
+                                    className="h-4 w-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                                    />
+                                </svg>
+                            ) : (
+                                <svg
+                                    className="h-4 w-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                    />
+                                </svg>
+                            )}
                         </button>
                     </div>
                     <p className="mt-1 text-xs text-gray-500">
@@ -606,8 +680,21 @@ export default function MariagesTab() {
                                 {selectedCouple.person1Name} & {selectedCouple.person2Name}
                             </h3>
                             {selectedCouple.password && (
-                                <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                                    🔒 Protégé
+                                <span className="inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                                    <svg
+                                        className="h-3 w-3"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                        />
+                                    </svg>
+                                    Protégé
                                 </span>
                             )}
                         </div>
@@ -626,15 +713,75 @@ export default function MariagesTab() {
                         <nav className="-mb-px flex space-x-6">
                             {(
                                 [
-                                    { key: 'infos', label: 'Informations', icon: '✏️' },
-                                    { key: 'media', label: 'Photos & Vidéos', icon: '🖼️' },
-                                    { key: 'videos', label: 'YouTube & Dailymotion', icon: '▶️' },
-                                ] as { key: DetailTab; label: string; icon: string }[]
+                                    {
+                                        key: 'infos',
+                                        label: 'Informations',
+                                        icon: (
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                />
+                                            </svg>
+                                        ),
+                                    },
+                                    {
+                                        key: 'media',
+                                        label: 'Photos & Vidéos',
+                                        icon: (
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                                />
+                                            </svg>
+                                        ),
+                                    },
+                                    {
+                                        key: 'videos',
+                                        label: 'YouTube & Dailymotion',
+                                        icon: (
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                                                />
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
+                                            </svg>
+                                        ),
+                                    },
+                                ] as { key: DetailTab; label: string; icon: React.ReactNode }[]
                             ).map((tab) => (
                                 <button
                                     key={tab.key}
                                     onClick={() => setDetailTab(tab.key)}
-                                    className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                                    className={`inline-flex items-center gap-1.5 py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                                         detailTab === tab.key
                                             ? 'border-black text-black'
                                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
