@@ -6,7 +6,6 @@ import { useState, useEffect, Suspense } from 'react';
 
 import Footer from '../components/Footer';
 import Header from '../components/Header';
-import PasswordProtection from '../components/PasswordProtection';
 import PortfolioGrid from '../components/PortfolioGrid';
 import { useMariagesData, MariageTestimonial } from '../hooks/useMariagesData';
 import './mariages.scss';
@@ -54,6 +53,8 @@ function MariagesContent() {
     const [pendingCouple, setPendingCouple] = useState<string | null>(null);
     const [pendingPassword, setPendingPassword] = useState<string>('');
     const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [passwordInput, setPasswordInput] = useState('');
+    const [passwordError, setPasswordError] = useState<string | null>(null);
 
     // Gestion du filtre actif depuis les query params
     const [activeFilter, setActiveFilter] = useState('Tout');
@@ -95,11 +96,18 @@ function MariagesContent() {
         }
     };
 
-    const handlePasswordVerified = () => {
-        setShowPasswordModal(false);
-        if (pendingCouple) {
-            handleFilterChange(pendingCouple);
-            setPendingCouple(null);
+    const handlePasswordSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (passwordInput === pendingPassword) {
+            setShowPasswordModal(false);
+            setPasswordError(null);
+            setPasswordInput('');
+            if (pendingCouple) {
+                handleFilterChange(pendingCouple);
+                setPendingCouple(null);
+            }
+        } else {
+            setPasswordError('Mot de passe incorrect. Veuillez réessayer.');
         }
     };
 
@@ -254,13 +262,27 @@ function MariagesContent() {
             </section>
             {/* Modale de mot de passe pour les couples protégés */}
             {showPasswordModal && pendingPassword && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-                    <div className="w-full max-w-md">
-                        <PasswordProtection
-                            correctPassword={pendingPassword}
-                            onPasswordVerified={handlePasswordVerified}
-                            eventTitle={pendingCouple || 'ce mariage'}
-                        />
+                <div className="password-modal-container">
+                    <div className="password-modal">
+                        <h2 className="modal-title">Mariage protégé</h2>
+                        <p className="modal-description">
+                            Ce mariage est protégé par un mot de passe. Veuillez saisir le mot de
+                            passe pour accéder aux photos.
+                        </p>
+                        <form onSubmit={handlePasswordSubmit} className="password-form">
+                            <input
+                                type="password"
+                                value={passwordInput}
+                                onChange={(e) => setPasswordInput(e.target.value)}
+                                placeholder="Mot de passe"
+                                className="password-input"
+                                autoFocus
+                            />
+                            {passwordError && <div className="password-error">{passwordError}</div>}
+                            <button type="submit" className="password-submit">
+                                Accéder aux photos
+                            </button>
+                        </form>
                     </div>
                 </div>
             )}
