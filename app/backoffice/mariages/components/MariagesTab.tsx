@@ -64,24 +64,24 @@ function SortableCoupleCard({
                         <h4 className="font-medium text-gray-900">
                             {couple.person1Name} & {couple.person2Name}
                         </h4>
-                        {couple.password && (
-                            <span className="inline-flex items-center gap-1 mt-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                                <svg
-                                    className="h-3 w-3"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                                    />
-                                </svg>
-                                Protégé
-                            </span>
-                        )}
+                        <span
+                            className={`inline-flex items-center gap-1 mt-1 text-xs px-2 py-0.5 rounded-full ${couple.password ? 'text-amber-600 bg-amber-50' : 'invisible'}`}
+                        >
+                            <svg
+                                className="h-3 w-3"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                />
+                            </svg>
+                            Protégé
+                        </span>
                     </div>
                     <button
                         {...attributes}

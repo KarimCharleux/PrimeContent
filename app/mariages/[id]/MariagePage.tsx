@@ -260,26 +260,28 @@ export default function MariagePage({ couple }: MariagePageProps) {
                 </motion.div>
             </div>
 
-            {/* Bouton télécharger fixe en bas — même pattern que EventPage (type "paye") */}
-            <motion.div
-                className="pb-5"
-                initial={{ opacity: 0, y: 20 }}
-                animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-            >
-                <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-                    <PrimaryButton
-                        text={
-                            isDownloadingZip
-                                ? `Téléchargement... ${downloadProgress}%`
-                                : 'Télécharger toutes les photos'
-                        }
-                        onClick={handleDownloadAllPhotos}
-                        animateOnMount={true}
-                        delay={0.5}
-                    />
-                </div>
-            </motion.div>
+            {/* Bouton télécharger fixe en bas — affiché seulement s'il y a des photos */}
+            {!isLoading && projects.some((p) => !p.isVideo && p._downloadUrl) && (
+                <motion.div
+                    className="pb-5"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={shouldStartAnimations ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                >
+                    <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+                        <PrimaryButton
+                            text={
+                                isDownloadingZip
+                                    ? `Téléchargement... ${downloadProgress}%`
+                                    : 'Télécharger toutes les photos'
+                            }
+                            onClick={handleDownloadAllPhotos}
+                            animateOnMount={true}
+                            delay={0.5}
+                        />
+                    </div>
+                </motion.div>
+            )}
 
             {isLoading ? (
                 <motion.div
@@ -306,7 +308,8 @@ export default function MariagePage({ couple }: MariagePageProps) {
                 </motion.div>
             ) : errorMessage ? (
                 <motion.div
-                    className="flex items-center justify-center py-20"
+                    className="flex items-center justify-center"
+                    style={{ minHeight: 'calc(100vh - 200px)' }}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
