@@ -17,7 +17,9 @@ import {
     useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { saveAs } from 'file-saver';
 import { doc, updateDoc } from 'firebase/firestore';
+import JSZip from 'jszip';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useState, useRef, useEffect, useCallback } from 'react';

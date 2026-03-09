@@ -17,7 +17,9 @@ import {
     useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { saveAs } from 'file-saver';
 import { collection, doc, getDocs, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
+import JSZip from 'jszip';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -276,6 +278,10 @@ export default function RealisationsMediaManager({
         provider: 'local',
     });
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+    // États pour le téléchargement ZIP
+    const [isDownloadingZip, setIsDownloadingZip] = useState(false);
+    const [downloadProgress, setDownloadProgress] = useState(0);
 
     // Statistiques
     const [stats, setStats] = useState<MediaStats>({
@@ -1145,6 +1151,49 @@ export default function RealisationsMediaManager({
         setShowForm(true);
     };
 
+    // Télécharger tous les médias locaux en ZIP
+    const handleDownloadAll = async () => {
+        const localMedias = medias.filter(
+            (m) => !m.videoId && (m.provider === 'local' || !m.provider),
+        );
+        if (localMedias.length === 0) return;
+        setIsDownloadingZip(true);
+        setDownloadProgress(0);
+        try {
+            const zip = new JSZip();
+            const folder = zip.folder('medias');
+            let completed = 0;
+            const promises = localMedias.map(async (media) => {
+                try {
+                    const url = getMediaUrl(media.source);
+                    const response = await fetch(url);
+                    const blob = await response.blob();
+                    const filename = media.source.split('/').pop() || `media-${media.id}`;
+                    folder?.file(filename, blob);
+                } catch (e) {
+                    console.error('Erreur téléchargement:', media.source, e);
+                } finally {
+                    completed++;
+                    setDownloadProgress(Math.round((completed / localMedias.length) * 100));
+                }
+            });
+            await Promise.all(promises);
+            const content = await zip.generateAsync({
+                type: 'blob',
+                compression: 'DEFLATE',
+                compressionOptions: { level: 6 },
+            });
+            saveAs(content, 'realisations-medias.zip');
+            onStatusChange?.({ type: 'success', message: 'ZIP téléchargé avec succès' });
+        } catch (e) {
+            console.error('Erreur ZIP:', e);
+            onStatusChange?.({ type: 'error', message: 'Erreur lors de la création du ZIP' });
+        } finally {
+            setIsDownloadingZip(false);
+            setDownloadProgress(0);
+        }
+    };
+
     // Ajouter un nouveau média avec le nouveau formulaire
     const handleAddNewMedia = () => {
         resetForm();
@@ -1178,26 +1227,81 @@ export default function RealisationsMediaManager({
             <div className="mb-8">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-medium">Importer des médias</h3>
-                    <button
-                        onClick={handleAddNewMedia}
-                        className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors flex items-center space-x-2"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
+                    <div className="flex items-center space-x-2">
+                        {medias.some(
+                            (m) => !m.videoId && (m.provider === 'local' || !m.provider),
+                        ) && (
+                            <button
+                                onClick={handleDownloadAll}
+                                disabled={isDownloadingZip}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                            >
+                                {isDownloadingZip ? (
+                                    <>
+                                        <svg
+                                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            ></path>
+                                        </svg>
+                                        {downloadProgress}%
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-5 w-5 mr-2"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                            />
+                                        </svg>
+                                        Tout télécharger
+                                    </>
+                                )}
+                            </button>
+                        )}
+                        <button
+                            onClick={handleAddNewMedia}
+                            className="px-4 py-2 bg-black text-white rounded-md hover:bg-black/80 transition-colors flex items-center space-x-2"
                         >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 4v16m8-8H4"
-                            />
-                        </svg>
-                        <span>Nouvelle réalisation</span>
-                    </button>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 4v16m8-8H4"
+                                />
+                            </svg>
+                            <span>Nouvelle réalisation</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* Sélection de catégorie */}
